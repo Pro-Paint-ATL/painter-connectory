@@ -1,6 +1,6 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import { 
   Card, 
   CardHeader, 
@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, Users, Calendar, PaintBucket, Search } from "lucide-react";
 
-// Mock data for subscribed painters
 const mockSubscribedPainters = [
   {
     id: "painter-1",
@@ -55,19 +54,29 @@ const mockSubscribedPainters = [
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [painters, setPainters] = useState(mockSubscribedPainters);
-  
-  // Calculate summary stats
+
+  useEffect(() => {
+    if (user && user.role !== "admin") {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
+  if (!user || user.role !== "admin") {
+    return null;
+  }
+
   const totalRevenue = painters.reduce((sum, painter) => sum + painter.amountPaid, 0);
   const activePainters = painters.filter(p => p.status === "active").length;
   const pastDuePainters = painters.filter(p => p.status === "past_due").length;
-  
+
   const filteredPainters = painters.filter(painter => 
     painter.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     painter.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",

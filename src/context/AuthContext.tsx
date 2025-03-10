@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 
-type UserRole = "customer" | "painter" | null;
+type UserRole = "customer" | "painter" | "admin" | null;
 
 interface Subscription {
   status: "active" | "canceled" | "past_due" | null;
@@ -65,19 +64,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, []);
 
-  // Mock login function - would connect to a real auth system in production
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
       // Simulate API request
       await new Promise((resolve) => setTimeout(resolve, 1000));
       
-      // Mock user data
+      // Mock user data - for demo purposes, any email containing 'admin' will be treated as admin
       const mockUser: User = {
         id: "user-" + Math.random().toString(36).substring(2, 9),
         name: email.split("@")[0],
         email,
-        role: email.includes("painter") ? "painter" : "customer",
+        role: email.includes("admin") ? "admin" : email.includes("painter") ? "painter" : "customer",
       };
       
       setUser(mockUser);
