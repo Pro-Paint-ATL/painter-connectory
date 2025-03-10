@@ -118,7 +118,7 @@ const EstimateCalculator = () => {
                 <h3 className="font-medium">Special Perks</h3>
                 <p>Save on your subscription:</p>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li className="text-primary font-medium">$5 OFF next month's subscription when you price match our calculator estimate and get hired!</li>
+                  <li className="text-primary font-medium">$5 OFF next month's subscription when you price match our calculator estimate and get hired! <span className="text-muted-foreground font-normal">(applicable once per month)</span></li>
                 </ul>
               </div>
             </CardContent>
