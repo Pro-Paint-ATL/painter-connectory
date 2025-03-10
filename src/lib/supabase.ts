@@ -16,6 +16,8 @@ supabase
     } else {
       console.log('Supabase connection successful');
     }
+    // Return explicitly to make this a proper Promise chain
+    return Promise.resolve();
   })
   .catch((error: Error) => {
     console.error('Error testing Supabase connection:', error);
