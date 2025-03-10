@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 type UserRole = "customer" | "painter" | null;
@@ -12,6 +13,8 @@ interface Subscription {
   paymentMethodId?: string;
   lastFour?: string;
   brand?: string;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
 }
 
 interface User {

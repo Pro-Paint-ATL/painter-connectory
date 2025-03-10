@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -8,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, PaintBucket, Shield, Clock, Users, CreditCard, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
   CardElement,
@@ -17,10 +15,11 @@ import {
 } from "@stripe/react-stripe-js";
 import { formatCardNumber, formatExpiryDate, formatCVC, stripePromise } from "@/utils/stripe";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useSubscriptionApi } from "@/api/subscriptionApi";
 
 // Inner component that uses Stripe hooks
 const SubscriptionForm = () => {
-  const { user, updateUserProfile } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -29,6 +28,9 @@ const SubscriptionForm = () => {
   // Get Stripe objects
   const stripe = useStripe();
   const elements = useElements();
+  
+  // Use our subscription API
+  const { subscribe } = useSubscriptionApi();
   
   const [paymentInfo, setPaymentInfo] = useState({
     cardNumber: "",
@@ -88,26 +90,8 @@ const SubscriptionForm = () => {
         throw new Error(error.message);
       }
       
-      // In a real implementation, you would send this to your server
-      console.log('Payment method created: ', paymentMethod);
-      
-      // Simulate payment confirmation from server
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Update user with subscription status
-      updateUserProfile({
-        subscription: {
-          status: "active",
-          plan: "pro",
-          startDate: new Date().toISOString(),
-          amount: 49,
-          currency: "USD",
-          interval: "month",
-          paymentMethodId: paymentMethod.id,
-          lastFour: paymentMethod.card?.last4 || '0000',
-          brand: paymentMethod.card?.brand || 'unknown',
-        }
-      });
+      // Use our subscription API to create a subscription
+      await subscribe(paymentMethod.id);
       
       // Show success dialog
       setShowSuccessDialog(true);
@@ -135,7 +119,6 @@ const SubscriptionForm = () => {
     }
   };
 
-  // Success dialog handler
   const handleCloseSuccessDialog = () => {
     setShowSuccessDialog(false);
     navigate("/profile");

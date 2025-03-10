@@ -16,6 +16,7 @@ import Booking from "./pages/Booking";
 import NotFound from "./pages/NotFound";
 import PainterSubscription from "./pages/PainterSubscription";
 import AdminDashboard from "./pages/AdminDashboard";
+import SubscriptionManagement from "./pages/SubscriptionManagement";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
                 <Route path="/booking/:painterId" element={<Booking />} />
                 <Route path="/subscription" element={<PainterSubscription />} />
                 <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/subscriptions" element={<SubscriptionManagement />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
