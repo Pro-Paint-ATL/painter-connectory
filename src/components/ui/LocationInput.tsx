@@ -15,7 +15,7 @@ const LocationInput: React.FC<LocationInputProps> = ({ onLocationChange, default
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Mock function to simulate geocoding API
+  // Mock function to simulate geocoding API with more customized suggestions
   const fetchAddressSuggestions = async (query: string) => {
     // In a real app, this would call a geocoding API like Google Maps, Mapbox, etc.
     setIsLoading(true);
@@ -23,23 +23,28 @@ const LocationInput: React.FC<LocationInputProps> = ({ onLocationChange, default
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 500));
     
-    // Mock responses based on input
+    // Generate more natural and varied mock responses based on input
     const mockSuggestions = [
       {
-        address: `${query}, New York, NY`,
+        address: query, // Exact user input
         lat: 40.7128,
         lng: -74.006,
       },
       {
-        address: `${query}, Los Angeles, CA`,
-        lat: 34.0522,
-        lng: -118.2437,
+        address: `${query}, New York`, // Only city
+        lat: 40.7128,
+        lng: -74.006,
       },
       {
-        address: `${query}, Chicago, IL`,
-        lat: 41.8781,
+        address: `${query}, Chicago`, // Only city
+        lat: 41.8781, 
         lng: -87.6298,
       },
+      {
+        address: `${query}, Seattle`, // Different city
+        lat: 47.6062,
+        lng: -122.3321,
+      }
     ];
     
     setIsLoading(false);

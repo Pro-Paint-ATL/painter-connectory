@@ -10,6 +10,7 @@ import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
 interface BookingCalendarProps {
   painterId: string;
   onTimeSelected: (date: Date, time: string) => void;
+  onSelectDate?: (date: Date) => void;
 }
 
 interface Availability {
@@ -17,7 +18,7 @@ interface Availability {
   times: string[];
 }
 
-const BookingCalendar: React.FC<BookingCalendarProps> = ({ painterId, onTimeSelected }) => {
+const BookingCalendar: React.FC<BookingCalendarProps> = ({ painterId, onTimeSelected, onSelectDate }) => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
   const [monthOffset, setMonthOffset] = useState(0);
@@ -85,6 +86,9 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({ painterId, onTimeSele
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
     setSelectedTime(undefined);
+    if (date && onSelectDate) {
+      onSelectDate(date);
+    }
   };
 
   const handleTimeSelect = (time: string) => {
