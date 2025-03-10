@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LocationInput from "@/components/ui/LocationInput";
 import PainterCard from "@/components/painters/PainterCard";
+import { useAuth } from "@/context/AuthContext";
 import {
   PaintBucket,
   Filter,
@@ -20,6 +20,14 @@ import {
   Search,
   SlidersHorizontal
 } from "lucide-react";
+
+const PAINTER_IMAGES = [
+  "/placeholder.svg",
+  "https://images.unsplash.com/photo-1507537297725-24a1c029d3ca?w=300&h=150&fit=crop",
+  "https://images.unsplash.com/photo-1531973576160-7125cd663d86?w=300&h=150&fit=crop",
+  "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=300&h=150&fit=crop",
+  "https://images.unsplash.com/photo-1558618666-d136994899e7?w=300&h=150&fit=crop"
+];
 
 interface Painter {
   id: string;
@@ -45,31 +53,28 @@ const FindPainters = () => {
   const [filteredPainters, setFilteredPainters] = useState<Painter[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
 
-  // Fetch mock painter data
   useEffect(() => {
-    // In a real app, this would be an API call
     const fetchPainters = async () => {
       setLoading(true);
       
-      // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Generate mock data
       const mockPainters: Painter[] = Array.from({ length: 12 }, (_, i) => ({
         id: `painter${i + 1}`,
         name: `${["Elite", "Pro", "Premier", "Quality", "Express", "Master", "Perfect"][i % 7]} Painters ${i + 1}`,
-        avatar: `https://source.unsplash.com/random/300x150?painting,${i}`,
-        rating: Math.floor(Math.random() * 2) + 3 + Math.random(), // Random rating 3-5
+        avatar: PAINTER_IMAGES[i % PAINTER_IMAGES.length],
+        rating: Math.floor(Math.random() * 2) + 3 + Math.random(),
         reviewCount: Math.floor(Math.random() * 50) + 5,
-        distance: Math.floor(Math.random() * 30) + 1, // 1-30 miles
+        distance: Math.floor(Math.random() * 30) + 1,
         location: ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix"][i % 5],
         yearsInBusiness: Math.floor(Math.random() * 20) + 1,
-        isInsured: Math.random() > 0.2, // 80% are insured
+        isInsured: Math.random() > 0.2,
         specialties: Array.from(
           { length: Math.floor(Math.random() * 3) + 1 },
           () => ["Interior", "Exterior", "Commercial", "Residential", "Cabinet", "Deck", "Fence"][Math.floor(Math.random() * 7)]
-        ).filter((value, index, self) => self.indexOf(value) === index), // Remove duplicates
+        ).filter((value, index, self) => self.indexOf(value) === index)
       }));
       
       setPainters(mockPainters);
@@ -80,24 +85,19 @@ const FindPainters = () => {
     fetchPainters();
   }, []);
 
-  // Apply filters whenever filter criteria change
   useEffect(() => {
     if (painters.length === 0) return;
     
     let filtered = [...painters];
     
-    // Filter by distance
     filtered = filtered.filter(painter => painter.distance <= maxDistance);
     
-    // Filter by rating
     filtered = filtered.filter(painter => painter.rating >= minRating);
     
-    // Filter by insurance
     if (onlyInsured) {
       filtered = filtered.filter(painter => painter.isInsured);
     }
     
-    // Filter by search term
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(

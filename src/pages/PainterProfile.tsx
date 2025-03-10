@@ -11,6 +11,12 @@ import { Link } from "react-router-dom";
 
 const PainterProfile = () => {
   const { id } = useParams<{ id: string }>();
+  const fallbackImage = "/placeholder.svg";
+
+  // Handle image loading errors
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.src = fallbackImage;
+  };
 
   // In a real app, this would fetch data from an API
   const painter = {
@@ -55,6 +61,7 @@ const PainterProfile = () => {
                       src={painter.avatar} 
                       alt={painter.name}
                       className="w-full h-full object-cover"
+                      onError={handleImageError}
                     />
                   </div>
                   
@@ -165,6 +172,7 @@ const PainterProfile = () => {
                           src={image} 
                           alt={`Portfolio example ${index + 1}`}
                           className="w-full h-full object-cover"
+                          onError={handleImageError}
                         />
                       </div>
                     ))}

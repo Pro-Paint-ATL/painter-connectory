@@ -46,15 +46,23 @@ const PainterCard: React.FC<PainterCardProps> = ({ painter }) => {
     );
   };
 
+  // Use a reliable fallback image in case the painter avatar URL is broken
+  const fallbackImage = "/placeholder.svg";
+  
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.src = fallbackImage;
+  };
+
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <CardContent className="p-0">
         <div className="flex flex-col">
           <div className="relative aspect-video bg-muted">
             <img
-              src={painter.avatar || "https://via.placeholder.com/300x150?text=Painter"}
+              src={painter.avatar || fallbackImage}
               alt={painter.name}
               className="object-cover w-full h-full"
+              onError={handleImageError}
             />
             <div className="absolute top-2 right-2 flex flex-col gap-2">
               {painter.isInsured && (
