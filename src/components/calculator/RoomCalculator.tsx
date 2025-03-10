@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { PaintBucket, Trash2, TicketPercent } from "lucide-react";
+import { PaintBucket, Trash2, TicketPercent, Sofa } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface RoomCalculatorProps {
@@ -31,6 +32,7 @@ export interface RoomDetail {
   complexity: number;
   roomCost: number;
   vaultedCeiling: boolean;
+  moveFurniture: boolean;
 }
 
 interface PaintRate {
@@ -39,6 +41,7 @@ interface PaintRate {
   windowCost: number;
   ceilingCost: number;
   complexityFactor: number;
+  furnitureMovingCost: number;
 }
 
 const defaultPaintRates: PaintRate = {
@@ -47,6 +50,7 @@ const defaultPaintRates: PaintRate = {
   windowCost: 35,
   ceilingCost: 1.00, // $1.00 per sq ft for ceiling
   complexityFactor: 0.25, // 25% increase per complexity level
+  furnitureMovingCost: 125, // $125 per room for moving furniture
 };
 
 const initialRooms: RoomDetail[] = [
@@ -66,6 +70,7 @@ const initialRooms: RoomDetail[] = [
     complexity: 1,
     roomCost: 0,
     vaultedCeiling: false,
+    moveFurniture: false,
   },
 ];
 
@@ -95,6 +100,10 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
       
       roomCost += room.doors * paintRates.doorCost;
       roomCost += room.windows * paintRates.windowCost;
+      
+      if (room.moveFurniture) {
+        roomCost += paintRates.furnitureMovingCost;
+      }
       
       roomCost *= 1 + ((room.complexity - 1) * paintRates.complexityFactor);
       
@@ -143,6 +152,7 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
         complexity: 1,
         roomCost: 0,
         vaultedCeiling: false,
+        moveFurniture: false,
       },
     ]);
   };
@@ -328,6 +338,27 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
                   <Label htmlFor={`${room.id}-vaulted`}>Vaulted Ceiling (2x cost)</Label>
                 </div>
               </div>
+              
+              <div className="border border-dashed border-muted-foreground/30 p-3 rounded-md">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`${room.id}-furniture`}
+                    checked={room.moveFurniture}
+                    onCheckedChange={(checked) =>
+                      updateRoom(room.id, { moveFurniture: checked === true })
+                    }
+                  />
+                  <div className="flex flex-col">
+                    <Label htmlFor={`${room.id}-furniture`} className="flex items-center gap-2">
+                      <Sofa className="h-4 w-4" />
+                      Move Furniture (+$125)
+                    </Label>
+                    <span className="text-xs text-muted-foreground">
+                      We'll move furniture to the center of the room for painting
+                    </span>
+                  </div>
+                </div>
+              </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between">
@@ -456,7 +487,7 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
           <p>This is a preliminary estimate based on the information provided.</p>
           <p>Final costs may vary based on site conditions and specific requirements.</p>
           {painterId && (
-            <p>Labor rate: ${paintRates.laborPerSqFt.toFixed(2)} per square foot (trim included). Ceiling: +${paintRates.ceilingCost.toFixed(2)} per square foot.</p>
+            <p>Labor rate: ${paintRates.laborPerSqFt.toFixed(2)} per square foot (trim included). Ceiling: +${paintRates.ceilingCost.toFixed(2)} per square foot. Furniture moving: +$125 per room.</p>
           )}
         </CardFooter>
       </Card>
