@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { StarIcon, Shield, Clock, MapPin, PaintBucket, Calendar } from "lucide-react";
+import { StarIcon, Shield, Clock, MapPin, PaintBucket, Calendar, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const PainterProfile = () => {
@@ -23,6 +23,7 @@ const PainterProfile = () => {
     location: "New York",
     yearsInBusiness: 15,
     isInsured: true,
+    insuranceAmount: "$1,000,000", // Added insurance amount information
     about: "Elite Painters has been providing premium painting services for both residential and commercial properties for over 15 years. Our team consists of skilled professionals who are committed to delivering exceptional quality and customer satisfaction.",
     specialties: ["Interior", "Exterior", "Commercial", "Residential"],
     portfolio: [
@@ -57,7 +58,14 @@ const PainterProfile = () => {
                     />
                   </div>
                   
-                  <h1 className="text-2xl font-bold mb-2">{painter.name}</h1>
+                  <h1 className="text-2xl font-bold mb-2">
+                    {painter.name}
+                    {painter.isInsured && (
+                      <Badge variant="default" className="ml-2 bg-green-600 hover:bg-green-700">
+                        <Shield className="h-3.5 w-3.5 mr-1" /> Insured
+                      </Badge>
+                    )}
+                  </h1>
                   
                   <div className="flex items-center gap-1 mb-4">
                     <div className="flex">
@@ -84,7 +92,9 @@ const PainterProfile = () => {
                     {painter.isInsured && (
                       <div className="flex items-center gap-2 text-sm">
                         <Shield className="h-4 w-4 text-green-500" />
-                        <span className="text-green-600">Insured & Verified</span>
+                        <span className="text-green-600">
+                          Insured & Verified ({painter.insuranceAmount} Coverage)
+                        </span>
                       </div>
                     )}
                   </div>
@@ -123,6 +133,25 @@ const PainterProfile = () => {
                   <p className="text-muted-foreground">{painter.about}</p>
                 </CardContent>
               </Card>
+              
+              {painter.isInsured && (
+                <Card className="border-green-200">
+                  <CardHeader className="flex flex-row items-center gap-2">
+                    <Shield className="h-5 w-5 text-green-600" />
+                    <h2 className="text-xl font-bold text-green-700">Insured Professional</h2>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Check className="h-5 w-5 text-green-500" />
+                      <p><span className="font-medium">General Liability Insurance:</span> {painter.insuranceAmount} coverage</p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      This painter maintains proper insurance coverage as required by our platform, 
+                      protecting both their business and your property during the painting project.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
               
               <Card>
                 <CardHeader>
