@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -107,7 +106,6 @@ const App = () => {
   const [envError, setEnvError] = useState<string | null>(null);
   
   useEffect(() => {
-    // Check if environment variables are available
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
     
@@ -118,7 +116,6 @@ const App = () => {
     }
   }, []);
 
-  // Show error message if environment variables are missing
   if (envError) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
@@ -131,9 +128,8 @@ const App = () => {
           <div className="p-4 bg-gray-100 rounded-md text-left text-sm mb-4">
             <p>To fix this issue:</p>
             <ol className="list-decimal list-inside mt-2 space-y-1">
-              <li>Click on "Share" in the top navigation bar</li>
-              <li>Select "Settings"</li>
-              <li>In the Settings sidebar, click on "Environment Variables"</li>
+              <li>Click on the "Project Settings" icon (gear/cog icon) in the Lovable interface</li>
+              <li>Look for the "Environment Variables" section</li>
               <li>Add the following environment variables:</li>
               <li className="ml-4 font-mono">VITE_SUPABASE_URL</li>
               <li className="ml-4 font-mono">VITE_SUPABASE_ANON_KEY</li>
