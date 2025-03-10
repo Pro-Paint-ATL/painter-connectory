@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -41,18 +40,12 @@ interface PaintRate {
   complexityFactor: number;
 }
 
-interface CouponType {
-  id: string;
-  discount: number;
-  applied: boolean;
-}
-
 const defaultPaintRates: PaintRate = {
-  laborPerSqFt: 4.50,
+  laborPerSqFt: 4.50, // Base rate includes trim
   doorCost: 50,
   windowCost: 35,
   ceilingCost: 1.00, // $1.00 per sq ft for ceiling
-  complexityFactor: 0.25, // per complexity level
+  complexityFactor: 0.25, // 25% increase per complexity level
 };
 
 // Initialize with sample room
@@ -61,79 +54,44 @@ const initialRooms: RoomDetail[] = [
     id: "room1",
     name: "Living Room",
     walls: {
-      width: 12, // width in feet
-      height: 9, // height in feet
-      area: 0, // calculated
+      width: 12,
+      height: 9,
+      area: 0,
     },
     ceiling: true,
-    ceilingArea: 0, // calculated
+    ceilingArea: 0,
     trim: true,
     doors: 2,
     windows: 3,
-    complexity: 1, // 1-5 scale
-    roomCost: 0, // calculated
+    complexity: 1,
+    roomCost: 0,
   },
 ];
 
 const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId }) => {
   const [rooms, setRooms] = useState<RoomDetail[]>(initialRooms);
-  const [paintRates, setPaintRates] = useState<PaintRate>(defaultPaintRates);
+  const [paintRates] = useState<PaintRate>(defaultPaintRates);
   const [totalCost, setTotalCost] = useState(0);
   const [couponCode, setCouponCode] = useState("");
-  const [availableCoupons, setAvailableCoupons] = useState<CouponType[]>([]);
-  const [appliedCoupon, setAppliedCoupon] = useState<CouponType | null>(null);
+  const [availableCoupons, setAvailableCoupons] = useState<Array<{ id: string; discount: number; applied: boolean }>>([]);
+  const [appliedCoupon, setAppliedCoupon] = useState<{ id: string; discount: number; applied: boolean } | null>(null);
   const [discountedTotal, setDiscountedTotal] = useState(0);
   const { toast } = useToast();
 
-  // If we have a painter ID, we could fetch their custom rates and coupons here
-  useEffect(() => {
-    if (painterId) {
-      // In a real app, this would fetch the painter's custom rates from an API
-      console.log(`Fetching rates for painter ${painterId}`);
-      
-      // Mock different rates for different painters
-      if (painterId === "painter1") {
-        setPaintRates({
-          ...defaultPaintRates,
-          laborPerSqFt: 4.75, // slightly higher rate for this painter
-        });
-      }
-      
-      // Mock available coupons
-      // In a real app, these would be fetched from the database based on the painter's subscription
-      setAvailableCoupons([
-        { id: "10OFF", discount: 0.10, applied: false },
-        { id: "10PERCENT", discount: 0.10, applied: false },
-        { id: "SAVE10", discount: 0.10, applied: false },
-        { id: "DEAL10", discount: 0.10, applied: false },
-        { id: "SPECIAL10", discount: 0.10, applied: false },
-        { id: "20OFF", discount: 0.20, applied: false },
-        { id: "20PERCENT", discount: 0.20, applied: false },
-        { id: "SAVE20", discount: 0.20, applied: false },
-        { id: "DEAL20", discount: 0.20, applied: false },
-        { id: "SPECIAL20", discount: 0.20, applied: false },
-      ]);
-    }
-  }, [painterId]);
-
-  // Calculate room costs whenever rooms or rates change
+  // Effect to calculate costs when rooms or rates change
   useEffect(() => {
     const updatedRooms = rooms.map((room) => {
-      // Calculate room dimensions correctly
-      const length = room.walls.width;
-      const width = room.walls.width; // Assuming square room from the UI inputs
-      const height = room.walls.height;
+      // Calculate wall area: perimeter × height
+      const perimeter = 2 * (room.walls.width + room.walls.width); // Using width for both dimensions
+      const wallArea = perimeter * room.walls.height;
       
-      // Calculate wall area: (2 × length × height) + (2 × width × height)
-      const wallArea = 2 * (length * height) + 2 * (width * height);
-      
-      // Calculate floor area (same as ceiling): length × width
-      const floorArea = length * width;
+      // Calculate floor/ceiling area
+      const floorArea = room.walls.width * room.walls.width; // Using width for both dimensions
       
       // Base cost: wall area × rate (includes trim)
       let roomCost = wallArea * paintRates.laborPerSqFt;
       
-      // Add ceiling cost if applicable
+      // Add ceiling cost if selected
       if (room.ceiling) {
         roomCost += floorArea * paintRates.ceilingCost;
       }
@@ -160,7 +118,6 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
     const newTotalCost = updatedRooms.reduce((sum, room) => sum + room.roomCost, 0);
     setTotalCost(newTotalCost);
     
-    // Calculate discounted total if coupon is applied
     if (appliedCoupon) {
       const discount = newTotalCost * appliedCoupon.discount;
       setDiscountedTotal(Math.round(newTotalCost - discount));
@@ -375,9 +332,6 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
                     id={`${room.id}-trim`}
                     checked={true}
                     disabled={true}
-                    onCheckedChange={(checked) =>
-                      updateRoom(room.id, { trim: checked === true })
-                    }
                   />
                   <Label htmlFor={`${room.id}-trim`}>Paint Trim (Included)</Label>
                 </div>
@@ -434,7 +388,6 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
               <span>${totalCost.toLocaleString()}</span>
             </div>
             
-            {/* Coupon section - only show if painter ID is provided */}
             {painterId && (
               <>
                 <Separator className="my-4" />
