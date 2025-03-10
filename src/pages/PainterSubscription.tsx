@@ -6,34 +6,93 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, PaintBucket, Shield, Clock, Users } from "lucide-react";
+import { CheckCircle2, PaintBucket, Shield, Clock, Users, CreditCard, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  CardElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
+import { formatCardNumber, formatExpiryDate, formatCVC, stripePromise } from "@/utils/stripe";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const PainterSubscription = () => {
+// Inner component that uses Stripe hooks
+const SubscriptionForm = () => {
   const { user, updateUserProfile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  
+  // Get Stripe objects
+  const stripe = useStripe();
+  const elements = useElements();
+  
   const [paymentInfo, setPaymentInfo] = useState({
     cardNumber: "",
     expiryDate: "",
     cvc: "",
     nameOnCard: "",
   });
+  
+  const [cardError, setCardError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setPaymentInfo((prev) => ({ ...prev, [name]: value }));
+    
+    // Format input values based on field type
+    let formattedValue = value;
+    if (name === 'cardNumber') {
+      formattedValue = formatCardNumber(value);
+    } else if (name === 'expiryDate') {
+      formattedValue = formatExpiryDate(value);
+    } else if (name === 'cvc') {
+      formattedValue = formatCVC(value);
+    }
+    
+    setPaymentInfo((prev) => ({ ...prev, [name]: formattedValue }));
   };
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Make sure stripe and elements are loaded
+    if (!stripe || !elements) {
+      setCardError("Stripe has not loaded yet. Please try again.");
+      return;
+    }
+    
     setLoading(true);
+    setCardError(null);
     
     try {
-      // In a real implementation, this would connect to Stripe API
-      // For demo purposes, we'll simulate a successful payment
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Get a reference to the card element
+      const cardElement = elements.getElement(CardElement);
+      
+      if (!cardElement) {
+        throw new Error("Card element not found");
+      }
+      
+      // Create payment method
+      const { error, paymentMethod } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+        billing_details: {
+          name: paymentInfo.nameOnCard,
+        },
+      });
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      // In a real implementation, you would send this to your server
+      console.log('Payment method created: ', paymentMethod);
+      
+      // Simulate payment confirmation from server
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Update user with subscription status
       updateUserProfile({
@@ -44,16 +103,28 @@ const PainterSubscription = () => {
           amount: 49,
           currency: "USD",
           interval: "month",
+          paymentMethodId: paymentMethod.id,
+          lastFour: paymentMethod.card?.last4 || '0000',
+          brand: paymentMethod.card?.brand || 'unknown',
         }
       });
+      
+      // Show success dialog
+      setShowSuccessDialog(true);
       
       toast({
         title: "Subscription Successful!",
         description: "You are now a Pro Painter and will be charged $49/month.",
       });
       
-      navigate("/profile");
     } catch (error) {
+      console.error("Payment error:", error);
+      if (error instanceof Error) {
+        setCardError(error.message);
+      } else {
+        setCardError("There was an error processing your payment. Please try again.");
+      }
+      
       toast({
         title: "Subscription Failed",
         description: "There was an error processing your payment. Please try again.",
@@ -63,6 +134,116 @@ const PainterSubscription = () => {
       setLoading(false);
     }
   };
+
+  // Success dialog handler
+  const handleCloseSuccessDialog = () => {
+    setShowSuccessDialog(false);
+    navigate("/profile");
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Payment Information</CardTitle>
+          <CardDescription>Enter your card details to subscribe</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubscribe}>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="nameOnCard" className="text-sm font-medium">Name on Card</label>
+                <Input
+                  id="nameOnCard"
+                  name="nameOnCard"
+                  placeholder="John Smith"
+                  value={paymentInfo.nameOnCard}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="cardDetails" className="text-sm font-medium">Card Details</label>
+                <div className="border border-input rounded-md p-3 bg-background">
+                  <CardElement
+                    id="cardDetails"
+                    options={{
+                      style: {
+                        base: {
+                          fontSize: '16px',
+                          color: 'var(--foreground)',
+                          '::placeholder': {
+                            color: 'var(--muted-foreground)',
+                          },
+                        },
+                        invalid: {
+                          color: 'var(--destructive)',
+                        },
+                      },
+                    }}
+                  />
+                </div>
+                {cardError && (
+                  <p className="text-sm text-destructive mt-1">{cardError}</p>
+                )}
+              </div>
+              
+              <div className="pt-4">
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={loading || !stripe}
+                >
+                  {loading ? "Processing..." : "Subscribe Now - $49/month"}
+                </Button>
+              </div>
+              
+              <div className="flex items-center justify-center text-xs text-muted-foreground mt-4 gap-1">
+                <Lock className="h-3 w-3" />
+                <span>Payments are secure and encrypted</span>
+              </div>
+              
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                By subscribing, you agree to our Terms of Service and authorize us to charge your card $49 monthly until you cancel.
+              </p>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+      
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Subscription Successful!</DialogTitle>
+            <DialogDescription>
+              You've successfully subscribed to the Pro Painter plan.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="rounded-lg bg-primary/10 p-4 flex items-center justify-center">
+              <CheckCircle2 className="h-12 w-12 text-primary" />
+            </div>
+            <p>
+              Your Pro Painter subscription has been activated. You now have access to all premium features including priority listing, verified badge, unlimited bookings, and more.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Your card will be charged $49/month. The next billing date is {new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleDateString()}.
+            </p>
+            <Button className="w-full" onClick={handleCloseSuccessDialog}>
+              Go to my Profile
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+// Main component that includes Stripe Elements provider
+const PainterSubscription = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Check if user is a painter
   if (user?.role !== "painter") {
@@ -103,6 +284,14 @@ const PainterSubscription = () => {
               <div className="text-sm text-muted-foreground">
                 Next billing date: {new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleDateString()}
               </div>
+              {user.subscription.lastFour && (
+                <div className="mt-2 text-sm text-muted-foreground flex items-center gap-1">
+                  <CreditCard className="h-3 w-3" />
+                  <span>
+                    {user.subscription.brand} ending in {user.subscription.lastFour}
+                  </span>
+                </div>
+              )}
             </div>
           </CardContent>
           <CardFooter>
@@ -183,80 +372,9 @@ const PainterSubscription = () => {
         </div>
 
         <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment Information</CardTitle>
-              <CardDescription>Enter your card details to subscribe</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubscribe}>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="nameOnCard" className="text-sm font-medium">Name on Card</label>
-                    <Input
-                      id="nameOnCard"
-                      name="nameOnCard"
-                      placeholder="John Smith"
-                      value={paymentInfo.nameOnCard}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label htmlFor="cardNumber" className="text-sm font-medium">Card Number</label>
-                    <Input
-                      id="cardNumber"
-                      name="cardNumber"
-                      placeholder="4242 4242 4242 4242"
-                      value={paymentInfo.cardNumber}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label htmlFor="expiryDate" className="text-sm font-medium">Expiry Date</label>
-                      <Input
-                        id="expiryDate"
-                        name="expiryDate"
-                        placeholder="MM/YY"
-                        value={paymentInfo.expiryDate}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label htmlFor="cvc" className="text-sm font-medium">CVC</label>
-                      <Input
-                        id="cvc"
-                        name="cvc"
-                        placeholder="123"
-                        value={paymentInfo.cvc}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="pt-4">
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={loading}
-                    >
-                      {loading ? "Processing..." : "Subscribe Now - $49/month"}
-                    </Button>
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground text-center mt-4">
-                    By subscribing, you agree to our Terms of Service and authorize us to charge your card $49 monthly until you cancel.
-                  </p>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+          <Elements stripe={stripePromise}>
+            <SubscriptionForm />
+          </Elements>
         </div>
       </div>
     </div>

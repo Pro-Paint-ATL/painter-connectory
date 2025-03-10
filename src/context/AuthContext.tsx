@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 type UserRole = "customer" | "painter" | null;
@@ -10,6 +9,9 @@ interface Subscription {
   amount: number | null;
   currency: string | null;
   interval: "month" | "year" | null;
+  paymentMethodId?: string;
+  lastFour?: string;
+  brand?: string;
 }
 
 interface User {
