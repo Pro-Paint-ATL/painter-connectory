@@ -5,20 +5,21 @@ import { supabase as supabaseClient } from '@/integrations/supabase/client';
 export const supabase = supabaseClient;
 
 // This will log if the connection is successful
-supabase
-  .from('profiles')
-  .select('count', { count: 'exact', head: true })
-  .then(response => {
-    if (response.error && response.error.message.includes('invalid api key')) {
-      console.error('Supabase connection error: Invalid API key');
-    } else if (response.error && response.error.message.includes('connection')) {
-      console.error('Supabase connection error:', response.error.message);
-    } else {
-      console.log('Supabase connection successful');
-    }
-    // Return explicitly to make this a proper Promise chain
-    return Promise.resolve();
-  })
-  .catch((error: Error) => {
-    console.error('Error testing Supabase connection:', error);
-  });
+// Wrap the entire chain in a Promise.resolve() to ensure we have a proper Promise
+Promise.resolve().then(() => {
+  return supabase
+    .from('profiles')
+    .select('count', { count: 'exact', head: true })
+    .then(response => {
+      if (response.error && response.error.message.includes('invalid api key')) {
+        console.error('Supabase connection error: Invalid API key');
+      } else if (response.error && response.error.message.includes('connection')) {
+        console.error('Supabase connection error:', response.error.message);
+      } else {
+        console.log('Supabase connection successful');
+      }
+    });
+})
+.catch((error: Error) => {
+  console.error('Error testing Supabase connection:', error);
+});
