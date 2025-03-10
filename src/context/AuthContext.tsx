@@ -3,11 +3,38 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { createClient, SupabaseClient, User as SupabaseUser } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
 
-// Create Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+// Create Supabase client - with safety checks for environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create Supabase client
+let supabase: SupabaseClient;
+try {
+  supabase = createClient(supabaseUrl, supabaseAnonKey);
+} catch (error) {
+  console.error("Error initializing Supabase client:", error);
+  // Create a dummy client for fallback to prevent crashes
+  supabase = {
+    auth: {
+      getSession: () => Promise.resolve({ data: { session: null } }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+      signInWithPassword: () => Promise.resolve({ data: {}, error: new Error("Supabase not initialized") }),
+      signUp: () => Promise.resolve({ data: {}, error: new Error("Supabase not initialized") }),
+      signOut: () => Promise.resolve({ error: null }),
+    },
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          single: () => Promise.resolve({ data: null, error: new Error("Supabase not initialized") }),
+        }),
+        insert: () => Promise.resolve({ error: new Error("Supabase not initialized") }),
+        update: () => ({
+          eq: () => Promise.resolve({ error: new Error("Supabase not initialized") }),
+        }),
+      }),
+    }),
+  } as unknown as SupabaseClient;
+}
 
 type UserRole = "customer" | "painter" | "admin" | null;
 
@@ -73,7 +100,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (error) {
-        throw error;
+        console.error("Error fetching profile:", error);
+        // If the profiles table doesn't exist yet, we'll create it with default values
+        if (error.code === "PGRST116") {
+          console.log("Profile not found, creating new profile");
+        } else {
+          throw error;
+        }
       }
 
       // If no profile exists, create a new one
@@ -92,12 +125,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
 
         // Insert the new profile
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert(newProfile);
+        try {
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert(newProfile);
 
-        if (insertError) {
-          throw insertError;
+          if (insertError) {
+            console.error("Error inserting profile:", insertError);
+            // Fall back to just returning the user info without saving to profiles
+          }
+        } catch (insertErr) {
+          console.error("Exception inserting profile:", insertErr);
         }
 
         return {
@@ -121,7 +159,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     } catch (error) {
       console.error("Error formatting user:", error);
-      return null;
+      // Return a basic user object even if there's an error
+      return supabaseUser ? {
+        id: supabaseUser.id,
+        name: supabaseUser.email?.split('@')[0] || '',
+        email: supabaseUser.email || '',
+        role: ADMIN_EMAILS.includes(supabaseUser.email?.toLowerCase() || '') ? "admin" : "customer",
+      } : null;
     }
   };
 

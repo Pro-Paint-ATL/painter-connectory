@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,8 +16,13 @@ import NotFound from "./pages/NotFound";
 import PainterSubscription from "./pages/PainterSubscription";
 import AdminDashboard from "./pages/AdminDashboard";
 import SubscriptionManagement from "./pages/SubscriptionManagement";
+import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
+
+// Check if required environment variables are set
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Protected route component for admin routes
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
@@ -102,24 +106,62 @@ const AppRoutes = () => {
   );
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <div className="flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-1">
-              <AppRoutes />
-            </main>
-            <Footer />
+const App = () => {
+  const [envError, setEnvError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    // Check for missing environment variables
+    if (!supabaseUrl) {
+      setEnvError("Missing VITE_SUPABASE_URL environment variable");
+    } else if (!supabaseAnonKey) {
+      setEnvError("Missing VITE_SUPABASE_ANON_KEY environment variable");
+    }
+  }, []);
+
+  // Show error message if environment variables are missing
+  if (envError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
+        <div className="max-w-md">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Configuration Error</h1>
+          <p className="mb-4">{envError}</p>
+          <p className="mb-4 text-sm">
+            Please add your Supabase URL and anon key to the project settings.
+          </p>
+          <div className="p-4 bg-gray-100 rounded-md text-left text-sm mb-4">
+            <p>To fix this issue:</p>
+            <ol className="list-decimal list-inside mt-2 space-y-1">
+              <li>Go to Project Settings in Lovable</li>
+              <li>Add the following environment variables:</li>
+              <li className="ml-4 font-mono">VITE_SUPABASE_URL</li>
+              <li className="ml-4 font-mono">VITE_SUPABASE_ANON_KEY</li>
+              <li>Get these values from your Supabase project dashboard</li>
+            </ol>
           </div>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <div className="flex min-h-screen flex-col">
+              <Header />
+              <main className="flex-1">
+                <AppRoutes />
+              </main>
+              <Footer />
+            </div>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

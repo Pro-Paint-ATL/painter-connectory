@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -14,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { DollarSign, Users, Calendar, PaintBucket, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -27,22 +29,33 @@ const AdminDashboard = () => {
     queryFn: async () => {
       if (!user || user.role !== "admin") return [];
       
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'painter')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('role', 'painter')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          toast({
+            title: "Error",
+            description: "Failed to load subscription data.",
+            variant: "destructive"
+          });
+          console.error("Supabase error:", error);
+          return [];
+        }
+        
+        return data || [];
+      } catch (err) {
+        console.error("Error fetching painters:", err);
         toast({
           title: "Error",
           description: "Failed to load subscription data.",
           variant: "destructive"
         });
-        throw error;
+        return [];
       }
-      
-      return data || [];
     },
     enabled: !!user && user.role === "admin"
   });
