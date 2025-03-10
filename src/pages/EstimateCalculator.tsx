@@ -5,13 +5,18 @@ import { motion } from "framer-motion";
 import RoomCalculator, { RoomDetail } from "@/components/calculator/RoomCalculator";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertCircle } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const EstimateCalculator = () => {
   const [totalCost, setTotalCost] = useState(0);
   const [roomDetails, setRoomDetails] = useState<RoomDetail[]>([]);
   const [painterId, setPainterId] = useState<string | undefined>(undefined);
+  const [showSubscriptionInfo, setShowSubscriptionInfo] = useState(false);
   const { search } = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     // Extract painter ID from URL if present
@@ -41,6 +46,18 @@ const EstimateCalculator = () => {
       title: "Quote Requested!",
       description: `Your estimate has been sent to the painter for a formal quote.`,
     });
+    
+    // If the user is a painter, show the lead cost info
+    if (user?.role === "painter") {
+      toast({
+        title: "Lead Generated",
+        description: "This will count as a lead. First lead is free, additional leads cost $5 each.",
+      });
+    }
+  };
+
+  const toggleSubscriptionInfo = () => {
+    setShowSubscriptionInfo(!showSubscriptionInfo);
   };
 
   return (
@@ -55,7 +72,50 @@ const EstimateCalculator = () => {
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             Get an accurate estimate for your painting project by providing room details below.
           </p>
+          {user?.role === "painter" && (
+            <Button 
+              variant="link" 
+              onClick={toggleSubscriptionInfo}
+              className="mt-2"
+            >
+              {showSubscriptionInfo ? "Hide" : "Show"} Painter Subscription Info
+            </Button>
+          )}
         </div>
+
+        {user?.role === "painter" && showSubscriptionInfo && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5" />
+                Painter Subscription Details
+              </CardTitle>
+              <CardDescription>
+                Information about subscription and lead generation costs
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <h3 className="font-medium">Monthly Subscription</h3>
+                <p>$49 per month subscription fee gives you access to:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Unlimited customer estimates</li>
+                  <li>10 coupon codes per month (5 x 10% off, 5 x 20% off)</li>
+                  <li>Your first customer lead is free</li>
+                </ul>
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="font-medium">Lead Costs</h3>
+                <p>When customers request a quote from you:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>First customer lead: FREE</li>
+                  <li>Additional customer leads: $5 each</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="mt-8">
           <RoomCalculator onCalculate={handleCalculate} painterId={painterId} />

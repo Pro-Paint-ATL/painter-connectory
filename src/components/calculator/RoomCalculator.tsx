@@ -8,7 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { PaintBucket, Trash2 } from "lucide-react";
+import { PaintBucket, Trash2, TicketPercent } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface RoomCalculatorProps {
   onCalculate: (totalCost: number, details: RoomDetail[]) => void;
@@ -29,22 +30,12 @@ export interface RoomDetail {
   doors: number;
   windows: number;
   complexity: number;
-  paintQuality: "basic" | "standard" | "premium";
   coats: number;
   roomCost: number;
 }
 
 interface PaintRate {
-  labor: {
-    basic: number;
-    standard: number;
-    premium: number;
-  };
-  materialPerSqFt: {
-    basic: number;
-    standard: number;
-    premium: number;
-  };
+  laborPerSqFt: number;
   doorCost: number;
   windowCost: number;
   trimCost: number;
@@ -52,17 +43,14 @@ interface PaintRate {
   complexityFactor: number;
 }
 
+interface CouponType {
+  id: string;
+  discount: number;
+  applied: boolean;
+}
+
 const defaultPaintRates: PaintRate = {
-  labor: {
-    basic: 1.75,
-    standard: 2.5,
-    premium: 4.0,
-  },
-  materialPerSqFt: {
-    basic: 0.25,
-    standard: 0.50,
-    premium: 1.0,
-  },
+  laborPerSqFt: 4.50,
   doorCost: 50,
   windowCost: 35,
   trimCost: 1.25, // per sq ft of wall area
@@ -86,7 +74,6 @@ const initialRooms: RoomDetail[] = [
     doors: 2,
     windows: 3,
     complexity: 1, // 1-5 scale
-    paintQuality: "standard",
     coats: 2,
     roomCost: 0, // calculated
   },
@@ -96,23 +83,40 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
   const [rooms, setRooms] = useState<RoomDetail[]>(initialRooms);
   const [paintRates, setPaintRates] = useState<PaintRate>(defaultPaintRates);
   const [totalCost, setTotalCost] = useState(0);
+  const [couponCode, setCouponCode] = useState("");
+  const [availableCoupons, setAvailableCoupons] = useState<CouponType[]>([]);
+  const [appliedCoupon, setAppliedCoupon] = useState<CouponType | null>(null);
+  const [discountedTotal, setDiscountedTotal] = useState(0);
+  const { toast } = useToast();
 
-  // If we have a painter ID, we could fetch their custom rates here
+  // If we have a painter ID, we could fetch their custom rates and coupons here
   useEffect(() => {
     if (painterId) {
       // In a real app, this would fetch the painter's custom rates from an API
       console.log(`Fetching rates for painter ${painterId}`);
+      
       // Mock different rates for different painters
       if (painterId === "painter1") {
         setPaintRates({
           ...defaultPaintRates,
-          labor: {
-            basic: 2.0,
-            standard: 3.0,
-            premium: 4.5,
-          },
+          laborPerSqFt: 4.75, // slightly higher rate for this painter
         });
       }
+      
+      // Mock available coupons
+      // In a real app, these would be fetched from the database based on the painter's subscription
+      setAvailableCoupons([
+        { id: "10OFF", discount: 0.10, applied: false },
+        { id: "10PERCENT", discount: 0.10, applied: false },
+        { id: "SAVE10", discount: 0.10, applied: false },
+        { id: "DEAL10", discount: 0.10, applied: false },
+        { id: "SPECIAL10", discount: 0.10, applied: false },
+        { id: "20OFF", discount: 0.20, applied: false },
+        { id: "20PERCENT", discount: 0.20, applied: false },
+        { id: "SAVE20", discount: 0.20, applied: false },
+        { id: "DEAL20", discount: 0.20, applied: false },
+        { id: "SPECIAL20", discount: 0.20, applied: false },
+      ]);
     }
   }, [painterId]);
 
@@ -126,16 +130,12 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
       // Calculate ceiling area: width × width
       const ceilingArea = room.walls.width * room.walls.width;
       
-      // Get base rates based on paint quality
-      const laborRatePerSqFt = paintRates.labor[room.paintQuality];
-      const materialRatePerSqFt = paintRates.materialPerSqFt[room.paintQuality];
-      
-      // Calculate wall cost
-      let roomCost = wallArea * (laborRatePerSqFt + materialRatePerSqFt) * room.coats;
+      // Calculate wall cost - just labor now (no materials)
+      let roomCost = wallArea * paintRates.laborPerSqFt * room.coats;
       
       // Add ceiling cost if applicable
       if (room.ceiling) {
-        roomCost += ceilingArea * (laborRatePerSqFt + materialRatePerSqFt) * paintRates.ceilingFactor * room.coats;
+        roomCost += ceilingArea * paintRates.laborPerSqFt * paintRates.ceilingFactor * room.coats;
       }
       
       // Add trim cost if applicable
@@ -164,8 +164,17 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
     setRooms(updatedRooms);
     const newTotalCost = updatedRooms.reduce((sum, room) => sum + room.roomCost, 0);
     setTotalCost(newTotalCost);
-    onCalculate(newTotalCost, updatedRooms);
-  }, [rooms, paintRates, onCalculate]);
+    
+    // Calculate discounted total if coupon is applied
+    if (appliedCoupon) {
+      const discount = newTotalCost * appliedCoupon.discount;
+      setDiscountedTotal(Math.round(newTotalCost - discount));
+    } else {
+      setDiscountedTotal(newTotalCost);
+    }
+    
+    onCalculate(appliedCoupon ? discountedTotal : newTotalCost, updatedRooms);
+  }, [rooms, paintRates, appliedCoupon, onCalculate]);
 
   const addRoom = () => {
     const newRoomId = `room${rooms.length + 1}`;
@@ -185,7 +194,6 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
         doors: 1,
         windows: 1,
         complexity: 1,
-        paintQuality: "standard",
         coats: 2,
         roomCost: 0,
       },
@@ -202,6 +210,70 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
     setRooms(
       rooms.map((room) => (room.id === id ? { ...room, ...updates } : room))
     );
+  };
+
+  const applyCoupon = () => {
+    // Find the coupon in available coupons
+    const coupon = availableCoupons.find(c => c.id === couponCode);
+    
+    if (!coupon) {
+      toast({
+        title: "Invalid Coupon",
+        description: "The coupon code you entered is not valid.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (coupon.applied) {
+      toast({
+        title: "Coupon Already Used",
+        description: "This coupon has already been applied to another estimate.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Apply the coupon
+    setAppliedCoupon(coupon);
+    
+    // Update available coupons to mark this one as used
+    setAvailableCoupons(
+      availableCoupons.map(c => 
+        c.id === coupon.id ? { ...c, applied: true } : c
+      )
+    );
+
+    // Calculate discounted total
+    const discount = totalCost * coupon.discount;
+    setDiscountedTotal(Math.round(totalCost - discount));
+    
+    toast({
+      title: "Coupon Applied!",
+      description: `${Math.round(coupon.discount * 100)}% discount applied to your estimate.`,
+    });
+    
+    // Clear the input field
+    setCouponCode("");
+  };
+
+  const removeCoupon = () => {
+    if (appliedCoupon) {
+      // Mark the coupon as not applied
+      setAvailableCoupons(
+        availableCoupons.map(c => 
+          c.id === appliedCoupon.id ? { ...c, applied: false } : c
+        )
+      );
+      
+      setAppliedCoupon(null);
+      setDiscountedTotal(totalCost);
+      
+      toast({
+        title: "Coupon Removed",
+        description: "The discount has been removed from your estimate.",
+      });
+    }
   };
 
   return (
@@ -340,25 +412,6 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor={`${room.id}-quality`}>Paint Quality</Label>
-                <Select
-                  value={room.paintQuality}
-                  onValueChange={(value: "basic" | "standard" | "premium") =>
-                    updateRoom(room.id, { paintQuality: value })
-                  }
-                >
-                  <SelectTrigger id={`${room.id}-quality`}>
-                    <SelectValue placeholder="Select paint quality" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="basic">Basic</SelectItem>
-                    <SelectItem value="standard">Standard</SelectItem>
-                    <SelectItem value="premium">Premium</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor={`${room.id}-coats`}>Number of Coats</Label>
                 <Select
                   value={room.coats.toString()}
@@ -404,11 +457,86 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
               <span>Total Estimate</span>
               <span>${totalCost.toLocaleString()}</span>
             </div>
+            
+            {/* Coupon section - only show if painter ID is provided */}
+            {painterId && (
+              <>
+                <Separator className="my-4" />
+                <div className="space-y-4">
+                  <div className="flex flex-col space-y-2">
+                    <Label htmlFor="coupon-code">Have a Coupon Code?</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="coupon-code"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        placeholder="Enter coupon code"
+                        className="flex-1"
+                        disabled={!!appliedCoupon}
+                      />
+                      {!appliedCoupon ? (
+                        <Button 
+                          onClick={applyCoupon} 
+                          disabled={!couponCode}
+                          className="gap-2"
+                        >
+                          <TicketPercent className="h-4 w-4" />
+                          Apply
+                        </Button>
+                      ) : (
+                        <Button 
+                          onClick={removeCoupon} 
+                          variant="outline"
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {appliedCoupon && (
+                    <div className="p-4 bg-muted rounded-md">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <TicketPercent className="h-5 w-5 text-primary" />
+                          <span className="font-medium">
+                            {Math.round(appliedCoupon.discount * 100)}% Discount Applied
+                          </span>
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          Code: {appliedCoupon.id}
+                        </span>
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span>Original Total:</span>
+                          <span>${totalCost.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-primary">
+                          <span>Discount:</span>
+                          <span>-${Math.round(totalCost * appliedCoupon.discount).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {appliedCoupon && (
+                    <div className="flex justify-between font-medium text-lg text-primary">
+                      <span>Discounted Total</span>
+                      <span>${discountedTotal.toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2 items-start text-sm text-muted-foreground">
           <p>This is a preliminary estimate based on the information provided.</p>
           <p>Final costs may vary based on site conditions and specific requirements.</p>
+          {painterId && (
+            <p>Labor rate: ${paintRates.laborPerSqFt.toFixed(2)} per square foot.</p>
+          )}
         </CardFooter>
       </Card>
     </div>
