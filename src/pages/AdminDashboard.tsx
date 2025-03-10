@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -17,13 +16,28 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 
+interface PainterProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar?: string;
+  location?: any;
+  subscription?: {
+    status?: "active" | "canceled" | "past_due" | null;
+    amount?: number;
+    subscriptionDate?: string;
+    nextBillingDate?: string;
+  };
+  created_at?: string;
+}
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { user, supabase } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch subscribed painters from Supabase
   const { data: painters = [], isLoading: isLoadingPainters } = useQuery({
     queryKey: ["subscribedPainters"],
     queryFn: async () => {
@@ -46,7 +60,7 @@ const AdminDashboard = () => {
           return [];
         }
         
-        return data || [];
+        return (data || []) as PainterProfile[];
       } catch (err) {
         console.error("Error fetching painters:", err);
         toast({
@@ -61,7 +75,6 @@ const AdminDashboard = () => {
   });
 
   useEffect(() => {
-    // Redirect non-admin users
     if (user && user.role !== "admin") {
       toast({
         title: "Access Denied",
@@ -88,7 +101,7 @@ const AdminDashboard = () => {
     painter.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatDate = (dateString: string | null) => {
+  const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",

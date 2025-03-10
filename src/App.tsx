@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,7 +17,6 @@ import NotFound from "./pages/NotFound";
 import PainterSubscription from "./pages/PainterSubscription";
 import AdminDashboard from "./pages/AdminDashboard";
 import SubscriptionManagement from "./pages/SubscriptionManagement";
-import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
 
@@ -101,48 +101,6 @@ const AppRoutes = () => {
 };
 
 const App = () => {
-  const [envError, setEnvError] = useState<string | null>(null);
-  
-  useEffect(() => {
-    // Test if Supabase variables are available at runtime
-    try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      
-      if (!supabaseUrl) {
-        setEnvError("Missing VITE_SUPABASE_URL environment variable");
-      } else if (!supabaseAnonKey) {
-        setEnvError("Missing VITE_SUPABASE_ANON_KEY environment variable");
-      }
-    } catch (error) {
-      console.error("Error checking Supabase environment variables:", error);
-      setEnvError("Error accessing Supabase environment variables");
-    }
-  }, []);
-
-  if (envError) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
-        <div className="max-w-md">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Configuration Error</h1>
-          <p className="mb-4">{envError}</p>
-          <p className="mb-4 text-sm">
-            Although Supabase is connected, the application cannot access the required environment variables.
-          </p>
-          <div className="p-4 bg-gray-100 rounded-md text-left text-sm mb-4">
-            <p>To fix this issue:</p>
-            <ol className="list-decimal list-inside mt-2 space-y-1">
-              <li>Make sure you've refreshed the page after connecting Supabase</li>
-              <li>Check that your Supabase project is properly connected</li>
-              <li>Try clicking the Supabase button again to verify the connection</li>
-              <li>If the problem persists, try restarting the Lovable environment</li>
-            </ol>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

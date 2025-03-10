@@ -5,7 +5,9 @@ import { supabase as supabaseClient } from '@/integrations/supabase/client';
 export const supabase = supabaseClient;
 
 // This will log if the connection is successful
-supabase.from('profiles').select('count', { count: 'exact', head: true })
+supabase
+  .from('profiles')
+  .select('count', { count: 'exact', head: true })
   .then(response => {
     if (response.error && response.error.message.includes('invalid api key')) {
       console.error('Supabase connection error: Invalid API key');
@@ -15,6 +17,6 @@ supabase.from('profiles').select('count', { count: 'exact', head: true })
       console.log('Supabase connection successful');
     }
   })
-  .catch(error => {
+  .catch((error: Error) => {
     console.error('Error testing Supabase connection:', error);
   });

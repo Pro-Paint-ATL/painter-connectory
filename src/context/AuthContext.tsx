@@ -94,9 +94,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Insert the new profile
         try {
+          // Insert into profiles table
           const { error: insertError } = await supabase
             .from('profiles')
-            .insert(newProfile);
+            .insert(newProfile as any);
 
           if (insertError) {
             console.error("Error inserting profile:", insertError);
@@ -120,7 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: supabaseUser.id,
         name: profile.name || supabaseUser.email?.split('@')[0] || '',
         email: supabaseUser.email || '',
-        role: profile.role,
+        role: profile.role as UserRole,
         avatar: profile.avatar || undefined,
         location: profile.location,
         subscription: profile.subscription
@@ -299,7 +300,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           avatar: data.avatar,
           location: data.location,
           role: data.role
-        })
+        } as any)
         .eq('id', user.id);
 
       if (error) {
