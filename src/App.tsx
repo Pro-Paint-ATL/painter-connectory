@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -128,8 +129,10 @@ const App = () => {
           <div className="p-4 bg-gray-100 rounded-md text-left text-sm mb-4">
             <p>To fix this issue:</p>
             <ol className="list-decimal list-inside mt-2 space-y-1">
-              <li>Click on the "Project Settings" icon (gear/cog icon) in the Lovable interface</li>
-              <li>Look for the "Environment Variables" section</li>
+              <li>Select the "Pro Paint Project" from the menu at the top of Lovable</li>
+              <li>Click on "..." (three dots) on the right side of Lovable interface</li>
+              <li>In the dropdown menu, look for "Project Settings"</li>
+              <li>Under "Project Info" section, you should find environment variable fields</li>
               <li>Add the following environment variables:</li>
               <li className="ml-4 font-mono">VITE_SUPABASE_URL</li>
               <li className="ml-4 font-mono">VITE_SUPABASE_ANON_KEY</li>
