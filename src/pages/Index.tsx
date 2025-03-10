@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -57,7 +56,7 @@ const Index = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-secondary/70 mix-blend-overlay -z-10" />
         <div className="absolute inset-0 -z-20">
           <img 
-            src="https://images.unsplash.com/photo-1562164146-c585419ffbed?w=1920&auto=format&fit=crop&q=80" 
+            src="/placeholder.svg" 
             alt="Colorful paint background" 
             className="w-full h-full object-cover"
           />
@@ -154,7 +153,7 @@ const Index = () => {
               className="rounded-xl overflow-hidden shadow-xl"
             >
               <img 
-                src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800&auto=format&fit=crop&q=80" 
+                src="/placeholder.svg" 
                 alt="Professional painter at work" 
                 className="w-full h-auto"
               />
@@ -197,7 +196,7 @@ const Index = () => {
       <section className="py-16 md:py-24 bg-background relative">
         <div className="absolute right-0 top-0 h-full w-1/3 opacity-10 pointer-events-none">
           <img 
-            src="https://images.unsplash.com/photo-1598001412636-a3dd75b04d39?w=500&auto=format&fit=crop&q=60" 
+            src="/placeholder.svg" 
             alt="Paint texture" 
             className="h-full object-cover"
           />
@@ -235,7 +234,7 @@ const Index = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-secondary/80 -z-10" />
         <div className="absolute inset-0 -z-20">
           <img 
-            src="https://images.unsplash.com/photo-1541436293329-27f08fb4072c?w=1920&auto=format&fit=crop&q=80" 
+            src="/placeholder.svg" 
             alt="Paint supplies" 
             className="w-full h-full object-cover"
           />

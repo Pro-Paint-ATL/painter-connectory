@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,7 @@ import {
   Calendar,
   LogOut,
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const navItems = [
   {
@@ -118,13 +118,15 @@ const Header = () => {
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center space-x-2">
-            <div className="relative w-8 h-8 overflow-hidden rounded-full">
-              <img 
-                src="https://images.unsplash.com/photo-1562164146-c585419ffbed?w=64&h=64&auto=format&fit=crop&q=80" 
-                alt="Paint splash" 
-                className="w-full h-full object-cover"
+            <Avatar className="w-8 h-8">
+              <AvatarImage 
+                src="/placeholder.svg" 
+                alt="Paint splash logo" 
               />
-            </div>
+              <AvatarFallback className="bg-primary/10">
+                <PaintBucket className="h-4 w-4 text-primary" />
+              </AvatarFallback>
+            </Avatar>
             <span className="font-semibold text-xl">Pro Paint {currentCity.code}</span>
           </Link>
         </div>
@@ -314,13 +316,15 @@ const Header = () => {
             <SheetContent side="right" className="w-full sm:w-80">
               <nav className="flex flex-col gap-4 mt-8">
                 <div className="flex items-center space-x-2 mb-6">
-                  <div className="relative w-8 h-8 overflow-hidden rounded-full">
-                    <img 
-                      src="https://images.unsplash.com/photo-1562164146-c585419ffbed?w=64&h=64&auto=format&fit=crop&q=80" 
-                      alt="Paint splash" 
-                      className="w-full h-full object-cover"
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage 
+                      src="/placeholder.svg" 
+                      alt="Paint splash logo" 
                     />
-                  </div>
+                    <AvatarFallback className="bg-primary/10">
+                      <PaintBucket className="h-4 w-4 text-primary" />
+                    </AvatarFallback>
+                  </Avatar>
                   <span className="font-semibold text-xl">Pro Paint {currentCity.code}</span>
                 </div>
                 {navItems.map((item) => (
