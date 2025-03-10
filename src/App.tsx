@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -104,13 +105,19 @@ const App = () => {
   const [envError, setEnvError] = useState<string | null>(null);
   
   useEffect(() => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl) {
-      setEnvError("Missing VITE_SUPABASE_URL environment variable");
-    } else if (!supabaseAnonKey) {
-      setEnvError("Missing VITE_SUPABASE_ANON_KEY environment variable");
+    // Test if Supabase variables are available at runtime
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl) {
+        setEnvError("Missing VITE_SUPABASE_URL environment variable");
+      } else if (!supabaseAnonKey) {
+        setEnvError("Missing VITE_SUPABASE_ANON_KEY environment variable");
+      }
+    } catch (error) {
+      console.error("Error checking Supabase environment variables:", error);
+      setEnvError("Error accessing Supabase environment variables");
     }
   }, []);
 
@@ -121,18 +128,15 @@ const App = () => {
           <h1 className="text-2xl font-bold text-red-600 mb-4">Configuration Error</h1>
           <p className="mb-4">{envError}</p>
           <p className="mb-4 text-sm">
-            Please add your Supabase URL and anon key to the project.
+            Although Supabase is connected, the application cannot access the required environment variables.
           </p>
           <div className="p-4 bg-gray-100 rounded-md text-left text-sm mb-4">
             <p>To fix this issue:</p>
             <ol className="list-decimal list-inside mt-2 space-y-1">
-              <li>Click on the gear icon (⚙️) in the top right of the Lovable interface</li>
-              <li>Select "Project Settings" from the dropdown menu</li>
-              <li>In the Project Settings, look for the "Project Info" section</li>
-              <li>Add the following environment variables:</li>
-              <li className="ml-4 font-mono">VITE_SUPABASE_URL</li>
-              <li className="ml-4 font-mono">VITE_SUPABASE_ANON_KEY</li>
-              <li>Get these values from your Supabase project dashboard</li>
+              <li>Make sure you've refreshed the page after connecting Supabase</li>
+              <li>Check that your Supabase project is properly connected</li>
+              <li>Try clicking the Supabase button again to verify the connection</li>
+              <li>If the problem persists, try restarting the Lovable environment</li>
             </ol>
           </div>
         </div>
