@@ -30,6 +30,7 @@ export interface RoomDetail {
   windows: number;
   complexity: number;
   roomCost: number;
+  vaultedCeiling: boolean;
 }
 
 interface PaintRate {
@@ -48,7 +49,6 @@ const defaultPaintRates: PaintRate = {
   complexityFactor: 0.25, // 25% increase per complexity level
 };
 
-// Initialize with sample room
 const initialRooms: RoomDetail[] = [
   {
     id: "room1",
@@ -65,6 +65,7 @@ const initialRooms: RoomDetail[] = [
     windows: 3,
     complexity: 1,
     roomCost: 0,
+    vaultedCeiling: false,
   },
 ];
 
@@ -78,36 +79,30 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
   const [discountedTotal, setDiscountedTotal] = useState(0);
   const { toast } = useToast();
 
-  // Effect to calculate costs when rooms or rates change
   useEffect(() => {
     const updatedRooms = rooms.map((room) => {
-      // Calculate wall area: perimeter × height
-      const perimeter = 2 * (room.walls.width + room.walls.width); // Using width for both dimensions
-      const wallArea = perimeter * room.walls.height;
-      
-      // Calculate floor/ceiling area
       const floorArea = room.walls.width * room.walls.width; // Using width for both dimensions
       
-      // Base cost: wall area × rate (includes trim)
-      let roomCost = wallArea * paintRates.laborPerSqFt;
+      let roomCost = floorArea * paintRates.laborPerSqFt;
       
-      // Add ceiling cost if selected
+      if (room.vaultedCeiling) {
+        roomCost *= 2;
+      }
+      
       if (room.ceiling) {
         roomCost += floorArea * paintRates.ceilingCost;
       }
       
-      // Add door and window costs
       roomCost += room.doors * paintRates.doorCost;
       roomCost += room.windows * paintRates.windowCost;
       
-      // Apply complexity factor
       roomCost *= 1 + ((room.complexity - 1) * paintRates.complexityFactor);
       
       return {
         ...room,
         walls: {
           ...room.walls,
-          area: wallArea,
+          area: floorArea,
         },
         ceilingArea: floorArea,
         roomCost: Math.round(roomCost),
@@ -147,6 +142,7 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
         windows: 1,
         complexity: 1,
         roomCost: 0,
+        vaultedCeiling: false,
       },
     ]);
   };
@@ -164,7 +160,6 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
   };
 
   const applyCoupon = () => {
-    // Find the coupon in available coupons
     const coupon = availableCoupons.find(c => c.id === couponCode);
     
     if (!coupon) {
@@ -185,17 +180,14 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
       return;
     }
 
-    // Apply the coupon
     setAppliedCoupon(coupon);
     
-    // Update available coupons to mark this one as used
     setAvailableCoupons(
       availableCoupons.map(c => 
         c.id === coupon.id ? { ...c, applied: true } : c
       )
     );
 
-    // Calculate discounted total
     const discount = totalCost * coupon.discount;
     setDiscountedTotal(Math.round(totalCost - discount));
     
@@ -204,13 +196,11 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
       description: `${Math.round(coupon.discount * 100)}% discount applied to your estimate.`,
     });
     
-    // Clear the input field
     setCouponCode("");
   };
 
   const removeCoupon = () => {
     if (appliedCoupon) {
-      // Mark the coupon as not applied
       setAvailableCoupons(
         availableCoupons.map(c => 
           c.id === appliedCoupon.id ? { ...c, applied: false } : c
@@ -329,11 +319,13 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox
-                    id={`${room.id}-trim`}
-                    checked={true}
-                    disabled={true}
+                    id={`${room.id}-vaulted`}
+                    checked={room.vaultedCeiling}
+                    onCheckedChange={(checked) =>
+                      updateRoom(room.id, { vaultedCeiling: checked === true })
+                    }
                   />
-                  <Label htmlFor={`${room.id}-trim`}>Paint Trim (Included)</Label>
+                  <Label htmlFor={`${room.id}-vaulted`}>Vaulted Ceiling (2x cost)</Label>
                 </div>
               </div>
 
