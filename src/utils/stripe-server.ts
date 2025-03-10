@@ -6,7 +6,9 @@ import Stripe from 'stripe';
 const STRIPE_SECRET_KEY = 'sk_test_51OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcUXQnMhJ97qXKTKhbhLgdpBDVaFMXqiYUkSVSCEZzRMTg500Ip6Sxgus';
 
 // Initialize Stripe with the secret key
-export const stripe = new Stripe(STRIPE_SECRET_KEY);
+export const stripe = new Stripe(STRIPE_SECRET_KEY, {
+  apiVersion: '2023-10-16' // Specify the Stripe API version
+});
 
 // Monthly subscription price ID from your Stripe dashboard
 export const MONTHLY_SUBSCRIPTION_PRICE_ID = 'price_1OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcUXQnMhJ97qXKTKhbhLgdpBDVaFMXqiYUkSVSCEZzRMTg500Ip6Sxgus';

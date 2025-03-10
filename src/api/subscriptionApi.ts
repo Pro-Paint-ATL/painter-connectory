@@ -24,7 +24,7 @@ export const createSubscriptionForUser = async (
     // 3. Return the subscription details
     // In a real app, you would store the subscription details in your database
     return {
-      status: 'active',
+      status: "active" as const, // Type assertion to match the expected union type
       plan: 'pro',
       startDate: new Date().toISOString(),
       amount: 49,
@@ -49,7 +49,7 @@ export const cancelSubscription = async (stripeSubscriptionId: string) => {
     // In a real app, this would call the Stripe API to cancel the subscription
     // For now, we're just returning a mock response
     return {
-      status: 'canceled',
+      status: "canceled" as const, // Type assertion to match the expected union type
       canceledAt: new Date().toISOString(),
     };
   } catch (error) {
