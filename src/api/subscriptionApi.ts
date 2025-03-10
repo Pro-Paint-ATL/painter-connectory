@@ -29,7 +29,7 @@ export const createSubscriptionForUser = async (
       startDate: new Date().toISOString(),
       amount: 49,
       currency: 'USD',
-      interval: 'month',
+      interval: 'month' as const, // Adding type assertion to match the expected union type
       paymentMethodId: paymentMethodId,
       stripeCustomerId: customer.id,
       stripeSubscriptionId: subscription.id,
