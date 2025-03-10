@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,7 +20,6 @@ import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
 
-// Protected route component for admin routes
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
   
@@ -36,7 +34,6 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Protected route component for authenticated users
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
   
@@ -129,10 +126,9 @@ const App = () => {
           <div className="p-4 bg-gray-100 rounded-md text-left text-sm mb-4">
             <p>To fix this issue:</p>
             <ol className="list-decimal list-inside mt-2 space-y-1">
-              <li>Select the "Pro Paint Project" from the menu at the top of Lovable</li>
-              <li>Click on "..." (three dots) on the right side of Lovable interface</li>
-              <li>In the dropdown menu, look for "Project Settings"</li>
-              <li>Under "Project Info" section, you should find environment variable fields</li>
+              <li>Click on the gear icon (⚙️) in the top right of the Lovable interface</li>
+              <li>Select "Project Settings" from the dropdown menu</li>
+              <li>In the Project Settings, look for the "Project Info" section</li>
               <li>Add the following environment variables:</li>
               <li className="ml-4 font-mono">VITE_SUPABASE_URL</li>
               <li className="ml-4 font-mono">VITE_SUPABASE_ANON_KEY</li>
