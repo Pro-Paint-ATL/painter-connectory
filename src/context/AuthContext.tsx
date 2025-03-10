@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { User as SupabaseUser } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "../lib/supabase";
+import { Json } from "@/integrations/supabase/types";
 
 type UserRole = "customer" | "painter" | "admin" | null;
 
@@ -20,17 +21,19 @@ interface Subscription {
   stripeSubscriptionId?: string;
 }
 
+interface UserLocation {
+  address: string;
+  latitude: number;
+  longitude: number;
+}
+
 interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
   avatar?: string;
-  location?: {
-    address: string;
-    latitude: number;
-    longitude: number;
-  };
+  location?: UserLocation;
   subscription?: Subscription;
 }
 
@@ -97,7 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Insert into profiles table
           const { error: insertError } = await supabase
             .from('profiles')
-            .insert(newProfile as any);
+            .insert(newProfile);
 
           if (insertError) {
             console.error("Error inserting profile:", insertError);
@@ -116,6 +119,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
 
+      // Parse the location and subscription fields from JSON
+      const locationData = profile.location as Json;
+      const subscriptionData = profile.subscription as Json;
+      
+      // Type-safe conversion of JSON data
+      const location: UserLocation | undefined = 
+        locationData ? 
+          typeof locationData === 'object' ? 
+            {
+              address: (locationData as any)?.address || '',
+              latitude: (locationData as any)?.latitude || 0,
+              longitude: (locationData as any)?.longitude || 0
+            } : undefined
+          : undefined;
+          
+      const subscription: Subscription | undefined = 
+        subscriptionData ? 
+          typeof subscriptionData === 'object' ? 
+            {
+              status: (subscriptionData as any)?.status || null,
+              plan: (subscriptionData as any)?.plan || null,
+              startDate: (subscriptionData as any)?.startDate || null,
+              amount: (subscriptionData as any)?.amount || null,
+              currency: (subscriptionData as any)?.currency || null,
+              interval: (subscriptionData as any)?.interval || null,
+              paymentMethodId: (subscriptionData as any)?.paymentMethodId,
+              lastFour: (subscriptionData as any)?.lastFour,
+              brand: (subscriptionData as any)?.brand,
+              stripeCustomerId: (subscriptionData as any)?.stripeCustomerId,
+              stripeSubscriptionId: (subscriptionData as any)?.stripeSubscriptionId
+            } : undefined
+          : undefined;
+
       // Return formatted user with profile data
       return {
         id: supabaseUser.id,
@@ -123,8 +159,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: supabaseUser.email || '',
         role: profile.role as UserRole,
         avatar: profile.avatar || undefined,
-        location: profile.location,
-        subscription: profile.subscription
+        location,
+        subscription
       };
     } catch (error) {
       console.error("Error formatting user:", error);
@@ -298,9 +334,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .update({
           name: data.name,
           avatar: data.avatar,
-          location: data.location,
+          location: data.location as any,
           role: data.role
-        } as any)
+        })
         .eq('id', user.id);
 
       if (error) {
