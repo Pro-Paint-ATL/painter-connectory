@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -45,6 +46,11 @@ const Booking = () => {
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
     setSelectedTime(undefined); // Reset time when date changes
+  };
+
+  const handleCalendarTimeSelect = (date: Date, time: string) => {
+    setSelectedDate(date);
+    setSelectedTime(time);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -161,6 +167,8 @@ const Booking = () => {
                   <div>
                     <h3 className="font-medium mb-4">Choose a Date</h3>
                     <BookingCalendar 
+                      painterId={painterId || "default"} 
+                      onTimeSelected={handleCalendarTimeSelect}
                       onSelectDate={handleDateSelect}
                     />
                   </div>
