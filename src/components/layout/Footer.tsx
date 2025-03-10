@@ -1,9 +1,32 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { PaintBucket, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 
 const Footer = () => {
+  // List of major cities with their respective codes
+  const majorCities = [
+    { city: "Miami", state: "FL", code: "MIA" },
+    { city: "Atlanta", state: "GA", code: "ATL" },
+    { city: "New York", state: "NY", code: "NY" },
+    { city: "Los Angeles", state: "CA", code: "LA" },
+    { city: "Chicago", state: "IL", code: "CHI" },
+    { city: "Dallas", state: "TX", code: "DAL" },
+    { city: "Houston", state: "TX", code: "HOU" },
+    { city: "Phoenix", state: "AZ", code: "PHX" },
+    { city: "Philadelphia", state: "PA", code: "PHL" },
+    { city: "San Antonio", state: "TX", code: "SAT" },
+  ];
+
+  const [currentCity, setCurrentCity] = useState(majorCities[0]);
+
+  useEffect(() => {
+    // In a real app, you would detect user's location or set from preferences
+    // For now, we'll just randomly select a city on load for demonstration
+    const randomCity = majorCities[Math.floor(Math.random() * majorCities.length)];
+    setCurrentCity(randomCity);
+  }, []);
+
   return (
     <footer className="bg-secondary/50 backdrop-blur-sm border-t">
       <div className="container px-4 py-10 md:py-12 mx-auto">
@@ -11,10 +34,10 @@ const Footer = () => {
           <div className="flex flex-col space-y-3">
             <Link to="/" className="flex items-center space-x-2">
               <PaintBucket className="h-6 w-6" />
-              <span className="font-semibold text-xl">PaintConnect</span>
+              <span className="font-semibold text-xl">Pro Paint {currentCity.code}</span>
             </Link>
             <p className="text-muted-foreground max-w-xs">
-              Connecting quality painters with customers for beautiful results.
+              Connecting quality painters with customers for beautiful results in {currentCity.city}, {currentCity.state}.
             </p>
           </div>
           
@@ -62,7 +85,7 @@ const Footer = () => {
         
         <div className="flex flex-col items-center justify-between gap-4 border-t border-t-muted/30 pt-6 mt-8 md:flex-row">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} PaintConnect. All rights reserved.
+            &copy; {new Date().getFullYear()} Pro Paint {currentCity.code}. All rights reserved.
           </p>
           
           <div className="flex space-x-4">
