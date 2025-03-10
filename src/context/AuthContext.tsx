@@ -41,7 +41,7 @@ interface AuthContextType {
 }
 
 const PRODUCTION_MODE = true;
-const ADMIN_EMAILS = ['admin@painterconnectory.com', 'youremail@yourdomain.com'];
+const ADMIN_EMAILS = ['admin@painterconnectory.com', 'youremail@yourdomain.com', 'propaintatl@gmail.com'];
 
 export const SAMPLE_PAINTERS = [
   {
@@ -105,7 +105,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // In a real app, we would check for existing session
     const checkAuth = async () => {
       try {
         const storedUser = localStorage.getItem("user");
@@ -125,11 +124,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // In production, this would call your actual authentication API
       if (PRODUCTION_MODE) {
         await new Promise((resolve) => setTimeout(resolve, 800));
         
-        // Check if this is an admin email
         const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
         const isPainter = email.toLowerCase().includes("painter");
         
@@ -144,7 +141,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(mockUser);
         localStorage.setItem("user", JSON.stringify(mockUser));
       } else {
-        // Keep the existing mock login logic for development
         await new Promise((resolve) => setTimeout(resolve, 1000));
         
         const mockUser: User = {
@@ -165,11 +161,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (name: string, email: string, password: string, role: UserRole) => {
     setIsLoading(true);
     try {
-      // In production, this would call your actual registration API
       if (PRODUCTION_MODE) {
         await new Promise((resolve) => setTimeout(resolve, 800));
         
-        // In production, we wouldn't allow just anyone to register as admin
         const safeRole = role === "admin" ? "customer" : role;
         
         const newUser: User = {
@@ -183,7 +177,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(newUser);
         localStorage.setItem("user", JSON.stringify(newUser));
       } else {
-        // Keep the existing mock registration logic for development
         await new Promise((resolve) => setTimeout(resolve, 1000));
         
         const newUser: User = {
