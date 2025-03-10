@@ -1,40 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { createClient, SupabaseClient, User as SupabaseUser } from "@supabase/supabase-js";
+import { User as SupabaseUser } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
-
-// Create Supabase client - with safety checks for environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-
-// Create Supabase client
-let supabase: SupabaseClient;
-try {
-  supabase = createClient(supabaseUrl, supabaseAnonKey);
-} catch (error) {
-  console.error("Error initializing Supabase client:", error);
-  // Create a dummy client for fallback to prevent crashes
-  supabase = {
-    auth: {
-      getSession: () => Promise.resolve({ data: { session: null } }),
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-      signInWithPassword: () => Promise.resolve({ data: {}, error: new Error("Supabase not initialized") }),
-      signUp: () => Promise.resolve({ data: {}, error: new Error("Supabase not initialized") }),
-      signOut: () => Promise.resolve({ error: null }),
-    },
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          single: () => Promise.resolve({ data: null, error: new Error("Supabase not initialized") }),
-        }),
-        insert: () => Promise.resolve({ error: new Error("Supabase not initialized") }),
-        update: () => ({
-          eq: () => Promise.resolve({ error: new Error("Supabase not initialized") }),
-        }),
-      }),
-    }),
-  } as unknown as SupabaseClient;
-}
+import { supabase } from "../lib/supabase";
 
 type UserRole = "customer" | "painter" | "admin" | null;
 
@@ -74,7 +42,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string, role: UserRole) => Promise<void>;
   logout: () => Promise<void>;
   updateUserProfile: (data: Partial<User>) => Promise<void>;
-  supabase: SupabaseClient;
+  supabase: typeof supabase;
 }
 
 // Admin emails for manual role assignment
@@ -173,7 +141,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const checkAuth = async () => {
       try {
         // Get session and user when the component mounts
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Error getting session:", sessionError);
+          setIsLoading(false);
+          return;
+        }
         
         if (session) {
           const formattedUser = await formatUser(session.user);
@@ -189,24 +163,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
 
     // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          const formattedUser = await formatUser(session.user);
-          setUser(formattedUser);
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-        } else if (event === 'USER_UPDATED' && session) {
-          const formattedUser = await formatUser(session.user);
-          setUser(formattedUser);
+    try {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          if (event === 'SIGNED_IN' && session) {
+            const formattedUser = await formatUser(session.user);
+            setUser(formattedUser);
+          } else if (event === 'SIGNED_OUT') {
+            setUser(null);
+          } else if (event === 'USER_UPDATED' && session) {
+            const formattedUser = await formatUser(session.user);
+            setUser(formattedUser);
+          }
         }
-      }
-    );
+      );
 
-    // Cleanup subscription on unmount
-    return () => {
-      subscription.unsubscribe();
-    };
+      // Cleanup subscription on unmount
+      return () => {
+        subscription?.unsubscribe();
+      };
+    } catch (error) {
+      console.error("Error setting up auth state change listener:", error);
+      setIsLoading(false);
+    }
   }, []);
 
   const login = async (email: string, password: string) => {

@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,10 +20,6 @@ import SubscriptionManagement from "./pages/SubscriptionManagement";
 import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
-
-// Check if required environment variables are set
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Protected route component for admin routes
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
@@ -110,7 +107,10 @@ const App = () => {
   const [envError, setEnvError] = useState<string | null>(null);
   
   useEffect(() => {
-    // Check for missing environment variables
+    // Check if environment variables are available
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
     if (!supabaseUrl) {
       setEnvError("Missing VITE_SUPABASE_URL environment variable");
     } else if (!supabaseAnonKey) {
