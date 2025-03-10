@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -57,8 +56,8 @@ const Index = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-secondary/70 mix-blend-overlay -z-10" />
         <div className="absolute inset-0 -z-20">
           <img 
-            src="/assets/hero-painters.jpg" 
-            alt="Professional paint crew working on a house" 
+            src="/lovable-uploads/f4b62cc6-109b-4647-b004-0ebc8236d06d.png" 
+            alt="Professional painters in white uniforms working" 
             className="w-full h-full object-cover"
           />
         </div>
@@ -154,8 +153,8 @@ const Index = () => {
               className="rounded-xl overflow-hidden shadow-xl"
             >
               <img 
-                src="/assets/painters-working.jpg" 
-                alt="Professional painters working on interior walls" 
+                src="/lovable-uploads/bdd722ac-9f89-47c1-b465-bc989b51d903.png" 
+                alt="Painting preparation with ladder and purple trim" 
                 className="w-full h-auto"
               />
             </motion.div>
@@ -197,8 +196,8 @@ const Index = () => {
       <section className="py-16 md:py-24 bg-background relative">
         <div className="absolute right-0 top-0 h-full w-1/3 opacity-10 pointer-events-none">
           <img 
-            src="/assets/paint-detail.jpg" 
-            alt="Painter applying paint detail" 
+            src="/lovable-uploads/bdd722ac-9f89-47c1-b465-bc989b51d903.png" 
+            alt="Painting preparation with ladder" 
             className="h-full object-cover"
           />
         </div>
@@ -235,8 +234,8 @@ const Index = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-secondary/80 -z-10" />
         <div className="absolute inset-0 -z-20">
           <img 
-            src="/assets/exterior-painting-crew.jpg" 
-            alt="Paint crew working on exterior of building" 
+            src="/lovable-uploads/f4b62cc6-109b-4647-b004-0ebc8236d06d.png" 
+            alt="Professional painters in white uniforms discussing project" 
             className="w-full h-full object-cover"
           />
         </div>
