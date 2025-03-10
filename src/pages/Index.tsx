@@ -52,16 +52,23 @@ const TestimonialCard = ({ quote, author, role }: { quote: string; author: strin
 const Index = () => {
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
+      {/* Hero Section with Background Image */}
       <section className="relative py-20 md:py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/30 -z-10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-secondary/70 mix-blend-overlay -z-10" />
+        <div className="absolute inset-0 -z-20">
+          <img 
+            src="https://images.unsplash.com/photo-1562164146-c585419ffbed?w=1920&auto=format&fit=crop&q=80" 
+            alt="Colorful paint background" 
+            className="w-full h-full object-cover"
+          />
+        </div>
         <div className="container px-4 mx-auto relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="text-4xl md:text-6xl font-bold mb-6 tracking-tight"
+              className="text-4xl md:text-6xl font-bold mb-6 tracking-tight text-white"
             >
               Find the Perfect Painter for Your Project
             </motion.h1>
@@ -69,7 +76,7 @@ const Index = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
+              className="text-xl text-white/90 mb-8 max-w-2xl mx-auto"
             >
               Connect with skilled painters in your area and get accurate estimates for your painting projects.
             </motion.p>
@@ -86,7 +93,7 @@ const Index = () => {
                 </Button>
               </Link>
               <Link to="/calculator">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 bg-white/20 hover:bg-white/30 border-white/40 text-white">
                   <Calculator className="h-4 w-4" />
                   Calculate Estimate
                 </Button>
@@ -126,10 +133,35 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Features */}
+      {/* Features with Image */}
       <section className="py-16 md:py-24 bg-secondary/20">
         <div className="container px-4 mx-auto">
-          <div className="text-center mb-16">
+          <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">Quality Results From Expert Painters</h2>
+              <p className="text-lg text-muted-foreground mb-8">
+                Our network of professional painters delivers outstanding results for every project. From residential touch-ups to commercial overhauls, we connect you with skilled professionals.
+              </p>
+              <Link to="/find-painters">
+                <Button size="lg">Find Your Painter</Button>
+              </Link>
+            </div>
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7 }}
+              className="rounded-xl overflow-hidden shadow-xl"
+            >
+              <img 
+                src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800&auto=format&fit=crop&q=80" 
+                alt="Professional painter at work" 
+                className="w-full h-auto"
+              />
+            </motion.div>
+          </div>
+
+          <div className="text-center mb-16 mt-20">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose PaintConnect</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Benefits for both customers and professional painters
@@ -162,8 +194,15 @@ const Index = () => {
       </section>
 
       {/* Testimonials */}
-      <section className="py-16 md:py-24 bg-background">
-        <div className="container px-4 mx-auto">
+      <section className="py-16 md:py-24 bg-background relative">
+        <div className="absolute right-0 top-0 h-full w-1/3 opacity-10 pointer-events-none">
+          <img 
+            src="https://images.unsplash.com/photo-1598001412636-a3dd75b04d39?w=500&auto=format&fit=crop&q=60" 
+            alt="Paint texture" 
+            className="h-full object-cover"
+          />
+        </div>
+        <div className="container px-4 mx-auto relative">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Users Say</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -191,11 +230,19 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-16 md:py-24 bg-primary text-primary-foreground">
+      {/* CTA with Background Image */}
+      <section className="py-16 md:py-24 relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-secondary/80 -z-10" />
+        <div className="absolute inset-0 -z-20">
+          <img 
+            src="https://images.unsplash.com/photo-1541436293329-27f08fb4072c?w=1920&auto=format&fit=crop&q=80" 
+            alt="Paint supplies" 
+            className="w-full h-full object-cover"
+          />
+        </div>
         <div className="container px-4 mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Transform Your Space?</h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">Ready to Transform Your Space?</h2>
+          <p className="text-xl mb-8 max-w-2xl mx-auto text-white/90">
             Start by finding the perfect painter for your project today.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -205,7 +252,7 @@ const Index = () => {
               </Button>
             </Link>
             <Link to="/calculator">
-              <Button size="lg" variant="outline" className="border-primary-foreground/20 w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10 w-full sm:w-auto">
                 Get an Estimate
               </Button>
             </Link>
