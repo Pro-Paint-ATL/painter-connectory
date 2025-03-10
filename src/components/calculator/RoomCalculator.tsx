@@ -30,7 +30,6 @@ export interface RoomDetail {
   doors: number;
   windows: number;
   complexity: number;
-  coats: number;
   roomCost: number;
 }
 
@@ -38,8 +37,7 @@ interface PaintRate {
   laborPerSqFt: number;
   doorCost: number;
   windowCost: number;
-  trimCost: number;
-  ceilingFactor: number;
+  ceilingCost: number;
   complexityFactor: number;
 }
 
@@ -53,8 +51,7 @@ const defaultPaintRates: PaintRate = {
   laborPerSqFt: 4.50,
   doorCost: 50,
   windowCost: 35,
-  trimCost: 1.25, // per sq ft of wall area
-  ceilingFactor: 0.8, // percentage of wall rate
+  ceilingCost: 1.00, // $1.00 per sq ft for ceiling
   complexityFactor: 0.25, // per complexity level
 };
 
@@ -74,7 +71,6 @@ const initialRooms: RoomDetail[] = [
     doors: 2,
     windows: 3,
     complexity: 1, // 1-5 scale
-    coats: 2,
     roomCost: 0, // calculated
   },
 ];
@@ -123,24 +119,23 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
   // Calculate room costs whenever rooms or rates change
   useEffect(() => {
     const updatedRooms = rooms.map((room) => {
-      // Calculate wall area: perimeter × height
-      const perimeter = 2 * (room.walls.width + room.walls.width);
-      const wallArea = perimeter * room.walls.height;
+      // Calculate room dimensions correctly
+      const length = room.walls.width;
+      const width = room.walls.width; // Assuming square room from the UI inputs
+      const height = room.walls.height;
       
-      // Calculate ceiling area: width × width
-      const ceilingArea = room.walls.width * room.walls.width;
+      // Calculate wall area: (2 × length × height) + (2 × width × height)
+      const wallArea = 2 * (length * height) + 2 * (width * height);
       
-      // Calculate wall cost - just labor now (no materials)
-      let roomCost = wallArea * paintRates.laborPerSqFt * room.coats;
+      // Calculate floor area (same as ceiling): length × width
+      const floorArea = length * width;
+      
+      // Base cost: wall area × rate (includes trim)
+      let roomCost = wallArea * paintRates.laborPerSqFt;
       
       // Add ceiling cost if applicable
       if (room.ceiling) {
-        roomCost += ceilingArea * paintRates.laborPerSqFt * paintRates.ceilingFactor * room.coats;
-      }
-      
-      // Add trim cost if applicable
-      if (room.trim) {
-        roomCost += wallArea * paintRates.trimCost;
+        roomCost += floorArea * paintRates.ceilingCost;
       }
       
       // Add door and window costs
@@ -156,7 +151,7 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
           ...room.walls,
           area: wallArea,
         },
-        ceilingArea,
+        ceilingArea: floorArea,
         roomCost: Math.round(roomCost),
       };
     });
@@ -194,7 +189,6 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
         doors: 1,
         windows: 1,
         complexity: 1,
-        coats: 2,
         roomCost: 0,
       },
     ]);
@@ -374,17 +368,18 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
                       updateRoom(room.id, { ceiling: checked === true })
                     }
                   />
-                  <Label htmlFor={`${room.id}-ceiling`}>Paint Ceiling</Label>
+                  <Label htmlFor={`${room.id}-ceiling`}>Paint Ceiling (+$1.00/sq ft)</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id={`${room.id}-trim`}
-                    checked={room.trim}
+                    checked={true}
+                    disabled={true}
                     onCheckedChange={(checked) =>
                       updateRoom(room.id, { trim: checked === true })
                     }
                   />
-                  <Label htmlFor={`${room.id}-trim`}>Paint Trim</Label>
+                  <Label htmlFor={`${room.id}-trim`}>Paint Trim (Included)</Label>
                 </div>
               </div>
 
@@ -409,25 +404,6 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
                   <span>Simple</span>
                   <span>Complex</span>
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor={`${room.id}-coats`}>Number of Coats</Label>
-                <Select
-                  value={room.coats.toString()}
-                  onValueChange={(value) =>
-                    updateRoom(room.id, { coats: parseInt(value) })
-                  }
-                >
-                  <SelectTrigger id={`${room.id}-coats`}>
-                    <SelectValue placeholder="Select number of coats" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 Coat</SelectItem>
-                    <SelectItem value="2">2 Coats</SelectItem>
-                    <SelectItem value="3">3 Coats</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </CardContent>
           </Card>
@@ -535,7 +511,7 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId 
           <p>This is a preliminary estimate based on the information provided.</p>
           <p>Final costs may vary based on site conditions and specific requirements.</p>
           {painterId && (
-            <p>Labor rate: ${paintRates.laborPerSqFt.toFixed(2)} per square foot.</p>
+            <p>Labor rate: ${paintRates.laborPerSqFt.toFixed(2)} per square foot (trim included). Ceiling: +${paintRates.ceilingCost.toFixed(2)} per square foot.</p>
           )}
         </CardFooter>
       </Card>
