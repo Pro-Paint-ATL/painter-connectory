@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -120,8 +121,8 @@ const Header = () => {
           <Link to="/" className="flex items-center space-x-2">
             <Avatar className="w-8 h-8">
               <AvatarImage 
-                src="/placeholder.svg" 
-                alt="Paint splash logo" 
+                src="/assets/paint-logo.jpg" 
+                alt="Paint crew logo" 
               />
               <AvatarFallback className="bg-primary/10">
                 <PaintBucket className="h-4 w-4 text-primary" />
@@ -318,8 +319,8 @@ const Header = () => {
                 <div className="flex items-center space-x-2 mb-6">
                   <Avatar className="w-8 h-8">
                     <AvatarImage 
-                      src="/placeholder.svg" 
-                      alt="Paint splash logo" 
+                      src="/assets/paint-logo.jpg" 
+                      alt="Paint crew logo" 
                     />
                     <AvatarFallback className="bg-primary/10">
                       <PaintBucket className="h-4 w-4 text-primary" />
