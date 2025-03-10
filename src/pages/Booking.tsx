@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -162,7 +161,6 @@ const Booking = () => {
                   <div>
                     <h3 className="font-medium mb-4">Choose a Date</h3>
                     <BookingCalendar 
-                      selectedDate={selectedDate}
                       onSelectDate={handleDateSelect}
                     />
                   </div>
