@@ -18,6 +18,7 @@ Promise.resolve().then(() => {
       } else {
         console.log('Supabase connection successful');
       }
+      return Promise.resolve(); // Return a Promise to maintain the chain
     });
 })
 .catch((error: Error) => {

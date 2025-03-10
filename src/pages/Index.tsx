@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -92,7 +93,7 @@ const Index = () => {
                 </Button>
               </Link>
               <Link to="/calculator">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 bg-white/20 hover:bg-white/30 border-white/40 text-white">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 bg-white/20 hover:bg-white/30 border-white/40 text-black">
                   <Calculator className="h-4 w-4" />
                   Calculate Estimate
                 </Button>
