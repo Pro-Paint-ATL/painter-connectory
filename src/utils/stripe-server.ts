@@ -1,17 +1,25 @@
 
 import Stripe from 'stripe';
 
-// This should be your Stripe secret key, which should never be exposed in client-side code
-// In production, this would be stored in an environment variable on your server
-const STRIPE_SECRET_KEY = 'sk_test_51OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcUXQnMhJ97qXKTKhbhLgdpBDVaFMXqiYUkSVSCEZzRMTg500Ip6Sxgus';
+// In production, these values should come from environment variables
+// For deployed applications, consider using Netlify/Vercel environment variables
+const PRODUCTION_MODE = true;
+
+// This is a test key, in production it would be stored securely and not in client-side code
+const STRIPE_SECRET_KEY = PRODUCTION_MODE 
+  ? 'sk_test_51OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcUXQnMhJ97qXKTKhbhLgdpBDVaFMXqiYUkSVSCEZzRMTg500Ip6Sxgus'
+  : 'sk_test_51OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcUXQnMhJ97qXKTKhbhLgdpBDVaFMXqiYUkSVSCEZzRMTg500Ip6Sxgus';
 
 // Initialize Stripe with the secret key
 export const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2023-08-16' // Updated to match the expected API version
+  apiVersion: '2023-08-16'
 });
 
 // Monthly subscription price ID from your Stripe dashboard
-export const MONTHLY_SUBSCRIPTION_PRICE_ID = 'price_1OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcUXQnMhJ97qXKTKhbhLgdpBDVaFMXqiYUkSVSCEZzRMTg500Ip6Sxgus';
+// In production, this would be your actual price ID
+export const MONTHLY_SUBSCRIPTION_PRICE_ID = PRODUCTION_MODE
+  ? 'price_1OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcUXQnMhJ97qXKTKhbhLgdpBDVaFMXqiYUkSVSCEZzRMTg500Ip6Sxgus'
+  : 'price_1OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcUXQnMhJ97qXKTKhbhLgdpBDVaFMXqiYUkSVSCEZzRMTg500Ip6Sxgus';
 
 // Create a subscription for a customer
 export const createSubscription = async (customerId: string, paymentMethodId: string) => {
@@ -92,3 +100,10 @@ export const handleWebhookEvent = async (body: string, signature: string, webhoo
     throw error;
   }
 };
+
+// In production, you might add helper functions to:
+// 1. List all subscriptions for admin dashboard
+// 2. Get subscription details
+// 3. Update subscription
+// 4. Cancel subscription with proration
+// 5. Handle failed payments

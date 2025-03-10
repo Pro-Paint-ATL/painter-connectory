@@ -1,8 +1,13 @@
 
 import { loadStripe } from '@stripe/stripe-js';
 
-// Replace with your Stripe publishable key when in production
-const STRIPE_PUBLISHABLE_KEY = 'pk_test_51OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcUXQnMhJ97qXKTKhbhLgdpBDVaFMXqiYUkSVSCEZzRMTg500Ip6Sxgus';
+// In production, these values should come from environment variables
+const PRODUCTION_MODE = true;
+
+// Replace with your actual publishable key
+const STRIPE_PUBLISHABLE_KEY = PRODUCTION_MODE
+  ? 'pk_test_51OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcUXQnMhJ97qXKTKhbhLgdpBDVaFMXqiYUkSVSCEZzRMTg500Ip6Sxgus'
+  : 'pk_test_51OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcUXQnMhJ97qXKTKhbhLgdpBDVaFMXqiYUkSVSCEZzRMTg500Ip6Sxgus';
 
 export const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
@@ -37,3 +42,9 @@ export const formatCVC = (cvc: string) => {
   const digits = cvc.replace(/\D/g, '');
   return digits.slice(0, 4);
 };
+
+// In production, you might want to add additional helper functions for:
+// 1. Validating card details client-side before submission
+// 2. Handling payment errors gracefully
+// 3. Managing saved payment methods
+// 4. Supporting additional payment methods beyond cards

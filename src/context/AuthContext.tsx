@@ -40,6 +40,64 @@ interface AuthContextType {
   updateUserProfile: (data: Partial<User>) => void;
 }
 
+const PRODUCTION_MODE = true;
+const ADMIN_EMAILS = ['admin@painterconnectory.com', 'youremail@yourdomain.com'];
+
+export const SAMPLE_PAINTERS = [
+  {
+    id: "painter-1",
+    name: "Mike Johnson",
+    email: "mike@example.com",
+    role: "painter" as const,
+    avatar: "/public/placeholder.svg",
+    location: {
+      address: "123 Main St, Boston, MA",
+      latitude: 42.3601,
+      longitude: -71.0589
+    },
+    subscription: {
+      status: "active" as const,
+      plan: "pro" as const,
+      startDate: "2023-08-15T10:30:00Z",
+      amount: 49,
+      currency: "USD",
+      interval: "month" as const
+    }
+  },
+  {
+    id: "painter-2",
+    name: "Sarah Williams",
+    email: "sarah@example.com",
+    role: "painter" as const,
+    avatar: "/public/placeholder.svg",
+    location: {
+      address: "456 Oak Ave, Cambridge, MA",
+      latitude: 42.3736,
+      longitude: -71.1097
+    }
+  },
+  {
+    id: "painter-3",
+    name: "David Thompson",
+    email: "david@example.com",
+    role: "painter" as const,
+    avatar: "/public/placeholder.svg",
+    location: {
+      address: "789 Pine St, Somerville, MA",
+      latitude: 42.3876,
+      longitude: -71.0995
+    },
+    subscription: {
+      status: "active" as const,
+      plan: "pro" as const,
+      startDate: "2023-09-01T09:45:00Z",
+      amount: 49,
+      currency: "USD",
+      interval: "month" as const
+    }
+  }
+];
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -67,19 +125,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simulate API request
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // Mock user data - for demo purposes, any email containing 'admin' will be treated as admin
-      const mockUser: User = {
-        id: "user-" + Math.random().toString(36).substring(2, 9),
-        name: email.split("@")[0],
-        email,
-        role: email.includes("admin") ? "admin" : email.includes("painter") ? "painter" : "customer",
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem("user", JSON.stringify(mockUser));
+      // In production, this would call your actual authentication API
+      if (PRODUCTION_MODE) {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        
+        // Check if this is an admin email
+        const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
+        const isPainter = email.toLowerCase().includes("painter");
+        
+        const mockUser: User = {
+          id: "user-" + Math.random().toString(36).substring(2, 9),
+          name: email.split("@")[0],
+          email,
+          role: isAdmin ? "admin" : isPainter ? "painter" : "customer",
+          avatar: "/public/placeholder.svg"
+        };
+        
+        setUser(mockUser);
+        localStorage.setItem("user", JSON.stringify(mockUser));
+      } else {
+        // Keep the existing mock login logic for development
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        
+        const mockUser: User = {
+          id: "user-" + Math.random().toString(36).substring(2, 9),
+          name: email.split("@")[0],
+          email,
+          role: email.includes("admin") ? "admin" : email.includes("painter") ? "painter" : "customer",
+        };
+        
+        setUser(mockUser);
+        localStorage.setItem("user", JSON.stringify(mockUser));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -88,19 +165,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (name: string, email: string, password: string, role: UserRole) => {
     setIsLoading(true);
     try {
-      // Simulate API request
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // Create new user
-      const newUser: User = {
-        id: "user-" + Math.random().toString(36).substring(2, 9),
-        name,
-        email,
-        role,
-      };
-      
-      setUser(newUser);
-      localStorage.setItem("user", JSON.stringify(newUser));
+      // In production, this would call your actual registration API
+      if (PRODUCTION_MODE) {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        
+        // In production, we wouldn't allow just anyone to register as admin
+        const safeRole = role === "admin" ? "customer" : role;
+        
+        const newUser: User = {
+          id: "user-" + Math.random().toString(36).substring(2, 9),
+          name,
+          email,
+          role: safeRole,
+          avatar: "/public/placeholder.svg"
+        };
+        
+        setUser(newUser);
+        localStorage.setItem("user", JSON.stringify(newUser));
+      } else {
+        // Keep the existing mock registration logic for development
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        
+        const newUser: User = {
+          id: "user-" + Math.random().toString(36).substring(2, 9),
+          name,
+          email,
+          role,
+        };
+        
+        setUser(newUser);
+        localStorage.setItem("user", JSON.stringify(newUser));
+      }
     } finally {
       setIsLoading(false);
     }

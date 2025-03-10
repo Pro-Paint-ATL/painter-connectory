@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -12,7 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, Users, Calendar, PaintBucket, Search } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
+// This would come from your database in a real production app
 const mockSubscribedPainters = [
   {
     id: "painter-1",
@@ -55,14 +58,40 @@ const mockSubscribedPainters = [
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [painters, setPainters] = useState(mockSubscribedPainters);
 
   useEffect(() => {
+    // Redirect non-admin users
     if (user && user.role !== "admin") {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to access the admin dashboard.",
+        variant: "destructive"
+      });
       navigate("/");
     }
-  }, [user, navigate]);
+    
+    // In a production app, you'd fetch this data from your API/database
+    // For example:
+    // const fetchSubscriptions = async () => {
+    //   try {
+    //     const response = await fetch('/api/admin/subscriptions');
+    //     const data = await response.json();
+    //     setPainters(data);
+    //   } catch (error) {
+    //     console.error('Failed to fetch subscriptions:', error);
+    //     toast({
+    //       title: "Error",
+    //       description: "Failed to load subscription data.",
+    //       variant: "destructive"
+    //     });
+    //   }
+    // };
+    // 
+    // fetchSubscriptions();
+  }, [user, navigate, toast]);
 
   if (!user || user.role !== "admin") {
     return null;
@@ -91,6 +120,14 @@ const AdminDashboard = () => {
         <div>
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
           <p className="text-muted-foreground">Manage painter subscriptions and revenue</p>
+        </div>
+        <div>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate("/admin/subscriptions")}
+          >
+            Manage Subscriptions
+          </Button>
         </div>
       </div>
       
