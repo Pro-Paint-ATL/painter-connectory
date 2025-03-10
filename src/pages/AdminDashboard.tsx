@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -14,53 +13,39 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, Users, Calendar, PaintBucket, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-// This would come from your database in a real production app
-const mockSubscribedPainters = [
-  {
-    id: "painter-1",
-    name: "Mike Johnson",
-    email: "mike@paintpro.com",
-    subscriptionDate: "2023-08-15T10:30:00Z",
-    status: "active",
-    amountPaid: 49,
-    nextBillingDate: "2023-09-15T10:30:00Z"
-  },
-  {
-    id: "painter-2",
-    name: "Sarah Williams",
-    email: "sarah@colorexperts.com",
-    subscriptionDate: "2023-07-22T14:15:00Z",
-    status: "active",
-    amountPaid: 49,
-    nextBillingDate: "2023-08-22T14:15:00Z"
-  },
-  {
-    id: "painter-3",
-    name: "David Thompson",
-    email: "david@perfectpaint.com",
-    subscriptionDate: "2023-09-01T09:45:00Z",
-    status: "active",
-    amountPaid: 49,
-    nextBillingDate: "2023-10-01T09:45:00Z"
-  },
-  {
-    id: "painter-4",
-    name: "Lisa Rodriguez",
-    email: "lisa@freshcoats.com",
-    subscriptionDate: "2023-08-05T16:20:00Z",
-    status: "past_due",
-    amountPaid: 49,
-    nextBillingDate: "2023-09-05T16:20:00Z"
-  }
-];
+import { useQuery } from "@tanstack/react-query";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, supabase } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [painters, setPainters] = useState(mockSubscribedPainters);
+
+  // Fetch subscribed painters from Supabase
+  const { data: painters = [], isLoading: isLoadingPainters } = useQuery({
+    queryKey: ["subscribedPainters"],
+    queryFn: async () => {
+      if (!user || user.role !== "admin") return [];
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'painter')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to load subscription data.",
+          variant: "destructive"
+        });
+        throw error;
+      }
+      
+      return data || [];
+    },
+    enabled: !!user && user.role === "admin"
+  });
 
   useEffect(() => {
     // Redirect non-admin users
@@ -72,41 +57,26 @@ const AdminDashboard = () => {
       });
       navigate("/");
     }
-    
-    // In a production app, you'd fetch this data from your API/database
-    // For example:
-    // const fetchSubscriptions = async () => {
-    //   try {
-    //     const response = await fetch('/api/admin/subscriptions');
-    //     const data = await response.json();
-    //     setPainters(data);
-    //   } catch (error) {
-    //     console.error('Failed to fetch subscriptions:', error);
-    //     toast({
-    //       title: "Error",
-    //       description: "Failed to load subscription data.",
-    //       variant: "destructive"
-    //     });
-    //   }
-    // };
-    // 
-    // fetchSubscriptions();
   }, [user, navigate, toast]);
 
   if (!user || user.role !== "admin") {
     return null;
   }
 
-  const totalRevenue = painters.reduce((sum, painter) => sum + painter.amountPaid, 0);
-  const activePainters = painters.filter(p => p.status === "active").length;
-  const pastDuePainters = painters.filter(p => p.status === "past_due").length;
+  const totalRevenue = painters.reduce((sum, painter) => {
+    return sum + (painter.subscription?.amount || 0);
+  }, 0);
+  
+  const activePainters = painters.filter(p => p.subscription?.status === "active").length;
+  const pastDuePainters = painters.filter(p => p.subscription?.status === "past_due").length;
 
   const filteredPainters = painters.filter(painter => 
     painter.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     painter.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
@@ -206,17 +176,17 @@ const AdminDashboard = () => {
                       <div className="font-medium">{painter.name}</div>
                       <div className="text-muted-foreground text-xs">{painter.email}</div>
                     </div>
-                    <div>{formatDate(painter.subscriptionDate)}</div>
+                    <div>{formatDate(painter.subscription?.subscriptionDate)}</div>
                     <div>
                       <Badge 
-                        variant={painter.status === "active" ? "outline" : "destructive"}
-                        className={painter.status === "active" ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20" : ""}
+                        variant={painter.subscription?.status === "active" ? "outline" : "destructive"}
+                        className={painter.subscription?.status === "active" ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20" : ""}
                       >
-                        {painter.status === "active" ? "Active" : "Past Due"}
+                        {painter.subscription?.status === "active" ? "Active" : "Past Due"}
                       </Badge>
                     </div>
-                    <div>${painter.amountPaid}/month</div>
-                    <div>{formatDate(painter.nextBillingDate)}</div>
+                    <div>${painter.subscription?.amount}/month</div>
+                    <div>{formatDate(painter.subscription?.nextBillingDate)}</div>
                   </div>
                 ))
               ) : (

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -28,6 +28,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useToast } from "@/hooks/use-toast";
 
 const navItems = [
   {
@@ -68,6 +69,8 @@ const majorCities = [
 const Header = () => {
   const { user, isAuthenticated, login, register, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
@@ -90,6 +93,8 @@ const Header = () => {
     try {
       await login(loginEmail, loginPassword);
       setIsLoginOpen(false);
+      setLoginEmail("");
+      setLoginPassword("");
     } catch (error) {
       console.error("Login failed:", error);
     } finally {
@@ -103,6 +108,9 @@ const Header = () => {
     try {
       await register(registerName, registerEmail, registerPassword, registerRole);
       setIsRegisterOpen(false);
+      setRegisterName("");
+      setRegisterEmail("");
+      setRegisterPassword("");
     } catch (error) {
       console.error("Registration failed:", error);
     } finally {
@@ -110,8 +118,13 @@ const Header = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (

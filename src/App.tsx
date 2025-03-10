@@ -3,8 +3,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import Index from "./pages/Index";
@@ -20,6 +20,88 @@ import SubscriptionManagement from "./pages/SubscriptionManagement";
 
 const queryClient = new QueryClient();
 
+// Protected route component for admin routes
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+  
+  if (!user || user.role !== "admin") {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+// Protected route component for authenticated users
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
+const AppRoutes = () => {
+  return (
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/calculator" element={<EstimateCalculator />} />
+      <Route path="/find-painters" element={<FindPainters />} />
+      <Route path="/painter/:id" element={<PainterProfile />} />
+      <Route 
+        path="/profile" 
+        element={
+          <ProtectedRoute>
+            <CustomerProfile />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/booking/:painterId" 
+        element={
+          <ProtectedRoute>
+            <Booking />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/subscription" 
+        element={
+          <ProtectedRoute>
+            <PainterSubscription />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin" 
+        element={
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        } 
+      />
+      <Route 
+        path="/admin/subscriptions" 
+        element={
+          <AdminRoute>
+            <SubscriptionManagement />
+          </AdminRoute>
+        } 
+      />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -30,18 +112,7 @@ const App = () => (
           <div className="flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/calculator" element={<EstimateCalculator />} />
-                <Route path="/find-painters" element={<FindPainters />} />
-                <Route path="/painter/:id" element={<PainterProfile />} />
-                <Route path="/profile" element={<CustomerProfile />} />
-                <Route path="/booking/:painterId" element={<Booking />} />
-                <Route path="/subscription" element={<PainterSubscription />} />
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/subscriptions" element={<SubscriptionManagement />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <AppRoutes />
             </main>
             <Footer />
           </div>
