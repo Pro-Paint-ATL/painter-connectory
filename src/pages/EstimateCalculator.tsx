@@ -113,6 +113,14 @@ const EstimateCalculator = () => {
                   <li>Additional customer leads: $5 each</li>
                 </ul>
               </div>
+              
+              <div className="space-y-2">
+                <h3 className="font-medium">Special Perks</h3>
+                <p>Save on your subscription:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li className="text-primary font-medium">$5 OFF next month's subscription when you price match our calculator estimate and get hired!</li>
+                </ul>
+              </div>
             </CardContent>
           </Card>
         )}
