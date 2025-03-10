@@ -25,7 +25,7 @@ export const createSubscriptionForUser = async (
     // In a real app, you would store the subscription details in your database
     return {
       status: "active" as const, // Type assertion to match the expected union type
-      plan: 'pro',
+      plan: "pro" as const, // Fixed to match the expected type
       startDate: new Date().toISOString(),
       amount: 49,
       currency: 'USD',

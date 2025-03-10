@@ -7,7 +7,7 @@ const STRIPE_SECRET_KEY = 'sk_test_51OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcU
 
 // Initialize Stripe with the secret key
 export const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16' // Specify the Stripe API version
+  apiVersion: '2023-08-16' // Updated to match the expected API version
 });
 
 // Monthly subscription price ID from your Stripe dashboard
