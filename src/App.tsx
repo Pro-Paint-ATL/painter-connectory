@@ -126,12 +126,14 @@ const App = () => {
           <h1 className="text-2xl font-bold text-red-600 mb-4">Configuration Error</h1>
           <p className="mb-4">{envError}</p>
           <p className="mb-4 text-sm">
-            Please add your Supabase URL and anon key to the project settings.
+            Please add your Supabase URL and anon key to the project.
           </p>
           <div className="p-4 bg-gray-100 rounded-md text-left text-sm mb-4">
             <p>To fix this issue:</p>
             <ol className="list-decimal list-inside mt-2 space-y-1">
-              <li>Go to Project Settings in Lovable</li>
+              <li>Click on "Share" in the top navigation bar</li>
+              <li>Select "Settings"</li>
+              <li>In the Settings sidebar, click on "Environment Variables"</li>
               <li>Add the following environment variables:</li>
               <li className="ml-4 font-mono">VITE_SUPABASE_URL</li>
               <li className="ml-4 font-mono">VITE_SUPABASE_ANON_KEY</li>
