@@ -14,6 +14,8 @@ import PainterProfile from "./pages/PainterProfile";
 import CustomerProfile from "./pages/CustomerProfile";
 import Booking from "./pages/Booking";
 import NotFound from "./pages/NotFound";
+import PainterSubscription from "./pages/PainterSubscription";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +36,8 @@ const App = () => (
                 <Route path="/painter/:id" element={<PainterProfile />} />
                 <Route path="/profile" element={<CustomerProfile />} />
                 <Route path="/booking/:painterId" element={<Booking />} />
+                <Route path="/subscription" element={<PainterSubscription />} />
+                <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>

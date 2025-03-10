@@ -3,6 +3,15 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 
 type UserRole = "customer" | "painter" | null;
 
+interface Subscription {
+  status: "active" | "canceled" | "past_due" | null;
+  plan: "pro" | null;
+  startDate: string | null;
+  amount: number | null;
+  currency: string | null;
+  interval: "month" | "year" | null;
+}
+
 interface User {
   id: string;
   name: string;
@@ -14,6 +23,7 @@ interface User {
     latitude: number;
     longitude: number;
   };
+  subscription?: Subscription;
 }
 
 interface AuthContextType {

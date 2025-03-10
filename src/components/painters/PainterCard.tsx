@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Clock, Shield, PaintBucket } from "lucide-react";
+import { Star, MapPin, Clock, Shield, PaintBucket, Check } from "lucide-react";
 
 interface PainterCardProps {
   painter: {
@@ -18,6 +18,7 @@ interface PainterCardProps {
     yearsInBusiness: number;
     isInsured: boolean;
     specialties: string[];
+    isSubscribed?: boolean;
   };
 }
 
@@ -55,18 +56,35 @@ const PainterCard: React.FC<PainterCardProps> = ({ painter }) => {
               alt={painter.name}
               className="object-cover w-full h-full"
             />
-            {painter.isInsured && (
-              <Badge 
-                variant="secondary" 
-                className="absolute top-2 right-2 flex items-center gap-1 bg-background/80 backdrop-blur-sm"
-              >
-                <Shield className="h-3 w-3" /> Insured
-              </Badge>
-            )}
+            <div className="absolute top-2 right-2 flex flex-col gap-2">
+              {painter.isInsured && (
+                <Badge 
+                  variant="secondary" 
+                  className="flex items-center gap-1 bg-background/80 backdrop-blur-sm"
+                >
+                  <Shield className="h-3 w-3" /> Insured
+                </Badge>
+              )}
+              {painter.isSubscribed && (
+                <Badge 
+                  variant="default" 
+                  className="flex items-center gap-1 bg-primary/90 backdrop-blur-sm"
+                >
+                  <Check className="h-3 w-3" /> Pro Painter
+                </Badge>
+              )}
+            </div>
           </div>
           
           <div className="p-5">
-            <h3 className="font-semibold text-lg truncate">{painter.name}</h3>
+            <h3 className="font-semibold text-lg truncate">
+              {painter.name}
+              {painter.isSubscribed && (
+                <span className="inline-block ml-2">
+                  <Check className="h-4 w-4 text-primary inline" />
+                </span>
+              )}
+            </h3>
             
             <div className="mt-2">
               {renderRatingStars(painter.rating)}
