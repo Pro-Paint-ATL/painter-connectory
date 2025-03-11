@@ -6,118 +6,121 @@ import { supabase } from "@/lib/supabase";
 
 const ADMIN_EMAILS = ['admin@painterconnectory.com', 'propaintatl@gmail.com'];
 
+/**
+ * Parses JSON data into a specific type with safe fallbacks
+ * @param data The JSON data to parse
+ * @param defaultValue Default value if data is not valid
+ */
+const parseJsonData = <T>(data: Json | null, defaultValue: T): T => {
+  if (!data || typeof data !== 'object') return defaultValue;
+  return data as unknown as T;
+};
+
+/**
+ * Formats a Supabase user into our application's User model
+ */
 export const formatUser = async (supabaseUser: SupabaseUser | null): Promise<User | null> => {
   if (!supabaseUser) return null;
 
   try {
     console.log("Getting user profile for:", supabaseUser.id);
-    console.log("User metadata:", supabaseUser.user_metadata);
     
-    const userRole = supabaseUser.user_metadata?.role as UserRole;
+    // Default values
+    const defaultRole: UserRole = ADMIN_EMAILS.includes(supabaseUser.email?.toLowerCase() || '') 
+      ? "admin" 
+      : supabaseUser.user_metadata?.role as UserRole || "customer";
     
+    const defaultUser: User = {
+      id: supabaseUser.id,
+      name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || '',
+      email: supabaseUser.email || '',
+      role: defaultRole,
+      avatar: supabaseUser.user_metadata?.avatar_url || undefined
+    };
+
+    // Try to fetch profile from database
     const { data: profile, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', supabaseUser.id)
       .single();
 
+    // Handle profile not found
     if (error) {
-      console.error("Error fetching profile:", error);
-      
       if (error.code === "PGRST116") {
         console.log("Profile not found, creating new profile");
         
-        let defaultRole: UserRole;
+        // Determine role for new profile
+        let newRole = supabaseUser.user_metadata?.role as UserRole;
         
-        if (ADMIN_EMAILS.includes(supabaseUser.email?.toLowerCase() || '')) {
-          defaultRole = "admin";
-        } else if (userRole) {
-          defaultRole = userRole;
-          console.log("Using role from metadata:", defaultRole);
-        } else {
-          const isPainter = supabaseUser.email?.toLowerCase().includes('painter') || false;
-          defaultRole = isPainter ? "painter" : "customer";
+        if (!newRole) {
+          if (ADMIN_EMAILS.includes(supabaseUser.email?.toLowerCase() || '')) {
+            newRole = "admin";
+          } else {
+            const isPainter = supabaseUser.email?.toLowerCase().includes('painter') || false;
+            newRole = isPainter ? "painter" : "customer";
+          }
         }
-
+        
+        // Create new profile
         const newProfile = {
           id: supabaseUser.id,
-          name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || '',
-          email: supabaseUser.email || '',
-          role: defaultRole,
-          avatar: supabaseUser.user_metadata?.avatar_url || null,
+          name: defaultUser.name,
+          email: defaultUser.email,
+          role: newRole,
+          avatar: defaultUser.avatar || null,
           created_at: new Date().toISOString()
         };
 
         try {
-          const { error: insertError } = await supabase
-            .from('profiles')
-            .insert(newProfile);
-
-          if (insertError) {
-            console.error("Error inserting profile:", insertError);
-          } else {
-            console.log("Profile created successfully with role:", defaultRole);
-          }
+          await supabase.from('profiles').insert(newProfile);
+          console.log("Profile created successfully with role:", newRole);
         } catch (insertErr) {
-          console.error("Exception inserting profile:", insertErr);
+          console.error("Error creating profile:", insertErr);
         }
-
-        return {
-          id: supabaseUser.id,
-          name: newProfile.name,
-          email: newProfile.email,
-          role: defaultRole,
-          avatar: newProfile.avatar || undefined
-        };
-      } else {
-        throw error;
+        
+        defaultUser.role = newRole;
+        return defaultUser;
       }
+      
+      console.error("Error fetching profile:", error);
+      return defaultUser;
     }
 
+    // Profile found, parse data
     console.log("Found existing profile with role:", profile.role);
     
-    const locationData = profile.location as Json;
-    const subscriptionData = profile.subscription as Json;
+    const location = parseJsonData<UserLocation>(
+      profile.location as Json, 
+      { address: '', latitude: 0, longitude: 0 }
+    );
     
-    const location: UserLocation | undefined = 
-      locationData ? 
-        typeof locationData === 'object' ? 
-          {
-            address: (locationData as any)?.address || '',
-            latitude: (locationData as any)?.latitude || 0,
-            longitude: (locationData as any)?.longitude || 0
-          } : undefined
-        : undefined;
-        
-    const subscription: Subscription | undefined = 
-      subscriptionData ? 
-        typeof subscriptionData === 'object' ? 
-          {
-            status: (subscriptionData as any)?.status || null,
-            plan: (subscriptionData as any)?.plan || null,
-            startDate: (subscriptionData as any)?.startDate || null,
-            amount: (subscriptionData as any)?.amount || null,
-            currency: (subscriptionData as any)?.currency || null,
-            interval: (subscriptionData as any)?.interval || null,
-            paymentMethodId: (subscriptionData as any)?.paymentMethodId,
-            lastFour: (subscriptionData as any)?.lastFour,
-            brand: (subscriptionData as any)?.brand,
-            stripeCustomerId: (subscriptionData as any)?.stripeCustomerId,
-            stripeSubscriptionId: (subscriptionData as any)?.stripeSubscriptionId
-          } : undefined
-        : undefined;
+    const subscription = parseJsonData<Subscription>(
+      profile.subscription as Json, 
+      { 
+        status: null, 
+        plan: null, 
+        startDate: null, 
+        amount: null, 
+        currency: null, 
+        interval: null 
+      }
+    );
 
+    // Return complete user object
     return {
       id: supabaseUser.id,
-      name: profile.name || supabaseUser.email?.split('@')[0] || '',
+      name: profile.name || defaultUser.name,
       email: supabaseUser.email || '',
-      role: profile.role as UserRole,
+      role: profile.role as UserRole || defaultRole,
       avatar: profile.avatar || undefined,
-      location: location,
-      subscription: subscription
+      location,
+      subscription
     };
   } catch (error) {
     console.error("Error formatting user:", error);
+    
+    // Fallback to basic user information
     return supabaseUser ? {
       id: supabaseUser.id,
       name: supabaseUser.email?.split('@')[0] || '',
