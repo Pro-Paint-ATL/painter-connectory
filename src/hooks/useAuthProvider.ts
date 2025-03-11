@@ -210,7 +210,8 @@ export const useAuthProvider = () => {
           avatar: data.avatar,
           location: data.location as any,
           role: data.role,
-          subscription: data.subscription as any
+          subscription: data.subscription as any,
+          company_info: data.companyInfo as any
         })
         .eq('id', user.id);
 

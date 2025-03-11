@@ -11,6 +11,18 @@ export interface UserLocation {
   bio?: string;
 }
 
+export interface PainterCompanyInfo {
+  companyName: string;
+  yearsInBusiness?: number;
+  isInsured: boolean;
+  insuranceAmount?: string;
+  insuranceDocumentUrl?: string;
+  logoUrl?: string;
+  businessDescription?: string;
+  specialties?: string[];
+  portfolio?: string[];
+}
+
 export interface Subscription {
   status: "active" | "canceled" | "past_due" | null;
   plan: "pro" | null;
@@ -33,6 +45,7 @@ export interface User {
   avatar?: string;
   location?: UserLocation;
   subscription?: Subscription;
+  companyInfo?: PainterCompanyInfo;
 }
 
 export interface AuthContextType {

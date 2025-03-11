@@ -1,7 +1,7 @@
 
 import { User as SupabaseUser } from "@supabase/supabase-js";
 import { Json } from "@/integrations/supabase/types";
-import { User, UserRole, UserLocation, Subscription } from "@/types/auth";
+import { User, UserRole, UserLocation, Subscription, PainterCompanyInfo } from "@/types/auth";
 import { supabase } from "@/lib/supabase";
 
 const ADMIN_EMAILS = ['admin@painterconnectory.com', 'propaintatl@gmail.com'];
@@ -106,6 +106,18 @@ export const formatUser = async (supabaseUser: SupabaseUser | null): Promise<Use
         interval: null 
       }
     );
+    
+    // Parse painter company info if user is a painter
+    const companyInfo = profile.role === 'painter' 
+      ? parseJsonData<PainterCompanyInfo>(
+          profile.company_info as Json,
+          {
+            companyName: '',
+            isInsured: false,
+            specialties: []
+          }
+        )
+      : undefined;
 
     // Return complete user object
     return {
@@ -115,7 +127,8 @@ export const formatUser = async (supabaseUser: SupabaseUser | null): Promise<Use
       role: profile.role as UserRole || defaultRole,
       avatar: profile.avatar || undefined,
       location,
-      subscription
+      subscription,
+      companyInfo
     };
   } catch (error) {
     console.error("Error formatting user:", error);
