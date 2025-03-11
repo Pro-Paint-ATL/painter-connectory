@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import {
   Shield,
   Clock,
   DollarSign,
+  CalendarDays,
 } from "lucide-react";
 
 const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) => (
@@ -113,7 +113,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* The rest of the sections - update buttons to use handleNavigate */}
       {/* How It Works */}
       <section className="py-16 md:py-24 bg-background">
         <div className="container px-4 mx-auto">
@@ -136,7 +135,7 @@ const Index = () => {
               description="Browse painters near you and compare ratings, experience, and services."
             />
             <FeatureCard
-              icon={<Calendar className="h-6 w-6 text-primary" />}
+              icon={<CalendarDays className="h-6 w-6 text-primary" />}
               title="Book and Confirm"
               description="Schedule your project and connect directly through our platform."
             />
