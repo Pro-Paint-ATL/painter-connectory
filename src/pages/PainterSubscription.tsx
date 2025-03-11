@@ -1,229 +1,16 @@
-import React, { useState } from "react";
+
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, PaintBucket, Shield, Clock, Users, CreditCard, Lock } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Elements,
-  CardElement,
-  useStripe,
-  useElements,
-} from "@stripe/react-stripe-js";
-import { formatCardNumber, formatExpiryDate, formatCVC, stripePromise } from "@/utils/stripe";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useSubscriptionApi } from "@/api/subscriptionApi";
 
-// Inner component that uses Stripe hooks
-const SubscriptionForm = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  
-  // Get Stripe objects
-  const stripe = useStripe();
-  const elements = useElements();
-  
-  // Use our subscription API
-  const { subscribe } = useSubscriptionApi();
-  
-  const [paymentInfo, setPaymentInfo] = useState({
-    cardNumber: "",
-    expiryDate: "",
-    cvc: "",
-    nameOnCard: "",
-  });
-  
-  const [cardError, setCardError] = useState<string | null>(null);
+// Direct Stripe checkout link
+const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/9AQeVl7aMbAbaHedQQ";
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    
-    // Format input values based on field type
-    let formattedValue = value;
-    if (name === 'cardNumber') {
-      formattedValue = formatCardNumber(value);
-    } else if (name === 'expiryDate') {
-      formattedValue = formatExpiryDate(value);
-    } else if (name === 'cvc') {
-      formattedValue = formatCVC(value);
-    }
-    
-    setPaymentInfo((prev) => ({ ...prev, [name]: formattedValue }));
-  };
-
-  const handleSubscribe = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Make sure stripe and elements are loaded
-    if (!stripe || !elements) {
-      setCardError("Stripe has not loaded yet. Please try again.");
-      return;
-    }
-    
-    setLoading(true);
-    setCardError(null);
-    
-    try {
-      // Get a reference to the card element
-      const cardElement = elements.getElement(CardElement);
-      
-      if (!cardElement) {
-        throw new Error("Card element not found");
-      }
-      
-      // Create payment method
-      const { error, paymentMethod } = await stripe.createPaymentMethod({
-        type: 'card',
-        card: cardElement,
-        billing_details: {
-          name: paymentInfo.nameOnCard,
-        },
-      });
-      
-      if (error) {
-        throw new Error(error.message);
-      }
-      
-      // Use our subscription API to create a subscription
-      await subscribe(paymentMethod.id);
-      
-      // Show success dialog
-      setShowSuccessDialog(true);
-      
-      toast({
-        title: "Subscription Successful!",
-        description: "You are now a Pro Painter and will be charged $49/month.",
-      });
-      
-    } catch (error) {
-      console.error("Payment error:", error);
-      if (error instanceof Error) {
-        setCardError(error.message);
-      } else {
-        setCardError("There was an error processing your payment. Please try again.");
-      }
-      
-      toast({
-        title: "Subscription Failed",
-        description: "There was an error processing your payment. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCloseSuccessDialog = () => {
-    setShowSuccessDialog(false);
-    navigate("/profile");
-  };
-
-  return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment Information</CardTitle>
-          <CardDescription>Enter your card details to subscribe</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubscribe}>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="nameOnCard" className="text-sm font-medium">Name on Card</label>
-                <Input
-                  id="nameOnCard"
-                  name="nameOnCard"
-                  placeholder="John Smith"
-                  value={paymentInfo.nameOnCard}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="cardDetails" className="text-sm font-medium">Card Details</label>
-                <div className="border border-input rounded-md p-3 bg-background">
-                  <CardElement
-                    id="cardDetails"
-                    options={{
-                      style: {
-                        base: {
-                          fontSize: '16px',
-                          color: 'var(--foreground)',
-                          '::placeholder': {
-                            color: 'var(--muted-foreground)',
-                          },
-                        },
-                        invalid: {
-                          color: 'var(--destructive)',
-                        },
-                      },
-                    }}
-                  />
-                </div>
-                {cardError && (
-                  <p className="text-sm text-destructive mt-1">{cardError}</p>
-                )}
-              </div>
-              
-              <div className="pt-4">
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={loading || !stripe}
-                >
-                  {loading ? "Processing..." : "Subscribe Now - $49/month"}
-                </Button>
-              </div>
-              
-              <div className="flex items-center justify-center text-xs text-muted-foreground mt-4 gap-1">
-                <Lock className="h-3 w-3" />
-                <span>Payments are secure and encrypted</span>
-              </div>
-              
-              <p className="text-xs text-muted-foreground text-center mt-2">
-                By subscribing, you agree to our Terms of Service and authorize us to charge your card $49 monthly until you cancel.
-              </p>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-      
-      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Subscription Successful!</DialogTitle>
-            <DialogDescription>
-              You've successfully subscribed to the Pro Painter plan.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="rounded-lg bg-primary/10 p-4 flex items-center justify-center">
-              <CheckCircle2 className="h-12 w-12 text-primary" />
-            </div>
-            <p>
-              Your Pro Painter subscription has been activated. You now have access to all premium features including priority listing, verified badge, unlimited bookings, and more.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Your card will be charged $49/month. The next billing date is {new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleDateString()}.
-            </p>
-            <Button className="w-full" onClick={handleCloseSuccessDialog}>
-              Go to my Profile
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-};
-
-// Main component that includes Stripe Elements provider
 const PainterSubscription = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -285,6 +72,11 @@ const PainterSubscription = () => {
     );
   }
 
+  // Handle external Stripe checkout
+  const handleSubscribe = () => {
+    window.open(STRIPE_PAYMENT_LINK, '_blank');
+  };
+
   return (
     <div className="container max-w-6xl mx-auto py-12 px-4">
       <div className="grid gap-8 lg:grid-cols-2">
@@ -292,6 +84,9 @@ const PainterSubscription = () => {
           <h1 className="text-3xl font-bold mb-6">Pro Painter Subscription</h1>
           <div className="mb-8">
             <div className="text-4xl font-bold mb-2">$49<span className="text-lg font-normal text-muted-foreground">/month</span></div>
+            <div className="inline-block bg-primary/10 rounded-full px-4 py-2 text-primary font-medium mb-6">
+              Start with a 21-day free trial
+            </div>
             <p className="text-muted-foreground mb-6">
               Unlock premium benefits and get more clients
             </p>
@@ -355,9 +150,53 @@ const PainterSubscription = () => {
         </div>
 
         <div>
-          <Elements stripe={stripePromise}>
-            <SubscriptionForm />
-          </Elements>
+          <Card>
+            <CardHeader>
+              <CardTitle>Pro Painter Subscription</CardTitle>
+              <CardDescription>Get started with a 21-day free trial</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="rounded-lg bg-primary/5 p-4">
+                  <h3 className="font-medium mb-2 flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-primary" />
+                    21-Day Free Trial
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Try all Pro features free for 21 days. Cancel anytime during your trial and you won't be charged.
+                  </p>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex justify-between">
+                    <span>Pro Painter Plan</span>
+                    <span className="font-medium">$49/month</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>First payment</span>
+                    <span>After 21-day trial</span>
+                  </div>
+                </div>
+                
+                <Button 
+                  className="w-full" 
+                  size="lg"
+                  onClick={handleSubscribe}
+                >
+                  Start Your 21-Day Free Trial
+                </Button>
+                
+                <div className="flex items-center justify-center text-xs text-muted-foreground gap-1">
+                  <Lock className="h-3 w-3" />
+                  <span>Secure payment processing by Stripe</span>
+                </div>
+                
+                <p className="text-xs text-muted-foreground text-center">
+                  By subscribing, you agree to our Terms of Service. After your free trial ends, you'll be charged $49 monthly until you cancel.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
