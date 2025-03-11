@@ -24,8 +24,8 @@ const createSecurityDefinerFunction = async () => {
     
     // Only create function if table exists but function doesn't
     if (functionExists && !checkError) {
-      // Try to call the existing function - without explicitly typing the generic parameters
-      const { error } = await supabase.rpc(
+      // Call the function with explicit type casting
+      const { error } = await (supabase.rpc as any)(
         'create_get_role_function'
       );
       if (error) {
@@ -65,8 +65,8 @@ Promise.resolve().then(() => {
 // Create custom functions to interact with RPC safely
 export const createSecurityFunction = async () => {
   try {
-    // Using proper approach without explicit typing
-    const { error } = await supabase.rpc(
+    // Using type casting to bypass the TypeScript constraint issue
+    const { error } = await (supabase.rpc as any)(
       'create_get_role_function'
     );
     return { error };
