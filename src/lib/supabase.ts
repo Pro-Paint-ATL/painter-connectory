@@ -4,9 +4,10 @@ import { supabase as supabaseClient } from '@/integrations/supabase/client';
 // Export the pre-configured client
 export const supabase = supabaseClient;
 
-// Define a function type for the RPC
-interface RPCFunctions {
-  create_get_role_function: () => Promise<{ data: any; error: any }>;
+// Define the return type for the RPC function
+interface CreateGetRoleFunctionResponse {
+  data: any;
+  error: any;
 }
 
 // Create a security definer function to get user role safely
@@ -24,8 +25,9 @@ const createSecurityDefinerFunction = async () => {
     // Only create function if table exists but function doesn't
     if (functionExists && !checkError) {
       // Try to call the existing function
-      const { error } = await supabase.rpc<RPCFunctions['create_get_role_function']>(
-        'create_get_role_function' as never
+      const { error } = await supabase.rpc<null, CreateGetRoleFunctionResponse>(
+        'create_get_role_function',
+        null
       );
       if (error) {
         console.error('Error creating security definer function:', error);
@@ -64,8 +66,9 @@ Promise.resolve().then(() => {
 // Create custom functions to interact with RPC safely
 export const createSecurityFunction = async () => {
   try {
-    const { error } = await supabase.rpc<RPCFunctions['create_get_role_function']>(
-      'create_get_role_function' as never
+    const { error } = await supabase.rpc<null, CreateGetRoleFunctionResponse>(
+      'create_get_role_function',
+      null
     );
     return { error };
   } catch (error) {
