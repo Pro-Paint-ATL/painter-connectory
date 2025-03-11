@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Clock, Users, Star, DollarSign, Settings, PaintBucket, Briefcase, FileEdit, LogOut, Shield, Upload, CheckCircle2, XCircle } from "lucide-react";
+import { PainterCompanyInfo } from "@/types/auth";
 
 const PainterDashboard = () => {
   const { user, logout, updateUserProfile } = useAuth();
@@ -22,7 +23,7 @@ const PainterDashboard = () => {
   const [specialtiesInput, setSpecialtiesInput] = useState("");
   
   // Company info form state
-  const [companyInfo, setCompanyInfo] = useState({
+  const [companyInfo, setCompanyInfo] = useState<Omit<PainterCompanyInfo, 'yearsInBusiness'> & { yearsInBusiness: string | number }>({
     companyName: user?.companyInfo?.companyName || "",
     yearsInBusiness: user?.companyInfo?.yearsInBusiness || "",
     isInsured: user?.companyInfo?.isInsured || false,
@@ -91,10 +92,18 @@ const PainterDashboard = () => {
       .map(item => item.trim())
       .filter(item => item.length > 0);
       
-    const updatedCompanyInfo = {
-      ...companyInfo,
+    // Properly convert yearsInBusiness to number or undefined
+    const updatedCompanyInfo: PainterCompanyInfo = {
+      companyName: companyInfo.companyName,
+      yearsInBusiness: companyInfo.yearsInBusiness ? Number(companyInfo.yearsInBusiness) : undefined,
+      isInsured: companyInfo.isInsured,
+      insuranceAmount: companyInfo.insuranceAmount,
+      businessDescription: companyInfo.businessDescription,
       specialties: specialtiesArray,
-      yearsInBusiness: companyInfo.yearsInBusiness ? Number(companyInfo.yearsInBusiness) : undefined
+      // Maintain any other fields that might exist
+      insuranceDocumentUrl: user?.companyInfo?.insuranceDocumentUrl,
+      logoUrl: user?.companyInfo?.logoUrl,
+      portfolio: user?.companyInfo?.portfolio
     };
     
     try {
@@ -135,12 +144,23 @@ const PainterDashboard = () => {
         .from('painter-assets')
         .getPublicUrl(`logos/${fileName}`);
       
+      // Create properly typed updated company info
+      const updatedCompanyInfo: PainterCompanyInfo = {
+        companyName: companyInfo.companyName,
+        yearsInBusiness: companyInfo.yearsInBusiness ? Number(companyInfo.yearsInBusiness) : undefined,
+        isInsured: companyInfo.isInsured,
+        insuranceAmount: companyInfo.insuranceAmount,
+        businessDescription: companyInfo.businessDescription,
+        specialties: companyInfo.specialties,
+        logoUrl: urlData?.publicUrl,
+        // Preserve other fields
+        insuranceDocumentUrl: user?.companyInfo?.insuranceDocumentUrl,
+        portfolio: user?.companyInfo?.portfolio
+      };
+      
       // Update user profile
       await updateUserProfile({
-        companyInfo: {
-          ...companyInfo,
-          logoUrl: urlData?.publicUrl
-        }
+        companyInfo: updatedCompanyInfo
       });
       
       toast({
@@ -176,13 +196,23 @@ const PainterDashboard = () => {
         .from('painter-assets')
         .getPublicUrl(`insurance/${fileName}`);
       
+      // Create properly typed updated company info
+      const updatedCompanyInfo: PainterCompanyInfo = {
+        companyName: companyInfo.companyName,
+        yearsInBusiness: companyInfo.yearsInBusiness ? Number(companyInfo.yearsInBusiness) : undefined,
+        isInsured: true,
+        insuranceAmount: companyInfo.insuranceAmount,
+        businessDescription: companyInfo.businessDescription,
+        specialties: companyInfo.specialties,
+        insuranceDocumentUrl: urlData?.publicUrl,
+        // Preserve other fields
+        logoUrl: user?.companyInfo?.logoUrl,
+        portfolio: user?.companyInfo?.portfolio
+      };
+      
       // Update user profile
       await updateUserProfile({
-        companyInfo: {
-          ...companyInfo,
-          insuranceDocumentUrl: urlData?.publicUrl,
-          isInsured: true
-        }
+        companyInfo: updatedCompanyInfo
       });
       
       setCompanyInfo(prev => ({

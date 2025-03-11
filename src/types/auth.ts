@@ -13,7 +13,7 @@ export interface UserLocation {
 
 export interface PainterCompanyInfo {
   companyName: string;
-  yearsInBusiness?: number;
+  yearsInBusiness?: number | undefined;
   isInsured: boolean;
   insuranceAmount?: string;
   insuranceDocumentUrl?: string;
