@@ -12,6 +12,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar: string | null
+          company_info: Json | null
           created_at: string | null
           email: string | null
           id: string
@@ -22,6 +23,7 @@ export type Database = {
         }
         Insert: {
           avatar?: string | null
+          company_info?: Json | null
           created_at?: string | null
           email?: string | null
           id: string
@@ -32,6 +34,7 @@ export type Database = {
         }
         Update: {
           avatar?: string | null
+          company_info?: Json | null
           created_at?: string | null
           email?: string | null
           id?: string

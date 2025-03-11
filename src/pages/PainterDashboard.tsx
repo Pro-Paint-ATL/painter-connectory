@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -320,7 +319,7 @@ const PainterDashboard = () => {
                   </Button>
                   <Button 
                     variant="ghost" 
-                    className="w-full justify-start" 
+                    className="w-full justify-start"
                     onClick={() => navigate("/profile")}
                   >
                     <FileEdit className="mr-2 h-4 w-4" />

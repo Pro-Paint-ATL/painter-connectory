@@ -69,7 +69,8 @@ export const formatUser = async (supabaseUser: SupabaseUser | null): Promise<Use
           email: defaultUser.email,
           role: newRole,
           avatar: defaultUser.avatar || null,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          company_info: newRole === "painter" ? {} : null
         };
 
         try {
