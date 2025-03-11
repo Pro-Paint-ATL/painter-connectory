@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, PaintBucket, Shield, Clock, Users, CreditCard, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 // Direct Stripe checkout link
 const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/9AQeVl7aMbAbaHedQQ";
@@ -14,6 +15,8 @@ const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/9AQeVl7aMbAbaHedQQ";
 const PainterSubscription = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isRedirectDialogOpen, setIsRedirectDialogOpen] = useState(false);
 
   // Check if user is a painter
   if (user?.role !== "painter") {
@@ -74,7 +77,19 @@ const PainterSubscription = () => {
 
   // Handle external Stripe checkout
   const handleSubscribe = () => {
+    setIsRedirectDialogOpen(true);
+  };
+
+  // When user confirms redirect to Stripe
+  const handleConfirmRedirect = () => {
     window.open(STRIPE_PAYMENT_LINK, '_blank');
+    setIsRedirectDialogOpen(false);
+    
+    // Show toast notification to guide the user
+    toast({
+      title: "Stripe Checkout Opened",
+      description: "Complete your subscription in the new tab. You'll be redirected back after payment.",
+    });
   };
 
   return (
@@ -179,7 +194,7 @@ const PainterSubscription = () => {
                 </div>
                 
                 <Button 
-                  className="w-full" 
+                  className="w-full text-black" 
                   size="lg"
                   onClick={handleSubscribe}
                 >
@@ -199,6 +214,26 @@ const PainterSubscription = () => {
           </Card>
         </div>
       </div>
+
+      {/* Dialog to inform user about redirect */}
+      <Dialog open={isRedirectDialogOpen} onOpenChange={setIsRedirectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Complete Your Subscription</DialogTitle>
+            <DialogDescription>
+              You'll be redirected to Stripe to complete your subscription. After payment, your account will be upgraded automatically.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button variant="outline" onClick={() => setIsRedirectDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmRedirect}>
+              Continue to Stripe
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

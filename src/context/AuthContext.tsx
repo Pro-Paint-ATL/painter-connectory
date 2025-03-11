@@ -83,8 +83,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // If no profile exists, create a new one
       if (!profile) {
         const isAdmin = ADMIN_EMAILS.includes(supabaseUser.email?.toLowerCase() || '');
-        const isPainter = supabaseUser.email?.toLowerCase().includes('painter') || false;
-        const defaultRole: UserRole = isAdmin ? "admin" : isPainter ? "painter" : "customer";
+        
+        // Get role from user metadata, fallback to default logic if not present
+        const userRole = supabaseUser.user_metadata?.role as UserRole;
+        let defaultRole: UserRole;
+        
+        if (isAdmin) {
+          defaultRole = "admin";
+        } else if (userRole) {
+          // Use the role that was set during registration
+          defaultRole = userRole;
+        } else {
+          // Fallback logic if no role in metadata
+          const isPainter = supabaseUser.email?.toLowerCase().includes('painter') || false;
+          defaultRole = isPainter ? "painter" : "customer";
+        }
 
         const newProfile = {
           id: supabaseUser.id,
@@ -264,6 +277,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Prevent direct admin registration
       const safeRole = role === "admin" ? "customer" : role;
       
+      // Store role in user metadata so it's available when creating the profile
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -285,12 +299,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
+        // Make sure user.user_metadata.role is set to safeRole
+        console.log("User metadata after signup:", data.user.user_metadata);
+        
         const formattedUser = await formatUser(data.user);
         setUser(formattedUser);
         
         toast({
           title: "Registration Successful",
-          description: "Your account has been created."
+          description: `Your account has been created as a ${safeRole}.`
         });
       }
     } catch (error) {
@@ -335,7 +352,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: data.name,
           avatar: data.avatar,
           location: data.location as any,
-          role: data.role
+          role: data.role,
+          subscription: data.subscription as any
         })
         .eq('id', user.id);
 

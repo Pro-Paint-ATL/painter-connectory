@@ -106,6 +106,9 @@ const Header = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
+      // Log the role being passed to register
+      console.log("Registering with role:", registerRole);
+      
       await register(registerName, registerEmail, registerPassword, registerRole);
       setIsRegisterOpen(false);
       setRegisterName("");
