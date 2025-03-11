@@ -4,6 +4,26 @@ import { supabase as supabaseClient } from '@/integrations/supabase/client';
 // Export the pre-configured client
 export const supabase = supabaseClient;
 
+// Create a security definer function to get user role safely
+const createSecurityDefinerFunction = async () => {
+  try {
+    // Check if the function already exists
+    const { data: functionExists } = await supabase.rpc('get_current_user_role', {}).catch(() => ({ data: null }));
+    
+    if (functionExists === null) {
+      // Function doesn't exist, create it
+      const { error } = await supabase.rpc('create_get_role_function');
+      if (error) {
+        console.error('Error creating security definer function:', error);
+      } else {
+        console.log('Security definer function created successfully');
+      }
+    }
+  } catch (error) {
+    console.error('Error checking for security definer function:', error);
+  }
+};
+
 // This will log if the connection is successful
 // Wrap the entire chain in a Promise.resolve() to ensure we have a proper Promise
 Promise.resolve().then(() => {
@@ -17,6 +37,8 @@ Promise.resolve().then(() => {
         console.error('Supabase connection error:', response.error.message);
       } else {
         console.log('Supabase connection successful');
+        // Try to create the security definer function if needed
+        createSecurityDefinerFunction();
       }
       return Promise.resolve(); // Return a Promise to maintain the chain
     });
@@ -24,3 +46,9 @@ Promise.resolve().then(() => {
 .catch((error: Error) => {
   console.error('Error testing Supabase connection:', error);
 });
+
+// Create custom functions to interact with RPC safely
+export const createSecurityFunction = async () => {
+  const { error } = await supabase.rpc('create_get_role_function');
+  return { error };
+};

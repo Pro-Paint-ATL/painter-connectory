@@ -12,6 +12,7 @@ import EstimateCalculator from "./pages/EstimateCalculator";
 import FindPainters from "./pages/FindPainters";
 import PainterProfile from "./pages/PainterProfile";
 import CustomerProfile from "./pages/CustomerProfile";
+import PainterDashboard from "./pages/PainterDashboard";
 import Booking from "./pages/Booking";
 import NotFound from "./pages/NotFound";
 import PainterSubscription from "./pages/PainterSubscription";
@@ -34,6 +35,20 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const PainterRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+  
+  if (!user || user.role !== "painter") {
+    return <Navigate to="/" replace />;
+  }
+  
+  return <>{children}</>;
+};
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();
   
@@ -49,6 +64,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AppRoutes = () => {
+  const { user } = useAuth();
+  
   return (
     <Routes>
       <Route path="/" element={<Index />} />
@@ -61,6 +78,14 @@ const AppRoutes = () => {
           <ProtectedRoute>
             <CustomerProfile />
           </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/painter-dashboard" 
+        element={
+          <PainterRoute>
+            <PainterDashboard />
+          </PainterRoute>
         } 
       />
       <Route 

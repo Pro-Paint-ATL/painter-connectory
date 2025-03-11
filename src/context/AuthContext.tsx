@@ -4,6 +4,7 @@ import { User as SupabaseUser } from "@supabase/supabase-js";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "../lib/supabase";
 import { Json } from "@/integrations/supabase/types";
+import { useNavigate } from "react-router-dom";
 
 type UserRole = "customer" | "painter" | "admin" | null;
 
@@ -63,6 +64,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!supabaseUser) return null;
 
     try {
+      console.log("Getting user profile for:", supabaseUser.id);
+      console.log("User metadata:", supabaseUser.user_metadata);
+      
+      // Get role from user metadata
+      const userRole = supabaseUser.user_metadata?.role as UserRole;
+      
       // Fetch user profile from the profiles table
       const { data: profile, error } = await supabase
         .from('profiles')
@@ -72,66 +79,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error("Error fetching profile:", error);
-        // If the profiles table doesn't exist yet, we'll create it with default values
+        
+        // If the profile doesn't exist yet, create a new one
         if (error.code === "PGRST116") {
           console.log("Profile not found, creating new profile");
+          
+          // Determine role based on metadata or fallback logic
+          let defaultRole: UserRole;
+          
+          if (ADMIN_EMAILS.includes(supabaseUser.email?.toLowerCase() || '')) {
+            defaultRole = "admin";
+          } else if (userRole) {
+            // Use the role that was set during registration
+            defaultRole = userRole;
+            console.log("Using role from metadata:", defaultRole);
+          } else {
+            // Fallback logic
+            const isPainter = supabaseUser.email?.toLowerCase().includes('painter') || false;
+            defaultRole = isPainter ? "painter" : "customer";
+          }
+
+          const newProfile = {
+            id: supabaseUser.id,
+            name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || '',
+            email: supabaseUser.email || '',
+            role: defaultRole,
+            avatar: supabaseUser.user_metadata?.avatar_url || null,
+            created_at: new Date().toISOString()
+          };
+
+          // Insert the new profile
+          try {
+            // Insert into profiles table
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert(newProfile);
+
+            if (insertError) {
+              console.error("Error inserting profile:", insertError);
+            } else {
+              console.log("Profile created successfully with role:", defaultRole);
+            }
+          } catch (insertErr) {
+            console.error("Exception inserting profile:", insertErr);
+          }
+
+          return {
+            id: supabaseUser.id,
+            name: newProfile.name,
+            email: newProfile.email,
+            role: defaultRole,
+            avatar: newProfile.avatar || undefined
+          };
         } else {
           throw error;
         }
       }
 
-      // If no profile exists, create a new one
-      if (!profile) {
-        const isAdmin = ADMIN_EMAILS.includes(supabaseUser.email?.toLowerCase() || '');
-        
-        // Get role from user metadata, fallback to default logic if not present
-        const userRole = supabaseUser.user_metadata?.role as UserRole;
-        let defaultRole: UserRole;
-        
-        if (isAdmin) {
-          defaultRole = "admin";
-        } else if (userRole) {
-          // Use the role that was set during registration
-          defaultRole = userRole;
-        } else {
-          // Fallback logic if no role in metadata
-          const isPainter = supabaseUser.email?.toLowerCase().includes('painter') || false;
-          defaultRole = isPainter ? "painter" : "customer";
-        }
-
-        const newProfile = {
-          id: supabaseUser.id,
-          name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || '',
-          email: supabaseUser.email || '',
-          role: defaultRole,
-          avatar: supabaseUser.user_metadata?.avatar_url || null,
-          created_at: new Date().toISOString()
-        };
-
-        // Insert the new profile
-        try {
-          // Insert into profiles table
-          const { error: insertError } = await supabase
-            .from('profiles')
-            .insert(newProfile);
-
-          if (insertError) {
-            console.error("Error inserting profile:", insertError);
-            // Fall back to just returning the user info without saving to profiles
-          }
-        } catch (insertErr) {
-          console.error("Exception inserting profile:", insertErr);
-        }
-
-        return {
-          id: supabaseUser.id,
-          name: newProfile.name,
-          email: newProfile.email,
-          role: newProfile.role,
-          avatar: newProfile.avatar || undefined
-        };
-      }
-
+      // If we got here, we have a profile
+      console.log("Found existing profile with role:", profile.role);
+      
       // Parse the location and subscription fields from JSON
       const locationData = profile.location as Json;
       const subscriptionData = profile.subscription as Json;
@@ -172,8 +179,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: supabaseUser.email || '',
         role: profile.role as UserRole,
         avatar: profile.avatar || undefined,
-        location,
-        subscription
+        location: location,
+        subscription: subscription
       };
     } catch (error) {
       console.error("Error formatting user:", error);
@@ -202,6 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session) {
           const formattedUser = await formatUser(session.user);
           setUser(formattedUser);
+          console.log("Session loaded, user role:", formattedUser?.role);
         }
       } catch (error) {
         console.error("Error checking auth:", error);
@@ -216,9 +224,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, session) => {
+          console.log("Auth state changed:", event);
           if (event === 'SIGNED_IN' && session) {
             const formattedUser = await formatUser(session.user);
             setUser(formattedUser);
+            console.log("User signed in with role:", formattedUser?.role);
           } else if (event === 'SIGNED_OUT') {
             setUser(null);
           } else if (event === 'USER_UPDATED' && session) {
@@ -263,6 +273,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           title: "Login Successful",
           description: `Welcome back, ${formattedUser?.name}!`
         });
+        
+        console.log("Logged in user with role:", formattedUser?.role);
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -276,6 +288,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Prevent direct admin registration
       const safeRole = role === "admin" ? "customer" : role;
+      
+      console.log("Registering with role:", safeRole);
       
       // Store role in user metadata so it's available when creating the profile
       const { data, error } = await supabase.auth.signUp({

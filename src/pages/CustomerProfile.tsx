@@ -1,5 +1,5 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,22 +9,82 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, Home, MapPin, FileEdit, Settings, LogOut } from "lucide-react";
+import { Clock, Home, MapPin, FileEdit, Settings, LogOut, PaintBucket } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const CustomerProfile = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
+  const { user, logout, updateUserProfile } = useAuth();
+  const navigate = useNavigate();
   
-  // In a real app, this would come from auth context
-  const user = {
-    name: "Alex Johnson",
-    email: "alex@example.com",
-    phone: "(555) 123-4567",
-    address: "123 Main St, New York, NY 10001",
-    joinDate: "Jan 2023",
+  useEffect(() => {
+    if (user?.role === "painter") {
+      navigate("/painter-dashboard");
+    }
+  }, [user, navigate]);
+  
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+    const name = formData.get('name') as string;
+    const email = formData.get('email') as string;
+    const phone = formData.get('phone') as string;
+    const address = formData.get('address') as string;
+    const bio = formData.get('bio') as string;
+    
+    if (user) {
+      const locationData = {
+        address,
+        latitude: 0,
+        longitude: 0
+      };
+      
+      try {
+        await updateUserProfile({
+          name,
+          location: locationData
+        });
+        
+        toast({
+          title: "Profile Updated",
+          description: "Your profile information has been saved successfully."
+        });
+      } catch (error) {
+        console.error("Error updating profile:", error);
+        toast({
+          title: "Update Failed",
+          description: "There was an error updating your profile.",
+          variant: "destructive"
+        });
+      }
+    }
   };
   
-  // Mock booking history
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+  
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "text-green-500 bg-green-50";
+      case "upcoming":
+        return "text-blue-500 bg-blue-50";
+      case "canceled":
+        return "text-red-500 bg-red-50";
+      default:
+        return "text-gray-500 bg-gray-50";
+    }
+  };
+
   const bookings = [
     {
       id: "booking1",
@@ -55,27 +115,18 @@ const CustomerProfile = () => {
       rating: null,
     },
   ];
-  
-  const handleSaveProfile = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast({
-      title: "Profile Updated",
-      description: "Your profile information has been saved successfully.",
-    });
-  };
-  
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "text-green-500 bg-green-50";
-      case "upcoming":
-        return "text-blue-500 bg-blue-50";
-      case "canceled":
-        return "text-red-500 bg-red-50";
-      default:
-        return "text-gray-500 bg-gray-50";
-    }
-  };
+
+  if (!user) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-center py-8">Loading user profile...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -90,11 +141,13 @@ const CustomerProfile = () => {
               <CardContent className="p-6">
                 <div className="flex flex-col items-center text-center mb-6">
                   <Avatar className="h-24 w-24 mb-4">
-                    <AvatarImage src="" />
+                    <AvatarImage src={user.avatar} />
                     <AvatarFallback className="text-2xl">{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                   </Avatar>
                   <h2 className="text-xl font-bold">{user.name}</h2>
-                  <p className="text-sm text-muted-foreground">Member since {user.joinDate}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {user.role === "customer" ? "Customer" : user.role === "painter" ? "Painter" : "Admin"}
+                  </p>
                 </div>
                 
                 <div className="space-y-1">
@@ -125,7 +178,7 @@ const CustomerProfile = () => {
                 </div>
                 
                 <div className="mt-6 pt-6 border-t">
-                  <Button variant="outline" className="w-full text-red-500 hover:text-red-700 hover:bg-red-50">
+                  <Button variant="outline" className="w-full text-red-500 hover:text-red-700 hover:bg-red-50" onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign Out
                   </Button>
@@ -145,25 +198,25 @@ const CustomerProfile = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="name">Full Name</Label>
-                        <Input id="name" defaultValue={user.name} />
+                        <Input id="name" name="name" defaultValue={user.name} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" defaultValue={user.email} />
+                        <Input id="email" name="email" type="email" defaultValue={user.email} readOnly />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="phone">Phone</Label>
-                        <Input id="phone" defaultValue={user.phone} />
+                        <Input id="phone" name="phone" defaultValue={user.location?.phone || ''} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="address">Address</Label>
-                        <Input id="address" defaultValue={user.address} />
+                        <Input id="address" name="address" defaultValue={user.location?.address || ''} />
                       </div>
                     </div>
                     
                     <div className="space-y-2">
                       <Label htmlFor="bio">About Me</Label>
-                      <Textarea id="bio" placeholder="Tell painters a bit about yourself or your project needs" />
+                      <Textarea id="bio" name="bio" placeholder="Tell painters a bit about yourself or your project needs" defaultValue={user.location?.bio || ''} />
                     </div>
                     
                     <Button type="submit">Save Changes</Button>
