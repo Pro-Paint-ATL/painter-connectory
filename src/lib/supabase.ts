@@ -8,10 +8,17 @@ export const supabase = supabaseClient;
 const createSecurityDefinerFunction = async () => {
   try {
     // Check if the function already exists
-    const { data: functionExists } = await supabase.rpc('get_current_user_role', {}).catch(() => ({ data: null }));
+    const { data: functionExists, error: checkError } = await supabase
+      .from('profiles')
+      .select('id')
+      .limit(1)
+      .then(response => {
+        return { data: response.data, error: response.error };
+      });
     
-    if (functionExists === null) {
-      // Function doesn't exist, create it
+    // Only create function if table exists but function doesn't
+    if (functionExists && !checkError) {
+      // Try to call the existing function
       const { error } = await supabase.rpc('create_get_role_function');
       if (error) {
         console.error('Error creating security definer function:', error);
@@ -49,6 +56,11 @@ Promise.resolve().then(() => {
 
 // Create custom functions to interact with RPC safely
 export const createSecurityFunction = async () => {
-  const { error } = await supabase.rpc('create_get_role_function');
-  return { error };
+  try {
+    const { error } = await supabase.rpc('create_get_role_function');
+    return { error };
+  } catch (error) {
+    console.error('Error creating security function:', error);
+    return { error };
+  }
 };

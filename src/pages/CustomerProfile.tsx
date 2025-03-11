@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -6,10 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, Home, MapPin, FileEdit, Settings, LogOut, PaintBucket } from "lucide-react";
+import { Clock, FileEdit, Settings, LogOut } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 const CustomerProfile = () => {
@@ -30,16 +30,18 @@ const CustomerProfile = () => {
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
     const name = formData.get('name') as string;
-    const email = formData.get('email') as string;
     const phone = formData.get('phone') as string;
     const address = formData.get('address') as string;
     const bio = formData.get('bio') as string;
     
     if (user) {
+      // Get existing location data or create new object
       const locationData = {
         address,
-        latitude: 0,
-        longitude: 0
+        latitude: user.location?.latitude || 0,
+        longitude: user.location?.longitude || 0,
+        phone, // Added phone field
+        bio    // Added bio field
       };
       
       try {

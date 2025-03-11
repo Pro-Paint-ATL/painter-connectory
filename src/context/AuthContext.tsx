@@ -26,6 +26,8 @@ interface UserLocation {
   address: string;
   latitude: number;
   longitude: number;
+  phone?: string; // Added phone field
+  bio?: string;   // Added bio field
 }
 
 interface User {
