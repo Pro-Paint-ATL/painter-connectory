@@ -19,7 +19,9 @@ const createSecurityDefinerFunction = async () => {
     // Only create function if table exists but function doesn't
     if (functionExists && !checkError) {
       // Try to call the existing function
-      const { error } = await supabase.rpc('create_get_role_function');
+      const { error } = await supabase.rpc(
+        'create_get_role_function' as any
+      );
       if (error) {
         console.error('Error creating security definer function:', error);
       } else {
@@ -57,7 +59,9 @@ Promise.resolve().then(() => {
 // Create custom functions to interact with RPC safely
 export const createSecurityFunction = async () => {
   try {
-    const { error } = await supabase.rpc('create_get_role_function');
+    const { error } = await supabase.rpc(
+      'create_get_role_function' as any
+    );
     return { error };
   } catch (error) {
     console.error('Error creating security function:', error);
