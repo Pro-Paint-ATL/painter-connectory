@@ -24,8 +24,8 @@ const createSecurityDefinerFunction = async () => {
     
     // Only create function if table exists but function doesn't
     if (functionExists && !checkError) {
-      // Try to call the existing function
-      const { error } = await supabase.rpc(
+      // Try to call the existing function - Using proper type arguments here
+      const { error } = await supabase.rpc<any, any>(
         'create_get_role_function'
       );
       if (error) {
@@ -65,7 +65,8 @@ Promise.resolve().then(() => {
 // Create custom functions to interact with RPC safely
 export const createSecurityFunction = async () => {
   try {
-    const { error } = await supabase.rpc(
+    // Using proper type arguments here
+    const { error } = await supabase.rpc<any, any>(
       'create_get_role_function'
     );
     return { error };
