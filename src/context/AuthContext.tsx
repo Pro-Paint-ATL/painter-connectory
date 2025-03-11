@@ -181,6 +181,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const handleUserSession = async (session: any) => {
+    if (session) {
+      const formattedUser = await formatUser(session.user);
+      setUser(formattedUser);
+      console.log("User session loaded with role:", formattedUser?.role);
+      
+      if (formattedUser?.role === "painter") {
+        navigate("/painter-dashboard");
+      } else if (formattedUser?.role === "admin") {
+        navigate("/admin");
+      } else if (formattedUser) {
+        navigate("/profile");
+      }
+    } else {
+      setUser(null);
+    }
+  };
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -193,17 +211,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         if (session) {
-          const formattedUser = await formatUser(session.user);
-          setUser(formattedUser);
-          console.log("Session loaded, user role:", formattedUser?.role);
-          
-          if (formattedUser?.role === "painter") {
-            navigate("/painter-dashboard");
-          } else if (formattedUser?.role === "admin") {
-            navigate("/admin");
-          } else if (formattedUser) {
-            navigate("/profile");
-          }
+          await handleUserSession(session);
         }
       } catch (error) {
         console.error("Error checking auth:", error);
@@ -219,17 +227,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         async (event, session) => {
           console.log("Auth state changed:", event);
           if (event === 'SIGNED_IN' && session) {
-            const formattedUser = await formatUser(session.user);
-            setUser(formattedUser);
-            console.log("User signed in with role:", formattedUser?.role);
-            
-            if (formattedUser?.role === "painter") {
-              navigate("/painter-dashboard");
-            } else if (formattedUser?.role === "admin") {
-              navigate("/admin");
-            } else if (formattedUser) {
-              navigate("/profile");
-            }
+            await handleUserSession(session);
           } else if (event === 'SIGNED_OUT') {
             setUser(null);
           } else if (event === 'USER_UPDATED' && session) {
@@ -328,6 +326,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           title: "Registration Successful",
           description: `Your account has been created as a ${safeRole}.`
         });
+
+        if (formattedUser?.role === "painter") {
+          navigate("/painter-dashboard");
+        } else if (formattedUser?.role === "admin") {
+          navigate("/admin");
+        } else {
+          navigate("/profile");
+        }
       }
     } catch (error) {
       console.error("Registration error:", error);
@@ -350,6 +356,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "Logged Out",
         description: "You have been successfully logged out."
       });
+      
+      navigate('/');
     } catch (error) {
       console.error("Logout error:", error);
       toast({
