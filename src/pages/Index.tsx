@@ -1,13 +1,12 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import {
   PaintBucket,
   Calculator,
   Search,
-  Calendar,
   Star,
   Shield,
   Clock,
@@ -50,6 +49,12 @@ const TestimonialCard = ({ quote, author, role }: { quote: string; author: strin
 );
 
 const Index = () => {
+  const navigate = useNavigate();
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section with Background Image */}
@@ -86,23 +91,29 @@ const Index = () => {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <Link to="/find-painters">
-                <Button size="lg" className="w-full sm:w-auto gap-2">
-                  <Search className="h-4 w-4" />
-                  Find Painters
-                </Button>
-              </Link>
-              <Link to="/calculator">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2 bg-white/20 hover:bg-white/30 border-white/40 text-black">
-                  <Calculator className="h-4 w-4" />
-                  Calculate Estimate
-                </Button>
-              </Link>
+              <Button 
+                size="lg" 
+                className="w-full sm:w-auto gap-2"
+                onClick={() => handleNavigate("/find-painters")}
+              >
+                <Search className="h-4 w-4" />
+                Find Painters
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="w-full sm:w-auto gap-2 bg-white/20 hover:bg-white/30 border-white/40 text-black"
+                onClick={() => handleNavigate("/calculator")}
+              >
+                <Calculator className="h-4 w-4" />
+                Calculate Estimate
+              </Button>
             </motion.div>
           </div>
         </div>
       </section>
 
+      {/* The rest of the sections - update buttons to use handleNavigate */}
       {/* How It Works */}
       <section className="py-16 md:py-24 bg-background">
         <div className="container px-4 mx-auto">
@@ -142,9 +153,12 @@ const Index = () => {
               <p className="text-lg text-muted-foreground mb-8">
                 Our network of professional painters delivers outstanding results for every project. From residential touch-ups to commercial overhauls, we connect you with skilled professionals.
               </p>
-              <Link to="/find-painters">
-                <Button size="lg">Find Your Painter</Button>
-              </Link>
+              <Button 
+                size="lg"
+                onClick={() => handleNavigate("/find-painters")}
+              >
+                Find Your Painter
+              </Button>
             </div>
             <motion.div 
               initial={{ opacity: 0, x: 20 }}
@@ -246,16 +260,22 @@ const Index = () => {
             Start by finding the perfect painter for your project today.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/find-painters">
-              <Button size="lg" variant="secondary" className="w-full sm:w-auto">
-                Find Painters Now
-              </Button>
-            </Link>
-            <Link to="/calculator">
-              <Button size="lg" variant="outline" className="border-white/20 text-black hover:bg-white/10 w-full sm:w-auto">
-                Get an Estimate
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              variant="secondary" 
+              className="w-full sm:w-auto"
+              onClick={() => handleNavigate("/find-painters")}
+            >
+              Find Painters Now
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="border-white/20 text-black hover:bg-white/10 w-full sm:w-auto"
+              onClick={() => handleNavigate("/calculator")}
+            >
+              Get an Estimate
+            </Button>
           </div>
         </div>
       </section>

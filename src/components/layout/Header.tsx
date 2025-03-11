@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -106,9 +105,7 @@ const Header = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      // Log the role being passed to register
       console.log("Registering with role:", registerRole);
-      
       await register(registerName, registerEmail, registerPassword, registerRole);
       setIsRegisterOpen(false);
       setRegisterName("");
@@ -128,6 +125,10 @@ const Header = () => {
     } catch (error) {
       console.error("Logout failed:", error);
     }
+  };
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
   };
 
   return (
@@ -150,9 +151,10 @@ const Header = () => {
 
         <nav className="hidden md:flex items-center gap-6">
           {navItems.map((item) => (
-            <Link
+            <Button
               key={item.href}
-              to={item.href}
+              variant="ghost"
+              onClick={() => handleNavigation(item.href)}
               className={`flex items-center text-sm font-medium transition-colors hover:text-primary ${
                 location.pathname === item.href
                   ? "text-primary"
@@ -161,18 +163,42 @@ const Header = () => {
             >
               {item.icon}
               {item.label}
-            </Link>
+            </Button>
           ))}
         </nav>
 
         <div className="flex items-center gap-2">
           {isAuthenticated ? (
             <div className="flex items-center gap-2">
-              <Link to="/profile">
-                <Button variant="ghost" size="icon" className="rounded-full" aria-label="User profile">
-                  <User className="h-5 w-5" />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full" 
+                aria-label="User profile"
+                onClick={() => handleNavigation("/profile")}
+              >
+                <User className="h-5 w-5" />
+              </Button>
+              {user?.role === "painter" && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleNavigation("/painter-dashboard")}
+                  className="gap-2"
+                >
+                  <span className="hidden sm:inline">Dashboard</span>
                 </Button>
-              </Link>
+              )}
+              {user?.role === "admin" && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleNavigation("/admin")}
+                  className="gap-2"
+                >
+                  <span className="hidden sm:inline">Admin</span>
+                </Button>
+              )}
               <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
                 <LogOut className="h-4 w-4" />
                 <span className="hidden sm:inline">Logout</span>
@@ -345,31 +371,52 @@ const Header = () => {
                   <span className="font-semibold text-xl">Pro Paint {currentCity.code}</span>
                 </div>
                 {navItems.map((item) => (
-                  <Link
+                  <Button
                     key={item.href}
-                    to={item.href}
-                    className="flex items-center py-2 text-base font-medium transition-colors hover:text-primary"
+                    variant="ghost"
+                    onClick={() => handleNavigation(item.href)}
+                    className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
                   >
                     {item.icon}
                     {item.label}
-                  </Link>
+                  </Button>
                 ))}
                 {isAuthenticated && (
                   <>
-                    <Link
-                      to="/profile"
-                      className="flex items-center py-2 text-base font-medium transition-colors hover:text-primary"
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleNavigation("/profile")}
+                      className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
                     >
                       <User className="h-4 w-4 mr-2" />
                       Profile
-                    </Link>
-                    <button
+                    </Button>
+                    {user?.role === "painter" && (
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleNavigation("/painter-dashboard")}
+                        className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
+                      >
+                        Dashboard
+                      </Button>
+                    )}
+                    {user?.role === "admin" && (
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleNavigation("/admin")}
+                        className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
+                      >
+                        Admin Dashboard
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
                       onClick={handleLogout}
-                      className="flex items-center py-2 text-base font-medium transition-colors hover:text-primary"
+                      className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
                     >
                       <LogOut className="h-4 w-4 mr-2" />
                       Logout
-                    </button>
+                    </Button>
                   </>
                 )}
               </nav>
