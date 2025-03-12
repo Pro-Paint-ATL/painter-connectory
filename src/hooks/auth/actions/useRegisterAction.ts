@@ -4,13 +4,14 @@ import { supabase } from "@/lib/supabase";
 import { User, UserRole } from "@/types/auth";
 import { formatUser } from "@/utils/authUtils";
 import { useAuthCore } from "./useAuthCore";
+import { createTrialSubscription } from "@/utils/companySetup";
 
 export const useRegisterAction = (user: User | null, setUser: (user: User | null) => void) => {
-  const { isLoading, setIsLoading } = useAuthCore(user, setUser);
+  const { startLoading, stopLoading, handleError } = useAuthCore(user, setUser);
   const { toast } = useToast();
 
   const register = async (name: string, email: string, password: string, role: UserRole) => {
-    setIsLoading(true);
+    startLoading();
     try {
       const safeRole = role === "admin" ? "customer" : role;
       
@@ -29,7 +30,7 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
           description: "An account with this email already exists. Please try logging in instead.",
           variant: "destructive"
         });
-        setIsLoading(false);
+        stopLoading();
         return null;
       }
 
@@ -63,7 +64,19 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
           // If we reached here, the registration was technically successful
           if (data.user) {
             const formattedUser = await formatUser(data.user);
-            setIsLoading(false);
+            
+            // If user is a painter, set up trial subscription
+            if (safeRole === "painter" && formattedUser) {
+              try {
+                await createTrialSubscription(formattedUser.id);
+              } catch (subError) {
+                console.error("Error creating trial subscription:", subError);
+                // Don't block registration if subscription setup fails
+              }
+            }
+            
+            stopLoading();
+            setUser(formattedUser);
             return formattedUser;
           }
         } else {
@@ -73,7 +86,7 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
             variant: "destructive"
           });
         }
-        setIsLoading(false);
+        stopLoading();
         return null;
       }
 
@@ -81,6 +94,17 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
         console.log("User metadata after signup:", data.user.user_metadata);
         
         const formattedUser = await formatUser(data.user);
+        
+        // If user is a painter, set up trial subscription
+        if (safeRole === "painter" && formattedUser) {
+          try {
+            await createTrialSubscription(formattedUser.id);
+          } catch (subError) {
+            console.error("Error creating trial subscription:", subError);
+            // Don't block registration if subscription setup fails
+          }
+        }
+        
         setUser(formattedUser);
         
         toast({
@@ -88,21 +112,25 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
           description: `Your account has been created as a ${safeRole}.`
         });
 
-        setIsLoading(false);
+        stopLoading();
         return formattedUser;
       }
       
-      setIsLoading(false);
+      stopLoading();
       return null;
     } catch (error) {
       console.error("Registration error:", error);
-      setIsLoading(false);
+      toast({
+        title: "Registration Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+      stopLoading();
       return null;
     }
   };
 
   return {
     register,
-    isLoading
   };
 };

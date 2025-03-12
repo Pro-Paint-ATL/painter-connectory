@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -45,6 +46,13 @@ const RegisterDialog = ({
     }
   }, [isOpen]);
 
+  // When parent isLoading changes to false, also reset local loading
+  useEffect(() => {
+    if (!isLoading && localLoading) {
+      setLocalLoading(false);
+    }
+  }, [isLoading]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -54,7 +62,7 @@ const RegisterDialog = ({
     
     try {
       await onRegister(name, email, password, role);
-      // Keep localLoading true until parent component changes isOpen
+      // localLoading will be reset by useEffect when parent isLoading changes
     } catch (error) {
       console.error("Registration error in dialog:", error);
       setLocalLoading(false); // Reset on error
@@ -63,7 +71,8 @@ const RegisterDialog = ({
 
   // Handle dialog close manually
   const handleOpenChange = (open: boolean) => {
-    if (!open) {
+    if (!open && (localLoading || isLoading)) {
+      // If closing while loading, force reset the loading states
       setLocalLoading(false);
     }
     onOpenChange(open);
