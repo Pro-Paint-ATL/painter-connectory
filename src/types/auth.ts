@@ -23,9 +23,10 @@ export interface PainterCompanyInfo {
 }
 
 export interface Subscription {
-  status: "active" | "canceled" | "past_due" | null;
+  status: "active" | "canceled" | "past_due" | "trial" | null;
   plan: "pro" | null;
   startDate: string | null;
+  endDate: string | null;
   amount: number | null;
   currency: string | null;
   interval: "month" | "year" | null;
@@ -34,6 +35,8 @@ export interface Subscription {
   brand?: string;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
+  trialEnds?: string;
+  featured?: boolean;
 }
 
 export interface PaymentMethod {

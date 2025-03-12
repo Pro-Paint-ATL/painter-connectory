@@ -1,6 +1,7 @@
 
 import { supabase } from "@/lib/supabase";
 import { PainterCompanyInfo } from "@/types/auth";
+import { Json } from "@/integrations/supabase/types";
 
 /**
  * Sets up a painter's company profile with featured status
@@ -14,7 +15,7 @@ export const setupFeaturedPainterCompany = async (
     const { error } = await supabase
       .from('profiles')
       .update({
-        company_info: companyInfo,
+        company_info: companyInfo as unknown as Json,
         // Add featured flag to subscription JSON
         subscription: {
           status: 'active',
@@ -26,7 +27,7 @@ export const setupFeaturedPainterCompany = async (
           interval: 'month',
           featured: true,
           stripeCustomerId: 'featured_company' // Placeholder for a real Stripe ID
-        }
+        } as unknown as Json
       })
       .eq('id', userId);
 
@@ -64,7 +65,7 @@ export const createTrialSubscription = async (userId: string): Promise<boolean> 
           currency: 'usd',
           interval: 'month',
           trialEnds: endDate.toISOString()
-        }
+        } as unknown as Json
       })
       .eq('id', userId);
 

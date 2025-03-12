@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -39,7 +38,7 @@ const PainterSubscription = () => {
     );
   }
 
-  // Check if already subscribed
+  // Check if already subscribed - now handles both active and trial status
   if (user?.subscription?.status === "active" || user?.subscription?.status === "trial") {
     return (
       <div className="container max-w-6xl mx-auto py-12 px-4">
