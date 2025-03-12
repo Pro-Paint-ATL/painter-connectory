@@ -10,12 +10,12 @@ import { useProfileAction } from "./actions/useProfileAction";
  */
 export const useAuthActions = (user: User | null, setUser: (user: User | null) => void) => {
   const { login, isLoading: loginLoading } = useLoginAction(user, setUser);
-  const { register, isLoading: registerLoading } = useRegisterAction(user, setUser);
+  const { register } = useRegisterAction(user, setUser);
   const { logout, isLoading: logoutLoading } = useLogoutAction(user, setUser);
   const { updateUserProfile, isLoading: profileLoading } = useProfileAction(user, setUser);
 
-  // Combine loading states
-  const isLoading = loginLoading || registerLoading || logoutLoading || profileLoading;
+  // Combine loading states - note we no longer include registerLoading as it's no longer exposed
+  const isLoading = loginLoading || logoutLoading || profileLoading;
 
   return {
     login,
