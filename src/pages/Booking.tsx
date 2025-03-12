@@ -66,16 +66,16 @@ const Booking = () => {
   const [address, setAddress] = useState<string>(() => {
     if (user?.location) {
       const location = user.location as UserLocation;
-      return location.address || "";
+      return location.address;
     }
-    return "";
+    return '';
   });
   const [phone, setPhone] = useState<string>(() => {
     if (user?.location) {
       const location = user.location as UserLocation;
-      return location.phone || "";
+      return location.phone || '';
     }
-    return "";
+    return '';
   });
   const [notes, setNotes] = useState<string>("");
   const [totalAmount, setTotalAmount] = useState<number>(0);
