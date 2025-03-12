@@ -1,574 +1,614 @@
+
 import React, { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { 
+  Card, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription, 
+  CardContent, 
+  CardFooter 
+} from "@/components/ui/card";
+import { 
+  Tabs, 
+  TabsList, 
+  TabsTrigger, 
+  TabsContent 
+} from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronLeft, Calendar, Clock, Check, CreditCard, AlertTriangle } from "lucide-react";
-import BookingCalendar from "@/components/booking/BookingCalendar";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
-import { createDepositPaymentIntent, calculateDepositAmount } from "@/utils/payment-system";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Elements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
-import PaymentForm from "@/components/booking/PaymentForm";
-import { BookingWithPayments } from "@/types/auth";
+import { 
+  Calendar, 
+  Clock, 
+  MapPin, 
+  Phone, 
+  Info, 
+  CheckCircle, 
+  AlertCircle, 
+  Brush,
+  DollarSign,
+  CreditCard,
+  ChevronRight
+} from "lucide-react";
+import { BookingCalendar } from "@/components/booking/BookingCalendar";
+import { PaymentForm } from "@/components/booking/PaymentForm";
+import { Painter } from "@/types/painter";
 
-// Initialize Stripe
-const stripePromise = loadStripe("pk_test_51OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcUXQnMhJ97qXKTKhbhLgdpBDVaFMXqiYUkSVSCEZzRMTg500Ip6Sxgus");
+const PROJECT_TYPES = [
+  "Interior Painting",
+  "Exterior Painting",
+  "Cabinet Refinishing",
+  "Deck Staining",
+  "Wallpaper Installation",
+  "Color Consultation",
+  "Commercial Painting",
+  "Other"
+];
 
 const Booking = () => {
   const { painterId } = useParams<{ painterId: string }>();
-  const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
-  const [agreementChecked, setAgreementChecked] = useState(false);
-  const [depositAgreementChecked, setDepositAgreementChecked] = useState(false);
-  const [depositAmount, setDepositAmount] = useState(0);
-  const [totalEstimate, setTotalEstimate] = useState(300); // Default estimate
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [bookingId, setBookingId] = useState<string | null>(null);
-  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
-  const [bookingDetails, setBookingDetails] = useState({
-    projectType: "interior",
-    notes: "",
-    address: "",
-    phone: "",
+  const { toast } = useToast();
+  
+  const [activeTab, setActiveTab] = useState("1");
+  const [bookingDate, setBookingDate] = useState<Date | undefined>();
+  const [bookingTime, setBookingTime] = useState<string>("");
+  const [projectType, setProjectType] = useState<string>("");
+  const [address, setAddress] = useState<string>(user?.location?.address || "");
+  const [phone, setPhone] = useState<string>(user?.location?.phone || "");
+  const [notes, setNotes] = useState<string>("");
+  const [totalAmount, setTotalAmount] = useState<number>(0);
+  const [depositAmount, setDepositAmount] = useState<number>(0);
+  const [bookingId, setBookingId] = useState<string>("");
+  
+  // Fetch painter details
+  const { 
+    data: painter, 
+    isLoading, 
+    error 
+  } = useQuery({
+    queryKey: ["painter", painterId],
+    queryFn: async () => {
+      if (!painterId) throw new Error("Painter ID is required");
+      
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, name, avatar, email, role, location, company_info")
+        .eq("id", painterId)
+        .eq("role", "painter")
+        .single();
+      
+      if (error) throw error;
+      if (!data) throw new Error("Painter not found");
+      
+      // Format painter data
+      const companyInfo = data.company_info as any || {};
+      const formattedPainter: Painter = {
+        id: data.id,
+        name: data.name || "Unknown Painter",
+        avatar: data.avatar || "",
+        rating: companyInfo.rating || 0,
+        reviewCount: companyInfo.reviewCount || 0,
+        distance: 0, // Not applicable here
+        location: data.location?.address || "Location not specified",
+        yearsInBusiness: companyInfo.yearsInBusiness || 0,
+        isInsured: companyInfo.isInsured || false,
+        specialties: companyInfo.specialties || [],
+        isSubscribed: true // Assume subscribed for simplicity
+      };
+      
+      return formattedPainter;
+    },
+    enabled: !!painterId
   });
-
+  
   useEffect(() => {
-    const deposit = calculateDepositAmount(totalEstimate);
-    setDepositAmount(deposit);
-  }, [totalEstimate]);
-
-  const painter = {
-    id: painterId,
-    name: "Elite Painters",
-    avatar: "https://source.unsplash.com/random/300x150?painting,1",
-    rating: 4.8,
-    reviewCount: 32,
-  };
-
-  const availableTimes = [
-    "9:00 AM", "10:00 AM", "11:00 AM", 
-    "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"
-  ];
-
-  const handleTimeSelect = (time: string) => {
-    setSelectedTime(time);
-  };
-
-  const handleDateSelect = (date: Date | undefined) => {
-    setSelectedDate(date);
-    setSelectedTime(undefined); // Reset time when date changes
-  };
-
-  const handleCalendarTimeSelect = (date: Date, time: string) => {
-    setSelectedDate(date);
-    setSelectedTime(time);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setBookingDetails(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleTypeChange = (value: string) => {
-    setBookingDetails(prev => ({ ...prev, projectType: value }));
-    
-    const newEstimate = value === "exterior" ? 400 : 300;
-    setTotalEstimate(newEstimate);
-  };
-
-  const handleNextStep = () => {
-    if (currentStep === 1 && !selectedDate) {
+    if (!user) {
       toast({
-        title: "Select a Date",
-        description: "Please select a date for your appointment.",
-        variant: "destructive",
+        title: "Authentication Required",
+        description: "Please log in to book a painter",
+        variant: "destructive"
       });
-      return;
+      navigate("/");
     }
-
-    if (currentStep === 1 && !selectedTime) {
+  }, [user, navigate, toast]);
+  
+  useEffect(() => {
+    // Set deposit amount to 15% of total amount
+    setDepositAmount(Math.round(totalAmount * 0.15 * 100) / 100);
+  }, [totalAmount]);
+  
+  const handleTimeSelection = (time: string) => {
+    setBookingTime(time);
+  };
+  
+  const handleProjectTypeSelection = (type: string) => {
+    setProjectType(type);
+    
+    // Set a default price based on project type
+    const basePrices: Record<string, number> = {
+      "Interior Painting": 500,
+      "Exterior Painting": 800,
+      "Cabinet Refinishing": 1200,
+      "Deck Staining": 600,
+      "Wallpaper Installation": 400,
+      "Color Consultation": 150,
+      "Commercial Painting": 1500,
+      "Other": 300
+    };
+    
+    setTotalAmount(basePrices[type] || 300);
+  };
+  
+  const validateStep1 = () => {
+    if (!bookingDate) {
       toast({
-        title: "Select a Time",
-        description: "Please select a time slot for your appointment.",
-        variant: "destructive",
+        title: "Date Required",
+        description: "Please select a booking date",
+        variant: "destructive"
       });
-      return;
+      return false;
     }
     
-    if (currentStep === 2 && !bookingDetails.address) {
+    if (!bookingTime) {
+      toast({
+        title: "Time Required",
+        description: "Please select a booking time",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    return true;
+  };
+  
+  const validateStep2 = () => {
+    if (!projectType) {
+      toast({
+        title: "Project Type Required",
+        description: "Please select a project type",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    if (!address) {
       toast({
         title: "Address Required",
-        description: "Please provide the address where the service will be performed.",
-        variant: "destructive",
+        description: "Please provide your address",
+        variant: "destructive"
       });
-      return;
+      return false;
     }
-
-    if (currentStep === 3 && !agreementChecked) {
+    
+    if (!phone) {
       toast({
-        title: "Agreement Required",
-        description: "Please agree to the terms and conditions before proceeding.",
-        variant: "destructive",
+        title: "Phone Required",
+        description: "Please provide your phone number",
+        variant: "destructive"
       });
-      return;
+      return false;
     }
-
-    if (currentStep === 3 && !depositAgreementChecked) {
-      toast({
-        title: "Deposit Agreement Required",
-        description: "Please acknowledge the good faith deposit agreement before proceeding.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
-    }
+    
+    return true;
   };
-
-  const handlePreviousStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const createBooking = async () => {
-    if (!user || !painterId || !selectedDate || !selectedTime) {
-      toast({
-        title: "Missing Information",
-        description: "Required booking information is missing.",
-        variant: "destructive",
-      });
-      return null;
-    }
-
+  
+  const handleCreateBooking = async () => {
+    if (!user || !painter || !bookingDate) return;
+    
     try {
-      const bookingData = {
-        customer_id: user.id,
-        painter_id: painterId,
-        date: selectedDate.toISOString().split('T')[0],
-        time: selectedTime,
-        address: bookingDetails.address,
-        phone: bookingDetails.phone,
-        project_type: bookingDetails.projectType,
-        notes: bookingDetails.notes,
-        status: 'pending_deposit',
-        total_amount: totalEstimate,
-        deposit_amount: depositAmount,
-        created_at: new Date().toISOString(),
-      };
-
+      // Format date as ISO string (YYYY-MM-DD)
+      const formattedDate = bookingDate.toISOString().split('T')[0];
+      
       const { data, error } = await supabase
-        .from('bookings')
-        .insert(bookingData)
-        .select('id')
+        .from("bookings")
+        .insert({
+          customer_id: user.id,
+          painter_id: painter.id,
+          date: formattedDate,
+          time: bookingTime,
+          address,
+          phone,
+          project_type: projectType,
+          notes,
+          status: "pending_deposit",
+          total_amount: totalAmount,
+          deposit_amount: depositAmount
+        })
+        .select()
         .single();
-
+      
       if (error) throw error;
-      return data.id;
+      
+      setBookingId(data.id);
+      toast({
+        title: "Booking Created",
+        description: "Your booking has been created successfully"
+      });
+      
+      // Move to payment step
+      setActiveTab("3");
     } catch (error) {
       console.error("Error creating booking:", error);
       toast({
-        title: "Booking Failed",
-        description: "There was an error creating your booking. Please try again.",
-        variant: "destructive",
+        title: "Booking Error",
+        description: "Failed to create booking. Please try again.",
+        variant: "destructive"
       });
-      return null;
     }
   };
-
-  const handleSubmit = async () => {
-    try {
-      setIsCreatingPayment(true);
-      
-      const newBookingId = await createBooking();
-      
-      if (!newBookingId) {
-        setIsCreatingPayment(false);
-        return;
-      }
-      
-      setBookingId(newBookingId);
-
-      const booking: BookingWithPayments = {
-        id: newBookingId,
-        customer_id: user!.id,
-        painter_id: painterId!,
-        total_amount: totalEstimate,
-        deposit_amount: depositAmount,
-        status: 'pending_deposit',
-        date: selectedDate!.toISOString().split('T')[0],
-        time: selectedTime!,
-        address: bookingDetails.address,
-        project_type: bookingDetails.projectType,
-        phone: bookingDetails.phone,
-        notes: bookingDetails.notes,
-        created_at: new Date().toISOString()
-      };
-
-      const { clientSecret: secret, error } = await createDepositPaymentIntent(
-        booking, 
-        user!.id
-      );
-
-      if (error || !secret) {
-        throw new Error("Failed to create payment intent");
-      }
-
-      setClientSecret(secret);
-      setPaymentDialogOpen(true);
-      setIsCreatingPayment(false);
-    } catch (error) {
-      console.error("Error in booking submission:", error);
-      toast({
-        title: "Booking Failed",
-        description: "There was an error processing your booking. Please try again.",
-        variant: "destructive",
-      });
-      setIsCreatingPayment(false);
+  
+  const handleNextStep = () => {
+    if (activeTab === "1" && validateStep1()) {
+      setActiveTab("2");
+    } else if (activeTab === "2" && validateStep2()) {
+      handleCreateBooking();
     }
   };
-
+  
   const handlePaymentSuccess = () => {
-    setPaymentDialogOpen(false);
-    toast({
-      title: "Booking Confirmed!",
-      description: `Your deposit has been processed and your appointment with ${painter.name} has been scheduled.`,
-    });
-    
-    navigate('/profile');
+    // Update booking status after successful payment
+    if (bookingId) {
+      supabase
+        .from("bookings")
+        .update({ status: "deposit_paid" })
+        .eq("id", bookingId);
+      
+      // Show success toast and navigate
+      toast({
+        title: "Payment Successful",
+        description: "Your booking is confirmed. The painter will contact you soon."
+      });
+      
+      // Navigate to profile page
+      setTimeout(() => {
+        navigate("/profile");
+      }, 2000);
+    }
   };
-
-  const handlePaymentCancel = () => {
-    setPaymentDialogOpen(false);
-  };
-
-  return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="mb-8">
-          <Link to={`/painter/${painterId}`} className="text-primary hover:underline flex items-center gap-2">
-            <ChevronLeft className="h-4 w-4" />
-            <span>Back to {painter.name}</span>
-          </Link>
-          
-          <h1 className="text-3xl font-bold mt-4">Book an Appointment</h1>
-          <p className="text-muted-foreground">Schedule a consultation with {painter.name}</p>
+  
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-12 px-4">
+        <div className="text-center">
+          <div className="animate-pulse h-8 w-1/3 bg-muted rounded mb-4 mx-auto"></div>
+          <div className="animate-pulse h-4 w-1/4 bg-muted rounded mx-auto"></div>
         </div>
-
-        <div className="relative mb-8">
-          <div className="flex items-center justify-between mb-8">
-            <div className="w-full flex items-center">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                <Calendar className="h-4 w-4" />
+      </div>
+    );
+  }
+  
+  if (error || !painter) {
+    return (
+      <div className="container mx-auto py-12 px-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            Failed to load painter details. Please try again.
+          </AlertDescription>
+        </Alert>
+        <div className="text-center mt-6">
+          <Button onClick={() => navigate("/find-painters")}>
+            Back to Painters
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="container mx-auto py-12 px-4">
+      <div className="max-w-3xl mx-auto">
+        <header className="mb-8 text-center">
+          <h1 className="text-3xl font-bold mb-2">Book {painter.name}</h1>
+          <p className="text-muted-foreground">
+            Complete the steps below to schedule a painting service
+          </p>
+        </header>
+        
+        <div className="mb-8">
+          <div className="flex items-center justify-between max-w-lg mx-auto">
+            <div className="flex flex-col items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activeTab === "1" ? 'bg-primary text-white' : (parseInt(activeTab) > 1 ? 'bg-green-500 text-white' : 'bg-muted')}`}>
+                {parseInt(activeTab) > 1 ? <CheckCircle className="h-4 w-4" /> : "1"}
               </div>
-              <div className="ml-2 mr-auto">
-                <p className={`font-medium ${currentStep >= 1 ? 'text-primary' : 'text-muted-foreground'}`}>Schedule</p>
-              </div>
-              <div className="w-full h-1 bg-muted">
-                <div className={`h-1 bg-primary ${currentStep >= 2 ? 'w-full' : 'w-0'} transition-all duration-300`}></div>
-              </div>
+              <span className="text-xs mt-1">Schedule</span>
             </div>
             
-            <div className="w-full flex items-center">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                <Clock className="h-4 w-4" />
-              </div>
-              <div className="ml-2 mr-auto">
-                <p className={`font-medium ${currentStep >= 2 ? 'text-primary' : 'text-muted-foreground'}`}>Details</p>
-              </div>
-              <div className="w-full h-1 bg-muted">
-                <div className={`h-1 bg-primary ${currentStep >= 3 ? 'w-full' : 'w-0'} transition-all duration-300`}></div>
-              </div>
+            <div className="h-0.5 w-full max-w-[80px] bg-muted relative">
+              <div 
+                className="absolute top-0 left-0 h-full bg-primary transition-all" 
+                style={{ width: activeTab === "1" ? "0%" : "100%" }}
+              ></div>
             </div>
             
-            <div className="flex items-center">
-              <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep >= 3 ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                <Check className="h-4 w-4" />
+            <div className="flex flex-col items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activeTab === "2" ? 'bg-primary text-white' : (parseInt(activeTab) > 2 ? 'bg-green-500 text-white' : 'bg-muted')}`}>
+                {parseInt(activeTab) > 2 ? <CheckCircle className="h-4 w-4" /> : "2"}
               </div>
-              <div className="ml-2">
-                <p className={`font-medium ${currentStep >= 3 ? 'text-primary' : 'text-muted-foreground'}`}>Confirm</p>
+              <span className="text-xs mt-1">Details</span>
+            </div>
+            
+            <div className="h-0.5 w-full max-w-[80px] bg-muted relative">
+              <div 
+                className="absolute top-0 left-0 h-full bg-primary transition-all" 
+                style={{ width: activeTab === "3" ? "100%" : "0%" }}
+              ></div>
+            </div>
+            
+            <div className="flex flex-col items-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activeTab === "3" ? 'bg-primary text-white' : 'bg-muted'}`}>
+                3
               </div>
+              <span className="text-xs mt-1">Payment</span>
             </div>
           </div>
-
-          {currentStep === 1 && (
-            <Card>
-              <CardHeader>
-                <h2 className="text-xl font-medium">Select Date & Time</h2>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        </div>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsContent value="1">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle>Select Date & Time</CardTitle>
+                  <CardDescription>
+                    Choose when you'd like {painter.name} to visit
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
                   <div>
-                    <h3 className="font-medium mb-4">Choose a Date</h3>
-                    <BookingCalendar 
-                      painterId={painterId || "default"} 
-                      onTimeSelected={handleCalendarTimeSelect}
-                      onSelectDate={handleDateSelect}
-                    />
+                    <Label>Select Date</Label>
+                    <div className="mt-2">
+                      <BookingCalendar 
+                        selectedDate={bookingDate}
+                        onDateChange={setBookingDate}
+                      />
+                    </div>
                   </div>
                   
                   <div>
-                    <h3 className="font-medium mb-4">Available Time Slots</h3>
-                    {selectedDate ? (
-                      <div className="grid grid-cols-2 gap-2">
-                        {availableTimes.map((time) => (
-                          <Button
-                            key={time}
-                            variant={selectedTime === time ? "default" : "outline"}
-                            className="justify-start"
-                            onClick={() => handleTimeSelect(time)}
-                          >
-                            {time}
-                          </Button>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground">Please select a date first</p>
-                    )}
+                    <Label>Select Time</Label>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-2">
+                      {["9:00 AM", "10:00 AM", "11:00 AM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM"].map((time) => (
+                        <Button
+                          key={time}
+                          type="button"
+                          variant={bookingTime === time ? "default" : "outline"}
+                          onClick={() => handleTimeSelection(time)}
+                          className="text-sm"
+                        >
+                          {time}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {currentStep === 2 && (
-            <Card>
-              <CardHeader>
-                <h2 className="text-xl font-medium">Project Details</h2>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    className="w-full"
+                    onClick={handleNextStep}
+                    disabled={!bookingDate || !bookingTime}
+                  >
+                    Next Step
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </CardFooter>
+              </Card>
+            </motion.div>
+          </TabsContent>
+          
+          <TabsContent value="2">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle>Project Details</CardTitle>
+                  <CardDescription>
+                    Tell us about your painting project
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
                   <div>
                     <Label>Project Type</Label>
-                    <Tabs 
-                      defaultValue={bookingDetails.projectType} 
-                      className="mt-2"
-                      onValueChange={handleTypeChange}
-                    >
-                      <TabsList className="grid grid-cols-2">
-                        <TabsTrigger value="interior">Interior Painting</TabsTrigger>
-                        <TabsTrigger value="exterior">Exterior Painting</TabsTrigger>
-                      </TabsList>
-                    </Tabs>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
+                      {PROJECT_TYPES.map((type) => (
+                        <Button
+                          key={type}
+                          type="button"
+                          variant={projectType === type ? "default" : "outline"}
+                          onClick={() => handleProjectTypeSelection(type)}
+                          className="text-sm h-auto py-2"
+                        >
+                          {type}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Service Address</Label>
-                    <Input 
-                      id="address" 
-                      name="address"
-                      value={bookingDetails.address}
-                      onChange={handleInputChange}
-                      placeholder="Enter the address where service is needed"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Contact Phone</Label>
-                    <Input 
-                      id="phone" 
-                      name="phone"
-                      value={bookingDetails.phone}
-                      onChange={handleInputChange}
-                      placeholder="Enter your phone number"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Project Notes</Label>
-                    <Textarea 
-                      id="notes" 
-                      name="notes"
-                      value={bookingDetails.notes}
-                      onChange={handleInputChange}
-                      placeholder="Describe your project, including any specific requirements"
-                      rows={4}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {currentStep === 3 && (
-            <Card>
-              <CardHeader>
-                <h2 className="text-xl font-medium">Confirm Booking</h2>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div className="p-4 bg-muted rounded-lg">
-                    <h3 className="font-medium mb-4">Booking Summary</h3>
+                  <div className="grid grid-cols-1 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="address">Address</Label>
+                      <Input
+                        id="address"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        placeholder="Enter your full address"
+                      />
+                    </div>
                     
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Painter:</span>
-                        <span className="font-medium">{painter.name}</span>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input
+                        id="phone"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="Enter your phone number"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="notes">Additional Notes</Label>
+                      <Textarea
+                        id="notes"
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="Share any specific details about your project"
+                        rows={4}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="rounded-lg bg-muted/50 p-4 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">Estimated Total</span>
+                      <span className="font-bold">${totalAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm text-muted-foreground">
+                      <span>Good Faith Deposit (15%)</span>
+                      <span>${depositAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="pt-2 text-xs text-muted-foreground">
+                      <Info className="h-3 w-3 inline-block mr-1" />
+                      Final price may vary based on project assessment.
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="flex flex-col sm:flex-row gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="w-full sm:w-auto"
+                    onClick={() => setActiveTab("1")}
+                  >
+                    Back
+                  </Button>
+                  <Button 
+                    className="w-full sm:w-auto"
+                    onClick={handleNextStep}
+                    disabled={!projectType || !address || !phone}
+                  >
+                    Next Step
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </CardFooter>
+              </Card>
+            </motion.div>
+          </TabsContent>
+          
+          <TabsContent value="3">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle>Payment</CardTitle>
+                  <CardDescription>
+                    Pay the good faith deposit to confirm your booking
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="rounded-lg border p-4 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <div className="bg-primary/10 p-2 rounded-full">
+                          <Brush className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <div className="font-medium">{projectType}</div>
+                          <div className="text-sm text-muted-foreground">with {painter.name}</div>
+                        </div>
                       </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Date:</span>
-                        <span className="font-medium">
-                          {selectedDate?.toLocaleDateString('en-US', { 
-                            weekday: 'long', 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-4 text-sm">
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Calendar className="h-3.5 w-3.5" />
+                        <span>
+                          {bookingDate?.toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric"
                           })}
                         </span>
                       </div>
                       
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Time:</span>
-                        <span className="font-medium">{selectedTime}</span>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>{bookingTime}</span>
                       </div>
                       
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Project Type:</span>
-                        <span className="font-medium">
-                          {bookingDetails.projectType === "interior" ? "Interior Painting" : "Exterior Painting"}
-                        </span>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <MapPin className="h-3.5 w-3.5" />
+                        <span className="truncate max-w-[200px]">{address}</span>
                       </div>
-                      
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Address:</span>
-                        <span className="font-medium">{bookingDetails.address}</span>
+                    </div>
+                    
+                    <div className="pt-3 border-t">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-sm">Project Total</span>
+                        <span className="font-medium">${totalAmount.toFixed(2)}</span>
                       </div>
-                      
-                      <div className="border-t border-border pt-3 mt-3">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Estimated Total:</span>
-                          <span className="font-medium">${totalEstimate.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between font-medium text-primary">
-                          <span>Required Good Faith Deposit (15%):</span>
-                          <span>${depositAmount.toFixed(2)}</span>
-                        </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">Deposit Due Now</span>
+                        <span className="font-bold">${depositAmount.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                    <div className="flex items-start mb-2">
-                      <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 mr-2 flex-shrink-0" />
-                      <h4 className="text-amber-800 font-medium">Good Faith Deposit Information</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-muted-foreground" />
+                      <Label>Payment Method</Label>
                     </div>
-                    <p className="text-sm text-amber-700 mb-4">
-                      A 15% good faith deposit is required to confirm your booking. This deposit:
-                    </p>
-                    <ul className="text-sm text-amber-700 space-y-1 list-disc pl-5 mb-4">
-                      <li>Will be applied to your final bill upon successful completion of work</li>
-                      <li>Is fully refundable if the painter doesn't show up or doesn't complete the work</li>
-                      <li>Helps ensure both parties are committed to the scheduled appointment</li>
-                    </ul>
-                    <div className="flex items-start space-x-2 mt-2">
-                      <Checkbox 
-                        id="deposit-agreement" 
-                        checked={depositAgreementChecked}
-                        onCheckedChange={(checked) => setDepositAgreementChecked(checked === true)}
-                      />
-                      <Label htmlFor="deposit-agreement" className="text-sm font-normal leading-tight">
-                        I understand and agree to the good faith deposit terms. I acknowledge that this deposit 
-                        is refundable if the painter doesn't show up or complete the work as agreed.
-                      </Label>
-                    </div>
+                    <PaymentForm 
+                      amount={depositAmount} 
+                      bookingId={bookingId}
+                      onSuccess={handlePaymentSuccess}
+                    />
                   </div>
                   
-                  <div>
-                    <div className="flex items-start space-x-2">
-                      <Checkbox 
-                        id="terms-agreement" 
-                        checked={agreementChecked}
-                        onCheckedChange={(checked) => setAgreementChecked(checked === true)}
-                      />
-                      <Label htmlFor="terms-agreement" className="text-sm font-normal">
-                        By clicking "Confirm Booking", I agree to the Terms of Service and Privacy Policy.
-                        I authorize the painter to contact me regarding this booking.
-                      </Label>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <div className="mt-6 flex justify-between">
-            {currentStep > 1 ? (
-              <Button variant="outline" onClick={handlePreviousStep}>
-                Previous
-              </Button>
-            ) : (
-              <Link to={`/painter/${painterId}`}>
-                <Button variant="outline">
-                  Cancel
-                </Button>
-              </Link>
-            )}
-            
-            {currentStep < 3 ? (
-              <Button onClick={handleNextStep}>
-                Next
-              </Button>
-            ) : (
-              <Button 
-                onClick={handleSubmit} 
-                disabled={!agreementChecked || !depositAgreementChecked || isCreatingPayment}
-                className="gap-2"
-              >
-                {isCreatingPayment ? (
-                  "Processing..."
-                ) : (
-                  <>
-                    <CreditCard className="h-4 w-4" />
-                    Pay Deposit & Book
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
-        </div>
-      </motion.div>
-
-      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Payment Required</DialogTitle>
-            <DialogDescription>
-              Please complete the payment for your good faith deposit of ${depositAmount.toFixed(2)}.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {clientSecret && (
-            <Elements stripe={stripePromise} options={{ clientSecret }}>
-              <PaymentForm 
-                amount={depositAmount} 
-                onSuccess={handlePaymentSuccess}
-                onCancel={handlePaymentCancel}
-              />
-            </Elements>
-          )}
-        </DialogContent>
-      </Dialog>
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Deposit Information</AlertTitle>
+                    <AlertDescription>
+                      This is a 15% good faith deposit to secure your booking. 
+                      The remaining balance will be due upon completion of the work.
+                    </AlertDescription>
+                  </Alert>
+                </CardContent>
+                <CardFooter>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setActiveTab("2")}
+                    disabled={!bookingId}
+                  >
+                    Back
+                  </Button>
+                </CardFooter>
+              </Card>
+            </motion.div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };

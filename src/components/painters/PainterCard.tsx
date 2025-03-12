@@ -1,133 +1,97 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Clock, Shield, PaintBucket, Check } from "lucide-react";
+import { Star, Shield, MapPin, CheckCircle2 } from "lucide-react";
+import { Painter } from "@/types/painter";
 
 interface PainterCardProps {
-  painter: {
-    id: string;
-    name: string;
-    avatar: string;
-    rating: number;
-    reviewCount: number;
-    distance: number;
-    location: string;
-    yearsInBusiness: number;
-    isInsured: boolean;
-    specialties: string[];
-    isSubscribed?: boolean;
-  };
+  painter: Painter;
 }
 
 const PainterCard: React.FC<PainterCardProps> = ({ painter }) => {
-  const renderRatingStars = (rating: number) => {
-    return (
-      <div className="flex items-center">
-        {[...Array(5)].map((_, index) => (
-          <Star
-            key={index}
-            className={`h-4 w-4 ${
-              index < Math.floor(rating) 
-                ? "fill-primary text-primary" 
-                : index < rating 
-                  ? "fill-primary/50 text-primary" 
-                  : "text-muted-foreground/30"
-            }`}
-          />
-        ))}
-        <span className="ml-2 text-sm font-medium">{rating.toFixed(1)}</span>
-        <span className="ml-1 text-sm text-muted-foreground">
-          ({painter.reviewCount} reviews)
-        </span>
-      </div>
-    );
-  };
-
-  // Use a reliable fallback image in case the painter avatar URL is broken
-  const fallbackImage = "/placeholder.svg";
+  const navigate = useNavigate();
   
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    e.currentTarget.src = fallbackImage;
+  const handleViewProfile = () => {
+    navigate(`/painter/${painter.id}`);
   };
-
+  
+  const handleBook = () => {
+    navigate(`/booking/${painter.id}`);
+  };
+  
   return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-      <CardContent className="p-0">
-        <div className="flex flex-col">
-          <div className="relative aspect-video bg-muted">
-            <img
-              src={painter.avatar || fallbackImage}
-              alt={painter.name}
-              className="object-cover w-full h-full"
-              onError={handleImageError}
-            />
-            <div className="absolute top-2 right-2 flex flex-col gap-2">
-              {painter.isInsured && (
-                <Badge 
-                  variant="secondary" 
-                  className="flex items-center gap-1 bg-background/80 backdrop-blur-sm"
-                >
-                  <Shield className="h-3 w-3" /> Insured
-                </Badge>
-              )}
-              {painter.isSubscribed && (
-                <Badge 
-                  variant="default" 
-                  className="flex items-center gap-1 bg-primary/90 backdrop-blur-sm"
-                >
-                  <Check className="h-3 w-3" /> Pro Painter
-                </Badge>
-              )}
-            </div>
-          </div>
-          
-          <div className="p-5">
-            <h3 className="font-semibold text-lg truncate">
+    <Card className="h-full flex flex-col overflow-hidden">
+      <CardContent className="p-4 flex-1">
+        <div className="flex items-center space-x-4 mb-4">
+          <Avatar className="h-14 w-14">
+            <AvatarImage src={painter.avatar} alt={painter.name} />
+            <AvatarFallback>{painter.name.charAt(0)}</AvatarFallback>
+          </Avatar>
+          <div>
+            <h3 className="font-medium truncate" title={painter.name}>
               {painter.name}
               {painter.isSubscribed && (
-                <span className="inline-block ml-2">
-                  <Check className="h-4 w-4 text-primary inline" />
-                </span>
+                <CheckCircle2 className="h-4 w-4 text-primary inline ml-1" />
               )}
             </h3>
-            
-            <div className="mt-2">
-              {renderRatingStars(painter.rating)}
-            </div>
-            
-            <div className="flex items-center mt-3 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4 mr-1" />
-              <span>{painter.distance.toFixed(1)} miles • {painter.location}</span>
-            </div>
-            
-            <div className="flex items-center mt-2 text-sm text-muted-foreground">
-              <Clock className="h-4 w-4 mr-1" />
-              <span>{painter.yearsInBusiness} years in business</span>
-            </div>
-            
-            <div className="mt-4 flex flex-wrap gap-2">
-              {painter.specialties.map((specialty, index) => (
-                <Badge variant="outline" key={index} className="bg-accent/50">
-                  {specialty}
-                </Badge>
-              ))}
+            <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+              <Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500" />
+              <span>
+                {painter.rating.toFixed(1)} ({painter.reviewCount} reviews)
+              </span>
             </div>
           </div>
         </div>
+        
+        <div className="space-y-2 mb-4">
+          <div className="flex items-center text-sm text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+            <span className="truncate">{painter.location}</span>
+            <span className="ml-1">({painter.distance.toFixed(1)} miles)</span>
+          </div>
+          
+          {painter.isInsured && (
+            <div className="flex items-center text-sm text-primary font-medium">
+              <Shield className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+              <span>Insured Business</span>
+            </div>
+          )}
+          
+          <div className="text-sm text-muted-foreground">
+            {painter.yearsInBusiness} years in business
+          </div>
+        </div>
+        
+        <div className="flex flex-wrap gap-1 mt-2">
+          {painter.specialties.slice(0, 3).map((specialty, index) => (
+            <Badge key={index} variant="secondary" className="text-xs font-normal">
+              {specialty}
+            </Badge>
+          ))}
+          {painter.specialties.length > 3 && (
+            <Badge variant="outline" className="text-xs font-normal">
+              +{painter.specialties.length - 3} more
+            </Badge>
+          )}
+        </div>
       </CardContent>
-      
-      <CardFooter className="p-4 pt-0 gap-3 flex flex-col sm:flex-row">
-        <Button variant="outline" asChild className="sm:flex-1">
-          <Link to={`/calculator?painter=${painter.id}`}>
-            <PaintBucket className="h-4 w-4 mr-2" />
-            Calculate Estimate
-          </Link>
+      <CardFooter className="p-4 pt-0 flex gap-2">
+        <Button
+          variant="outline"
+          className="flex-1"
+          onClick={handleViewProfile}
+        >
+          View Profile
         </Button>
-        <Button asChild className="sm:flex-1">
-          <Link to={`/painter/${painter.id}`}>View Profile</Link>
+        <Button
+          className="flex-1"
+          onClick={handleBook}
+        >
+          Book
         </Button>
       </CardFooter>
     </Card>
