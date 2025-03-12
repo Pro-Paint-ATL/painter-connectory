@@ -1,6 +1,6 @@
 
-import React, { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,21 +9,48 @@ import { useToast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, Calendar, Clock, Check } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ChevronLeft, Calendar, Clock, Check, CreditCard, AlertTriangle } from "lucide-react";
 import BookingCalendar from "@/components/booking/BookingCalendar";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase";
+import { createDepositPaymentIntent, calculateDepositAmount } from "@/utils/payment-system";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import PaymentForm from "@/components/booking/PaymentForm";
+
+// Initialize Stripe
+const stripePromise = loadStripe("pk_test_51OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcUXQnMhJ97qXKTKhbhLgdpBDVaFMXqiYUkSVSCEZzRMTg500Ip6Sxgus");
 
 const Booking = () => {
   const { painterId } = useParams<{ painterId: string }>();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
+  const [agreementChecked, setAgreementChecked] = useState(false);
+  const [depositAgreementChecked, setDepositAgreementChecked] = useState(false);
+  const [depositAmount, setDepositAmount] = useState(0);
+  const [totalEstimate, setTotalEstimate] = useState(300); // Default estimate
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [bookingId, setBookingId] = useState<string | null>(null);
+  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
   const [bookingDetails, setBookingDetails] = useState({
     projectType: "interior",
     notes: "",
     address: "",
     phone: "",
   });
+
+  useEffect(() => {
+    // Calculate 15% deposit amount
+    const deposit = calculateDepositAmount(totalEstimate);
+    setDepositAmount(deposit);
+  }, [totalEstimate]);
 
   // In a real app, this would fetch painter data from an API
   const painter = {
@@ -60,6 +87,10 @@ const Booking = () => {
 
   const handleTypeChange = (value: string) => {
     setBookingDetails(prev => ({ ...prev, projectType: value }));
+    
+    // Adjust estimate based on project type
+    const newEstimate = value === "exterior" ? 400 : 300;
+    setTotalEstimate(newEstimate);
   };
 
   const handleNextStep = () => {
@@ -80,6 +111,33 @@ const Booking = () => {
       });
       return;
     }
+    
+    if (currentStep === 2 && !bookingDetails.address) {
+      toast({
+        title: "Address Required",
+        description: "Please provide the address where the service will be performed.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (currentStep === 3 && !agreementChecked) {
+      toast({
+        title: "Agreement Required",
+        description: "Please agree to the terms and conditions before proceeding.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (currentStep === 3 && !depositAgreementChecked) {
+      toast({
+        title: "Deposit Agreement Required",
+        description: "Please acknowledge the good faith deposit agreement before proceeding.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
@@ -92,15 +150,112 @@ const Booking = () => {
     }
   };
 
-  const handleSubmit = () => {
-    // In a real app, this would send the booking request to the API
+  const createBooking = async () => {
+    if (!user || !painterId || !selectedDate || !selectedTime) {
+      toast({
+        title: "Missing Information",
+        description: "Required booking information is missing.",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    try {
+      const bookingData = {
+        customer_id: user.id,
+        painter_id: painterId,
+        date: selectedDate.toISOString().split('T')[0],
+        time: selectedTime,
+        address: bookingDetails.address,
+        phone: bookingDetails.phone,
+        project_type: bookingDetails.projectType,
+        notes: bookingDetails.notes,
+        status: 'pending_deposit',
+        total_amount: totalEstimate,
+        deposit_amount: depositAmount,
+        created_at: new Date().toISOString(),
+      };
+
+      const { data, error } = await supabase
+        .from('bookings')
+        .insert(bookingData)
+        .select('id')
+        .single();
+
+      if (error) throw error;
+      return data.id;
+    } catch (error) {
+      console.error("Error creating booking:", error);
+      toast({
+        title: "Booking Failed",
+        description: "There was an error creating your booking. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setIsCreatingPayment(true);
+      
+      // Create booking in database
+      const newBookingId = await createBooking();
+      
+      if (!newBookingId) {
+        setIsCreatingPayment(false);
+        return;
+      }
+      
+      setBookingId(newBookingId);
+
+      // Get deposit payment intent
+      const booking = {
+        id: newBookingId,
+        customerId: user!.id,
+        painterId: painterId!,
+        totalAmount: totalEstimate,
+        depositAmount: depositAmount,
+        status: 'pending_deposit' as any,
+      };
+
+      const { clientSecret: secret, error } = await createDepositPaymentIntent(
+        booking as any, 
+        user!.id
+      );
+
+      if (error || !secret) {
+        throw new Error("Failed to create payment intent");
+      }
+
+      // Set client secret and open payment dialog
+      setClientSecret(secret);
+      setPaymentDialogOpen(true);
+      setIsCreatingPayment(false);
+    } catch (error) {
+      console.error("Error in booking submission:", error);
+      toast({
+        title: "Booking Failed",
+        description: "There was an error processing your booking. Please try again.",
+        variant: "destructive",
+      });
+      setIsCreatingPayment(false);
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    setPaymentDialogOpen(false);
     toast({
       title: "Booking Confirmed!",
-      description: `Your appointment with ${painter.name} has been scheduled.`,
+      description: `Your deposit has been processed and your appointment with ${painter.name} has been scheduled.`,
     });
     
-    // Redirect to profile or confirmation page (in a real app)
-    // history.push('/profile');
+    // Redirect to profile page
+    navigate('/profile');
+  };
+
+  const handlePaymentCancel = () => {
+    setPaymentDialogOpen(false);
   };
 
   return (
@@ -302,14 +457,58 @@ const Booking = () => {
                         <span className="text-muted-foreground">Address:</span>
                         <span className="font-medium">{bookingDetails.address}</span>
                       </div>
+                      
+                      <div className="border-t border-border pt-3 mt-3">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Estimated Total:</span>
+                          <span className="font-medium">${totalEstimate.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between font-medium text-primary">
+                          <span>Required Good Faith Deposit (15%):</span>
+                          <span>${depositAmount.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-start mb-2">
+                      <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 mr-2 flex-shrink-0" />
+                      <h4 className="text-amber-800 font-medium">Good Faith Deposit Information</h4>
+                    </div>
+                    <p className="text-sm text-amber-700 mb-4">
+                      A 15% good faith deposit is required to confirm your booking. This deposit:
+                    </p>
+                    <ul className="text-sm text-amber-700 space-y-1 list-disc pl-5 mb-4">
+                      <li>Will be applied to your final bill upon successful completion of work</li>
+                      <li>Is fully refundable if the painter doesn't show up or doesn't complete the work</li>
+                      <li>Helps ensure both parties are committed to the scheduled appointment</li>
+                    </ul>
+                    <div className="flex items-start space-x-2 mt-2">
+                      <Checkbox 
+                        id="deposit-agreement" 
+                        checked={depositAgreementChecked}
+                        onCheckedChange={(checked) => setDepositAgreementChecked(checked === true)}
+                      />
+                      <Label htmlFor="deposit-agreement" className="text-sm font-normal leading-tight">
+                        I understand and agree to the good faith deposit terms. I acknowledge that this deposit 
+                        is refundable if the painter doesn't show up or complete the work as agreed.
+                      </Label>
                     </div>
                   </div>
                   
                   <div>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      By clicking "Confirm Booking", you agree to our Terms of Service and Privacy Policy.
-                      The painter will receive your booking request and contact information.
-                    </p>
+                    <div className="flex items-start space-x-2">
+                      <Checkbox 
+                        id="terms-agreement" 
+                        checked={agreementChecked}
+                        onCheckedChange={(checked) => setAgreementChecked(checked === true)}
+                      />
+                      <Label htmlFor="terms-agreement" className="text-sm font-normal">
+                        By clicking "Confirm Booking", I agree to the Terms of Service and Privacy Policy.
+                        I authorize the painter to contact me regarding this booking.
+                      </Label>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -334,13 +533,46 @@ const Booking = () => {
                 Next
               </Button>
             ) : (
-              <Button onClick={handleSubmit}>
-                Confirm Booking
+              <Button 
+                onClick={handleSubmit} 
+                disabled={!agreementChecked || !depositAgreementChecked || isCreatingPayment}
+                className="gap-2"
+              >
+                {isCreatingPayment ? (
+                  "Processing..."
+                ) : (
+                  <>
+                    <CreditCard className="h-4 w-4" />
+                    Pay Deposit & Book
+                  </>
+                )}
               </Button>
             )}
           </div>
         </div>
       </motion.div>
+
+      {/* Payment Dialog */}
+      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Payment Required</DialogTitle>
+            <DialogDescription>
+              Please complete the payment for your good faith deposit of ${depositAmount.toFixed(2)}.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {clientSecret && (
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
+              <PaymentForm 
+                amount={depositAmount} 
+                onSuccess={handlePaymentSuccess}
+                onCancel={handlePaymentCancel}
+              />
+            </Elements>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -37,6 +37,16 @@ export interface Subscription {
   stripeSubscriptionId?: string;
 }
 
+export interface PaymentMethod {
+  id: string;
+  type: "card";
+  lastFour: string;
+  brand: string;
+  expiryMonth: number;
+  expiryYear: number;
+  isDefault: boolean;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -46,6 +56,8 @@ export interface User {
   location?: UserLocation;
   subscription?: Subscription;
   companyInfo?: PainterCompanyInfo;
+  paymentMethods?: PaymentMethod[];
+  stripeCustomerId?: string;
 }
 
 export interface AuthContextType {
