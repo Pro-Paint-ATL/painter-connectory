@@ -1,11 +1,10 @@
 
-import { createCustomer, createSubscription } from '@/utils/stripe-server';
+import { stripe } from '@/utils/stripe-server';
 import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { Json } from '@/integrations/supabase/types';
 
-// In a real production environment, these would be API endpoints on your server
-// For now, we're creating a mock API interface that simulates what your server would do
-
-// Function to create a subscription (this would be a server endpoint in production)
+// Function to create a subscription using real Stripe flow
 export const createSubscriptionForUser = async (
   paymentMethodId: string,
   userData: {
@@ -15,32 +14,67 @@ export const createSubscriptionForUser = async (
   }
 ) => {
   try {
-    // 1. Create a customer in Stripe
-    const customer = await createCustomer(userData.email, userData.name);
+    // Create or retrieve Stripe customer
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('subscription')
+      .eq('id', userData.userId)
+      .single();
     
-    // 2. Create a subscription for that customer
-    const subscription = await createSubscription(customer.id, paymentMethodId);
+    let stripeCustomerId = profile?.subscription?.stripeCustomerId;
+    
+    if (!stripeCustomerId) {
+      const customer = await stripe.customers.create({
+        email: userData.email,
+        name: userData.name,
+        payment_method: paymentMethodId,
+        invoice_settings: {
+          default_payment_method: paymentMethodId,
+        },
+      });
+      stripeCustomerId = customer.id;
+    }
+    
+    // Create subscription
+    const subscription = await stripe.subscriptions.create({
+      customer: stripeCustomerId,
+      items: [{ price: process.env.STRIPE_PRICE_ID }], // Using the price ID from environment
+      payment_behavior: 'default_incomplete',
+      expand: ['latest_invoice.payment_intent'],
+      payment_settings: {
+        payment_method_types: ['card'],
+        save_default_payment_method: 'on_subscription',
+      },
+    });
     
     // Calculate end date (1 month from now)
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + 1);
     
-    // 3. Return the subscription details
-    // In a real app, you would store the subscription details in your database
+    // Update profile with subscription data
+    await supabase
+      .from('profiles')
+      .update({
+        subscription: {
+          status: "active",
+          plan: "pro",
+          startDate: new Date().toISOString(),
+          endDate: endDate.toISOString(),
+          amount: 49,
+          currency: 'USD',
+          interval: 'month',
+          paymentMethodId: paymentMethodId,
+          stripeCustomerId: stripeCustomerId,
+          stripeSubscriptionId: subscription.id,
+          lastFour: 'pending', // Will be updated after payment confirmation
+          brand: 'pending',
+        } as unknown as Json
+      })
+      .eq('id', userData.userId);
+    
     return {
-      status: "active" as const, // Type assertion to match the expected union type
-      plan: "pro" as const, // Fixed to match the expected type
-      startDate: new Date().toISOString(),
-      endDate: endDate.toISOString(), // Added the required endDate property
-      amount: 49,
-      currency: 'USD',
-      interval: 'month' as const, // Adding type assertion to match the expected union type
-      paymentMethodId: paymentMethodId,
-      stripeCustomerId: customer.id,
-      stripeSubscriptionId: subscription.id,
-      // These would typically come from the payment method details
-      lastFour: 'demo', // In production, get this from the payment method
-      brand: 'visa',   // In production, get this from the payment method
+      subscriptionId: subscription.id,
+      clientSecret: subscription.latest_invoice.payment_intent.client_secret,
     };
   } catch (error) {
     console.error('Error creating subscription:', error);
@@ -48,14 +82,14 @@ export const createSubscriptionForUser = async (
   }
 };
 
-// Function to cancel a subscription (this would be a server endpoint in production)
+// Function to cancel a subscription
 export const cancelSubscription = async (stripeSubscriptionId: string) => {
   try {
-    // In a real app, this would call the Stripe API to cancel the subscription
-    // For now, we're just returning a mock response
+    const canceledSubscription = await stripe.subscriptions.cancel(stripeSubscriptionId);
+    
     return {
-      status: "canceled" as const, // Type assertion to match the expected union type
-      canceledAt: new Date().toISOString(),
+      status: "canceled" as const,
+      canceledAt: new Date(canceledSubscription.canceled_at * 1000).toISOString(),
     };
   } catch (error) {
     console.error('Error canceling subscription:', error);
@@ -73,7 +107,7 @@ export const useSubscriptionApi = () => {
     }
     
     try {
-      const subscriptionData = await createSubscriptionForUser(
+      const { subscriptionId, clientSecret } = await createSubscriptionForUser(
         paymentMethodId,
         {
           name: user.name,
@@ -82,12 +116,8 @@ export const useSubscriptionApi = () => {
         }
       );
       
-      // Update the user's profile with the subscription data
-      updateUserProfile({
-        subscription: subscriptionData,
-      });
-      
-      return subscriptionData;
+      // Return the client secret for payment confirmation
+      return { subscriptionId, clientSecret };
     } catch (error) {
       console.error('Failed to subscribe:', error);
       throw error;
@@ -103,7 +133,7 @@ export const useSubscriptionApi = () => {
       const result = await cancelSubscription(user.subscription.stripeSubscriptionId);
       
       // Update the user's profile to reflect canceled subscription
-      updateUserProfile({
+      await updateUserProfile({
         subscription: {
           ...user.subscription,
           status: 'canceled',
