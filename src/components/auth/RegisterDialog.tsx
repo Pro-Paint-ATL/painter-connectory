@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -38,35 +37,43 @@ const RegisterDialog = ({
   useEffect(() => {
     if (!isOpen) {
       // Reset form state when dialog closes
+      setName("");
+      setEmail("");
+      setPassword("");
+      setRole("customer");
       setLocalLoading(false);
     }
   }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (localLoading || isLoading) return; // Prevent multiple submissions
+    
     setLocalLoading(true);
     
     try {
       await onRegister(name, email, password, role);
+      // Keep localLoading true until parent component changes isOpen
     } catch (error) {
       console.error("Registration error in dialog:", error);
-    } finally {
-      // Always reset local loading regardless of parent loading state
+      setLocalLoading(false); // Reset on error
+    }
+  };
+
+  // Handle dialog close manually
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
       setLocalLoading(false);
     }
+    onOpenChange(open);
   };
 
   // Determine if button should be in loading state
   const isButtonLoading = isLoading || localLoading;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      // Reset loading state when dialog is manually closed
-      if (!open) {
-        setLocalLoading(false);
-      }
-      onOpenChange(open);
-    }}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create an account</DialogTitle>

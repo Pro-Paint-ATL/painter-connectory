@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
@@ -66,6 +67,7 @@ export const useAuthActions = (user: User | null, setUser: (user: User | null) =
           description: "An account with this email already exists. Please try logging in instead.",
           variant: "destructive"
         });
+        setIsLoading(false);
         return null;
       }
 
@@ -102,6 +104,7 @@ export const useAuthActions = (user: User | null, setUser: (user: User | null) =
           // If we reached here, the registration was technically successful
           if (data.user) {
             const formattedUser = await formatUser(data.user);
+            setIsLoading(false);
             return formattedUser;
           }
         } else {
@@ -111,7 +114,8 @@ export const useAuthActions = (user: User | null, setUser: (user: User | null) =
             variant: "destructive"
           });
         }
-        throw error;
+        setIsLoading(false);
+        return null;
       }
 
       if (data.user) {
@@ -125,19 +129,21 @@ export const useAuthActions = (user: User | null, setUser: (user: User | null) =
           description: `Your account has been created as a ${safeRole}.`
         });
 
+        setIsLoading(false);
         return formattedUser;
       }
+      
+      setIsLoading(false);
       return null;
     } catch (error) {
       console.error("Registration error:", error);
-      return null;
-    } finally {
-      // Always reset loading state regardless of success/failure
       setIsLoading(false);
+      return null;
     }
   };
 
   const logout = async () => {
+    setIsLoading(true);
     try {
       const { error } = await supabase.auth.signOut();
       
@@ -158,12 +164,15 @@ export const useAuthActions = (user: User | null, setUser: (user: User | null) =
         description: "Failed to log out. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const updateUserProfile = async (data: Partial<User>) => {
     if (!user) return;
     
+    setIsLoading(true);
     try {
       const { error } = await supabase
         .from('profiles')
@@ -194,6 +203,8 @@ export const useAuthActions = (user: User | null, setUser: (user: User | null) =
       });
     } catch (error) {
       console.error("Update profile error:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 

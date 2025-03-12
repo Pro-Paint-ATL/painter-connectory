@@ -66,6 +66,7 @@ export const useAuthProvider = () => {
       });
       return null;
     } finally {
+      // Always reset registration state
       setIsRegistering(false);
     }
   };
