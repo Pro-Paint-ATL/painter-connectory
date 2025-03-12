@@ -64,19 +64,15 @@ const Booking = () => {
   const [projectType, setProjectType] = useState<string>("");
   const [address, setAddress] = useState<string>(() => {
     if (user?.location) {
-      const location = user.location;
-      if (typeof location === 'object' && location !== null && 'address' in location) {
-        return location.address as string || "";
-      }
+      const location = user.location as UserLocation;
+      return location.address || "";
     }
     return "";
   });
   const [phone, setPhone] = useState<string>(() => {
     if (user?.location) {
-      const location = user.location;
-      if (typeof location === 'object' && location !== null && 'phone' in location) {
-        return location.phone as string || "";
-      }
+      const location = user.location as UserLocation;
+      return location.phone || "";
     }
     return "";
   });
