@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, PaintBucket, Shield, Clock, Users, CreditCard, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { createTrialSubscription } from "@/utils/companySetup";
 
 // Direct Stripe checkout link
 const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/9AQeVl7aMbAbaHedQQ";
@@ -17,6 +18,7 @@ const PainterSubscription = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isRedirectDialogOpen, setIsRedirectDialogOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Check if user is a painter
   if (user?.role !== "painter") {
@@ -38,7 +40,7 @@ const PainterSubscription = () => {
   }
 
   // Check if already subscribed
-  if (user?.subscription?.status === "active") {
+  if (user?.subscription?.status === "active" || user?.subscription?.status === "trial") {
     return (
       <div className="container max-w-6xl mx-auto py-12 px-4">
         <Card className="w-full max-w-2xl mx-auto">
@@ -52,11 +54,22 @@ const PainterSubscription = () => {
             <div className="rounded-lg bg-accent/50 p-4 mb-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="font-medium">Pro Painter Plan</div>
-                <Badge variant="secondary">Active</Badge>
+                <Badge variant="secondary">
+                  {user.subscription.status === "trial" ? "Trial" : "Active"}
+                </Badge>
               </div>
-              <div className="text-sm text-muted-foreground">
-                Next billing date: {new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleDateString()}
-              </div>
+              {user.subscription.status === "trial" && user.subscription.endDate && (
+                <div className="text-sm text-muted-foreground">
+                  Trial ends: {new Date(user.subscription.endDate).toLocaleDateString()}
+                </div>
+              )}
+              {user.subscription.status === "active" && (
+                <div className="text-sm text-muted-foreground">
+                  Next billing date: {user.subscription.endDate ? 
+                    new Date(user.subscription.endDate).toLocaleDateString() : 
+                    new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleDateString()}
+                </div>
+              )}
               {user.subscription.lastFour && (
                 <div className="mt-2 text-sm text-muted-foreground flex items-center gap-1">
                   <CreditCard className="h-3 w-3" />
@@ -74,6 +87,31 @@ const PainterSubscription = () => {
       </div>
     );
   }
+
+  // Start free trial process
+  const handleStartTrial = async () => {
+    if (!user) return;
+    
+    setIsProcessing(true);
+    const success = await createTrialSubscription(user.id);
+    
+    if (success) {
+      toast({
+        title: "Free Trial Started!",
+        description: "Your 21-day free trial has been activated. Enjoy all Pro features!",
+      });
+      
+      // Force refresh to update user subscription info
+      window.location.reload();
+    } else {
+      toast({
+        title: "Error Starting Trial",
+        description: "There was a problem activating your free trial. Please try again.",
+        variant: "destructive"
+      });
+    }
+    setIsProcessing(false);
+  };
 
   // Handle external Stripe checkout
   const handleSubscribe = () => {
@@ -194,11 +232,26 @@ const PainterSubscription = () => {
                 </div>
                 
                 <Button 
-                  className="w-full text-black" 
+                  className="w-full" 
+                  size="lg"
+                  onClick={handleStartTrial}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? "Processing..." : "Start Your 21-Day Free Trial"}
+                </Button>
+                
+                <div className="flex justify-center">
+                  <p className="text-sm text-muted-foreground">- or -</p>
+                </div>
+                
+                <Button 
+                  className="w-full" 
+                  variant="outline"
                   size="lg"
                   onClick={handleSubscribe}
+                  disabled={isProcessing}
                 >
-                  Start Your 21-Day Free Trial
+                  Subscribe with Stripe
                 </Button>
                 
                 <div className="flex items-center justify-center text-xs text-muted-foreground gap-1">

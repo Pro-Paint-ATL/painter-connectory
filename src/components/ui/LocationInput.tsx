@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, MapPin } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface LocationInputProps {
   onLocationChange: (location: { address: string; latitude: number; longitude: number }) => void;
@@ -14,49 +15,58 @@ const LocationInput: React.FC<LocationInputProps> = ({ onLocationChange, default
   const [suggestions, setSuggestions] = useState<{ address: string; lat: number; lng: number }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const { toast } = useToast();
 
-  // Mock function to simulate geocoding API with more customized suggestions
+  // This would be replaced with a real geocoding API in production
   const fetchAddressSuggestions = async (query: string) => {
-    // In a real app, this would call a geocoding API like Google Maps, Mapbox, etc.
     setIsLoading(true);
     
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    
-    // Generate more natural and varied mock responses based on input
-    const mockSuggestions = [
-      {
-        address: query, // Exact user input
-        lat: 40.7128,
-        lng: -74.006,
-      },
-      {
-        address: `${query}, New York`, // Only city
-        lat: 40.7128,
-        lng: -74.006,
-      },
-      {
-        address: `${query}, Chicago`, // Only city
-        lat: 41.8781, 
-        lng: -87.6298,
-      },
-      {
-        address: `${query}, Seattle`, // Different city
-        lat: 47.6062,
-        lng: -122.3321,
-      }
-    ];
-    
-    setIsLoading(false);
-    return mockSuggestions;
+    try {
+      // In a real implementation, you would call an API like Google Maps Geocoding or Mapbox
+      // For now, we'll use more realistic mock data
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      
+      const mockSuggestions = [
+        {
+          address: `${query}, Atlanta, GA`,
+          lat: 33.7488,
+          lng: -84.3877,
+        },
+        {
+          address: `${query}, Decatur, GA`,
+          lat: 33.7748,
+          lng: -84.2963,
+        },
+        {
+          address: `${query}, Marietta, GA`,
+          lat: 33.9526,
+          lng: -84.5499,
+        },
+        {
+          address: `${query}, Alpharetta, GA`,
+          lat: 34.0754,
+          lng: -84.2941,
+        }
+      ];
+      
+      setSuggestions(mockSuggestions);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error("Error fetching address suggestions:", error);
+      toast({
+        title: "Error",
+        description: "Could not fetch address suggestions",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (address.length > 3) {
-        const results = await fetchAddressSuggestions(address);
-        setSuggestions(results);
-        setShowSuggestions(true);
+        await fetchAddressSuggestions(address);
       } else {
         setSuggestions([]);
         setShowSuggestions(false);
@@ -86,21 +96,53 @@ const LocationInput: React.FC<LocationInputProps> = ({ onLocationChange, default
       setIsLoading(true);
       navigator.geolocation.getCurrentPosition(
         async (position) => {
-          // In a real app, this would reverse geocode to get the address
-          const mockAddress = "Your Current Location";
-          setAddress(mockAddress);
-          onLocationChange({
-            address: mockAddress,
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-          setIsLoading(false);
+          try {
+            // In a real app, you would use reverse geocoding here
+            // For now, we'll set a mock address based on coordinates
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            
+            // Mock reverse geocoding
+            const mockAddress = `Location at ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            
+            setAddress(mockAddress);
+            onLocationChange({
+              address: mockAddress,
+              latitude: lat,
+              longitude: lng,
+            });
+            
+            toast({
+              title: "Location Found",
+              description: "Using your current location",
+            });
+          } catch (error) {
+            console.error("Error reverse geocoding:", error);
+            toast({
+              title: "Error",
+              description: "Could not determine your address",
+              variant: "destructive"
+            });
+          } finally {
+            setIsLoading(false);
+          }
         },
         (error) => {
           console.error("Error getting location:", error);
           setIsLoading(false);
+          toast({
+            title: "Error",
+            description: "Could not access your location. Please check your browser permissions.",
+            variant: "destructive"
+          });
         }
       );
+    } else {
+      toast({
+        title: "Not Supported",
+        description: "Geolocation is not supported by your browser",
+        variant: "destructive"
+      });
     }
   };
 

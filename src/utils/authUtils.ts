@@ -4,7 +4,8 @@ import { Json } from "@/integrations/supabase/types";
 import { User, UserRole, UserLocation, Subscription, PainterCompanyInfo } from "@/types/auth";
 import { supabase } from "@/lib/supabase";
 
-const ADMIN_EMAILS = ['admin@painterconnectory.com', 'propaintatl@gmail.com'];
+// Add your email to the admin list
+const ADMIN_EMAILS = ['admin@painterconnectory.com', 'propaintatl@gmail.com', 'your@email.com'];
 
 /**
  * Parses JSON data into a specific type with safe fallbacks
