@@ -13,6 +13,7 @@ import LocationInput from "@/components/ui/LocationInput";
 import PainterCard from "@/components/painters/PainterCard";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { UserLocation } from "@/types/auth";
 import {
   PaintBucket,
   Filter,
@@ -91,14 +92,32 @@ const FindPainters = () => {
               JSON.parse(profile.subscription) : profile.subscription) : 
             { status: null };
 
-          // Calculate distance (we would need the user's location for an accurate calculation)
-          // For now, set a random number between 1-30 miles
+          // Parse location properly
+          let locationObj: UserLocation = { address: 'Location not specified', latitude: 0, longitude: 0 };
+          
+          if (profile.location) {
+            // Handle potential string JSON or already parsed object
+            const parsedLocation = typeof profile.location === 'string' 
+              ? JSON.parse(profile.location) 
+              : profile.location;
+            
+            // Check if parsed location has the required properties
+            if (parsedLocation && typeof parsedLocation === 'object') {
+              locationObj = {
+                address: parsedLocation.address || 'Location not specified',
+                latitude: parsedLocation.latitude || 0,
+                longitude: parsedLocation.longitude || 0
+              };
+            }
+          }
+            
+          // Calculate distance using location data
           const distance = userLocation ? 
             calculateDistance(
               userLocation.latitude, 
               userLocation.longitude, 
-              profile.location?.latitude || 0, 
-              profile.location?.longitude || 0
+              locationObj.latitude, 
+              locationObj.longitude
             ) : 
             Math.floor(Math.random() * 30) + 1;
             
@@ -109,7 +128,7 @@ const FindPainters = () => {
             rating: companyInfo.rating || 4 + Math.random(),
             reviewCount: companyInfo.reviewCount || Math.floor(Math.random() * 50) + 1,
             distance: distance,
-            location: profile.location?.address || 'Location not specified',
+            location: locationObj.address,
             yearsInBusiness: companyInfo.yearsInBusiness || Math.floor(Math.random() * 10) + 1,
             isInsured: companyInfo.isInsured || false,
             specialties: companyInfo.specialties || [],
