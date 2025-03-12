@@ -1,5 +1,6 @@
+
 import { supabase } from "@/lib/supabase";
-import { setupPainterCompany } from './companySetup';
+import { setupPainterCompany, createTrialSubscription } from './companySetup';
 import { PainterCompanyInfo } from "@/types/auth";
 import { Json } from "@/integrations/supabase/types";
 
@@ -11,10 +12,18 @@ export const setFeaturedPainter = async (userId: string) => {
     .eq('id', userId)
     .single();
 
-  const companyInfo = profile?.company_info as PainterCompanyInfo;
-  
-  if (!companyInfo) {
-    throw new Error('Company info not found');
+  // Properly handle the type conversion with type checking
+  if (!profile?.company_info || 
+      typeof profile.company_info === 'string' || 
+      Array.isArray(profile.company_info) ||
+      typeof profile.company_info !== 'object') {
+    throw new Error('Company info not found or invalid format');
+  }
+
+  // Validate that the required fields exist in the company_info
+  const companyInfo = profile.company_info as unknown as PainterCompanyInfo;
+  if (!companyInfo.companyName || typeof companyInfo.isInsured !== 'boolean') {
+    throw new Error('Company info missing required fields');
   }
 
   // Update the company info with featured status
