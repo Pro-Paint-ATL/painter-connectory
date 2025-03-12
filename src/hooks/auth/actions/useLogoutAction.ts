@@ -5,11 +5,11 @@ import { User } from "@/types/auth";
 import { useAuthCore } from "./useAuthCore";
 
 export const useLogoutAction = (user: User | null, setUser: (user: User | null) => void) => {
-  const { isLoading, setIsLoading } = useAuthCore(user, setUser);
+  const { isLoading, startLoading, stopLoading, handleError } = useAuthCore(user, setUser);
   const { toast } = useToast();
 
   const logout = async () => {
-    setIsLoading(true);
+    startLoading();
     try {
       const { error } = await supabase.auth.signOut();
       
@@ -25,13 +25,15 @@ export const useLogoutAction = (user: User | null, setUser: (user: User | null) 
       });
     } catch (error) {
       console.error("Logout error:", error);
+      handleError("Failed to log out");
+      
       toast({
         title: "Error",
         description: "Failed to log out. Please try again.",
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      stopLoading();
     }
   };
 
