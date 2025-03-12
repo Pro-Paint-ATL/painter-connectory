@@ -1,4 +1,28 @@
 
 project_id = "onwbydtzjkvgwffharmo"
-[functions.create-role-function]
-verify_jwt = false
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage"]
+
+[db]
+port = 54322
+
+[studio]
+port = 54323
+
+[inbucket]
+port = 54324
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true
+
+[realtime]
+enabled = true
+
+[functions]
+serve_from_storage = false

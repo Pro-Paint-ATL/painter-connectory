@@ -9,6 +9,7 @@ const createSecurityDefinerFunction = async () => {
   try {
     // Check if the function already exists
     const { data, error } = await supabase.rpc('get_current_user_role')
+      .then(response => response)
       .catch(err => {
         return { data: null, error: err };
       });
@@ -50,7 +51,7 @@ Promise.resolve().then(() => {
       } else {
         console.log('Supabase connection successful');
         // Try to create the security definer function if needed
-        createSecurityDefinerFunction();
+        createSecurityDefinerFunction().catch(err => console.error('Error in security definer function creation:', err));
       }
       return Promise.resolve();
     })
@@ -63,6 +64,7 @@ Promise.resolve().then(() => {
 export const getUserRole = async () => {
   try {
     const { data, error } = await supabase.rpc('get_current_user_role')
+      .then(response => response)
       .catch(err => {
         return { data: null, error: err };
       });
