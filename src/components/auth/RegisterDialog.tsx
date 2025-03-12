@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { UserRole } from "@/types/auth";
+import { Loader2 } from "lucide-react";
 
 interface RegisterDialogProps {
   isOpen: boolean;
@@ -31,10 +32,20 @@ const RegisterDialog = ({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("customer");
+  const [localLoading, setLocalLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onRegister(name, email, password, role);
+    setLocalLoading(true);
+    try {
+      await onRegister(name, email, password, role);
+    } finally {
+      // Only reset local loading if parent isLoading is false
+      // This ensures we don't hide the loading state prematurely
+      if (!isLoading) {
+        setLocalLoading(false);
+      }
+    }
   };
 
   return (
@@ -55,6 +66,7 @@ const RegisterDialog = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              disabled={isLoading || localLoading}
             />
           </div>
           <div className="space-y-2">
@@ -66,6 +78,7 @@ const RegisterDialog = ({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={isLoading || localLoading}
             />
           </div>
           <div className="space-y-2">
@@ -76,7 +89,12 @@ const RegisterDialog = ({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={isLoading || localLoading}
+              minLength={6}
             />
+            <p className="text-xs text-muted-foreground">
+              Password must be at least 6 characters
+            </p>
           </div>
           <div className="space-y-2">
             <Label>I am a</Label>
@@ -86,6 +104,7 @@ const RegisterDialog = ({
                 variant={role === "customer" ? "default" : "outline"}
                 className="flex-1"
                 onClick={() => setRole("customer")}
+                disabled={isLoading || localLoading}
               >
                 Customer
               </Button>
@@ -94,13 +113,21 @@ const RegisterDialog = ({
                 variant={role === "painter" ? "default" : "outline"}
                 className="flex-1"
                 onClick={() => setRole("painter")}
+                disabled={isLoading || localLoading}
               >
                 Painter
               </Button>
             </div>
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Creating account..." : "Sign Up"}
+          <Button type="submit" className="w-full" disabled={isLoading || localLoading}>
+            {(isLoading || localLoading) ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating account...
+              </>
+            ) : (
+              "Sign Up"
+            )}
           </Button>
           <div className="text-center text-sm">
             Already have an account?{" "}
@@ -108,6 +135,7 @@ const RegisterDialog = ({
               type="button"
               className="text-primary hover:underline"
               onClick={onSwitchToLogin}
+              disabled={isLoading || localLoading}
             >
               Login
             </button>
