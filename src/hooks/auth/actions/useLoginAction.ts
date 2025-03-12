@@ -6,11 +6,11 @@ import { formatUser } from "@/utils/authUtils";
 import { useAuthCore } from "./useAuthCore";
 
 export const useLoginAction = (user: User | null, setUser: (user: User | null) => void) => {
-  const { isLoading, setIsLoading } = useAuthCore(user, setUser);
+  const { isLoading, setIsLoading, startLoading, stopLoading } = useAuthCore(user, setUser);
   const { toast } = useToast();
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
+    startLoading();
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -23,7 +23,8 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
           description: error.message,
           variant: "destructive"
         });
-        throw error;
+        stopLoading();
+        return null;
       }
 
       if (data.user) {
@@ -36,14 +37,20 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
         });
         
         console.log("Logged in user with role:", formattedUser?.role);
+        stopLoading();
         return formattedUser;
       }
+      stopLoading();
       return null;
     } catch (error) {
       console.error("Login error:", error);
+      toast({
+        title: "Login Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+      stopLoading();
       return null;
-    } finally {
-      setIsLoading(false);
     }
   };
 

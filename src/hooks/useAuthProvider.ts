@@ -12,11 +12,13 @@ export const useAuthProvider = () => {
   const { login, register, logout, updateUserProfile, isLoading: actionLoading } = useAuthActions(user, setUser);
   const { navigateBasedOnRole, navigate } = useAuthNavigation(user);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
 
   // Handle login with navigation
   const handleLogin = async (email: string, password: string) => {
     try {
+      setIsLoggingIn(true);
       const loggedInUser = await login(email, password);
       if (loggedInUser) {
         console.log("User logged in successfully, navigating based on role");
@@ -25,7 +27,14 @@ export const useAuthProvider = () => {
       return loggedInUser;
     } catch (error) {
       console.error("Login handler error:", error);
+      toast({
+        title: "Login Error",
+        description: "Failed to log in. Please try again.",
+        variant: "destructive"
+      });
       return null;
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -55,6 +64,11 @@ export const useAuthProvider = () => {
         return registeredUser;
       } else {
         console.log("Registration did not return a user object");
+        toast({
+          title: "Registration Issue",
+          description: "Your account may have been created but we couldn't log you in automatically. Please try logging in.",
+          variant: "destructive"
+        });
       }
       return null;
     } catch (error) {
@@ -79,11 +93,16 @@ export const useAuthProvider = () => {
       navigate('/');
     } catch (error) {
       console.error("Logout handler error:", error);
+      toast({
+        title: "Logout Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
   // Combined loading state from all sources
-  const isLoading = sessionLoading || actionLoading || isRegistering;
+  const isLoading = sessionLoading || actionLoading || isRegistering || isLoggingIn;
 
   return {
     user,

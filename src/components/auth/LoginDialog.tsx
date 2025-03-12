@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -29,10 +29,33 @@ const LoginDialog = ({
 }: LoginDialogProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [localLoading, setLocalLoading] = useState(false);
+
+  useEffect(() => {
+    // If the external loading state changes to false, update the local loading state
+    if (!isLoading && localLoading) {
+      setLocalLoading(false);
+    }
+  }, [isLoading, localLoading]);
+
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      setEmail("");
+      setPassword("");
+      setLocalLoading(false);
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onLogin(email, password);
+    setLocalLoading(true);
+    try {
+      await onLogin(email, password);
+    } catch (error) {
+      console.error("Login error in dialog:", error);
+      setLocalLoading(false);
+    }
   };
 
   return (
@@ -66,8 +89,8 @@ const LoginDialog = ({
               required
             />
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Logging in..." : "Login"}
+          <Button type="submit" className="w-full" disabled={isLoading || localLoading}>
+            {isLoading || localLoading ? "Logging in..." : "Login"}
           </Button>
           <div className="text-center text-sm">
             Don't have an account?{" "}

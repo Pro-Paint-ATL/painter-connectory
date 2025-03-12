@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
@@ -11,23 +12,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LocationInput from "@/components/ui/LocationInput";
 import PainterCard from "@/components/painters/PainterCard";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase";
 import {
   PaintBucket,
   Filter,
-  StarIcon,
-  Shield,
-  Clock,
   Search,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Shield
 } from "lucide-react";
-
-const PAINTER_IMAGES = [
-  "/placeholder.svg",
-  "https://images.unsplash.com/photo-1507537297725-24a1c029d3ca?w=300&h=150&fit=crop",
-  "https://images.unsplash.com/photo-1531973576160-7125cd663d86?w=300&h=150&fit=crop",
-  "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=300&h=150&fit=crop",
-  "https://images.unsplash.com/photo-1558618666-d136994899e7?w=300&h=150&fit=crop"
-];
 
 interface Painter {
   id: string;
@@ -40,6 +32,7 @@ interface Painter {
   yearsInBusiness: number;
   isInsured: boolean;
   specialties: string[];
+  isSubscribed?: boolean;
 }
 
 const FindPainters = () => {
@@ -59,31 +52,108 @@ const FindPainters = () => {
     const fetchPainters = async () => {
       setLoading(true);
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockPainters: Painter[] = Array.from({ length: 12 }, (_, i) => ({
-        id: `painter${i + 1}`,
-        name: `${["Elite", "Pro", "Premier", "Quality", "Express", "Master", "Perfect"][i % 7]} Painters ${i + 1}`,
-        avatar: PAINTER_IMAGES[i % PAINTER_IMAGES.length],
-        rating: Math.floor(Math.random() * 2) + 3 + Math.random(),
-        reviewCount: Math.floor(Math.random() * 50) + 5,
-        distance: Math.floor(Math.random() * 30) + 1,
-        location: ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix"][i % 5],
-        yearsInBusiness: Math.floor(Math.random() * 20) + 1,
-        isInsured: Math.random() > 0.2,
-        specialties: Array.from(
-          { length: Math.floor(Math.random() * 3) + 1 },
-          () => ["Interior", "Exterior", "Commercial", "Residential", "Cabinet", "Deck", "Fence"][Math.floor(Math.random() * 7)]
-        ).filter((value, index, self) => self.indexOf(value) === index)
-      }));
-      
-      setPainters(mockPainters);
-      setFilteredPainters(mockPainters);
-      setLoading(false);
+      try {
+        // Fetch painter profiles from Supabase
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('role', 'painter');
+          
+        if (error) {
+          console.error('Error fetching painters:', error);
+          toast({
+            title: "Error",
+            description: "Failed to load painters. Please try again later.",
+            variant: "destructive"
+          });
+          setLoading(false);
+          return;
+        }
+        
+        if (!data || data.length === 0) {
+          setPainters([]);
+          setFilteredPainters([]);
+          setLoading(false);
+          return;
+        }
+        
+        // Transform the data into the Painter interface format
+        const transformedPainters: Painter[] = data.map(profile => {
+          // Parse company_info from JSON
+          const companyInfo = profile.company_info ? 
+            (typeof profile.company_info === 'string' ? 
+              JSON.parse(profile.company_info) : profile.company_info) : 
+            { companyName: '', isInsured: false, specialties: [] };
+          
+          // Parse subscription from JSON
+          const subscription = profile.subscription ? 
+            (typeof profile.subscription === 'string' ? 
+              JSON.parse(profile.subscription) : profile.subscription) : 
+            { status: null };
+
+          // Calculate distance (we would need the user's location for an accurate calculation)
+          // For now, set a random number between 1-30 miles
+          const distance = userLocation ? 
+            calculateDistance(
+              userLocation.latitude, 
+              userLocation.longitude, 
+              profile.location?.latitude || 0, 
+              profile.location?.longitude || 0
+            ) : 
+            Math.floor(Math.random() * 30) + 1;
+            
+          return {
+            id: profile.id,
+            name: companyInfo.companyName || profile.name || 'Unnamed Painter',
+            avatar: profile.avatar || '/placeholder.svg',
+            rating: companyInfo.rating || 4 + Math.random(),
+            reviewCount: companyInfo.reviewCount || Math.floor(Math.random() * 50) + 1,
+            distance: distance,
+            location: profile.location?.address || 'Location not specified',
+            yearsInBusiness: companyInfo.yearsInBusiness || Math.floor(Math.random() * 10) + 1,
+            isInsured: companyInfo.isInsured || false,
+            specialties: companyInfo.specialties || [],
+            isSubscribed: subscription?.status === 'active' || subscription?.status === 'trial'
+          };
+        });
+        
+        setPainters(transformedPainters);
+        setFilteredPainters(transformedPainters);
+      } catch (err) {
+        console.error('Error processing painter data:', err);
+        toast({
+          title: "Error",
+          description: "Something went wrong while loading painters.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
     };
     
     fetchPainters();
-  }, []);
+  }, [toast, userLocation]);
+
+  // Simple distance calculation using the Haversine formula
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return 15; // Default distance
+    
+    const R = 3958.8; // Earth's radius in miles
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2); 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    const distance = R * c;
+    
+    return Math.round(distance * 10) / 10; // Round to 1 decimal place
+  };
+  
+  const toRad = (value: number) => {
+    return value * Math.PI / 180;
+  };
 
   useEffect(() => {
     if (painters.length === 0) return;
@@ -218,28 +288,36 @@ const FindPainters = () => {
           </TabsList>
         </Tabs>
 
-        {filteredPainters.length === 0 ? (
+        {loading ? (
           <div className="text-center py-12">
-            <PaintBucket className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-xl font-medium mb-2">No painters found</h3>
-            <p className="text-muted-foreground">
-              Try adjusting your filters or expanding your search radius.
-            </p>
+            <p className="text-muted-foreground">Loading painters...</p>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPainters.map((painter) => (
-              <motion.div
-                key={painter.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
-                whileHover={{ y: -5 }}
-              >
-                <PainterCard painter={painter} />
-              </motion.div>
-            ))}
-          </div>
+          filteredPainters.length === 0 ? (
+            <div className="text-center py-12">
+              <PaintBucket className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-xl font-medium mb-2">No painters found</h3>
+              <p className="text-muted-foreground">
+                {painters.length > 0 
+                  ? "Try adjusting your filters or expanding your search radius." 
+                  : "There are no registered painters in the system yet."}
+              </p>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredPainters.map((painter) => (
+                <motion.div
+                  key={painter.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                  whileHover={{ y: -5 }}
+                >
+                  <PainterCard painter={painter} />
+                </motion.div>
+              ))}
+            </div>
+          )
         )}
       </motion.div>
     </div>
