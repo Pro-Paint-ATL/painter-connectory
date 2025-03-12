@@ -1,4 +1,3 @@
-
 import { Json } from "@/integrations/supabase/types";
 
 export type UserRole = "customer" | "painter" | "admin" | null;
@@ -93,10 +92,10 @@ export interface BookingPayment {
   amount: number;
   payment_type: PaymentType;
   status: 'pending' | 'processing' | 'succeeded' | 'failed' | 'refunded';
-  payment_intent_id?: string;
-  payment_method_id?: string;
+  payment_intent_id?: string | null;
+  payment_method_id?: string | null;
   created_at: string;
-  updated_at: string;
+  updated_at?: string | null;
 }
 
 export interface Booking {

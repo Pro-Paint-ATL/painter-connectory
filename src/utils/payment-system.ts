@@ -1,7 +1,7 @@
 
 import { stripe } from './stripe-server';
 import { supabase } from '@/lib/supabase';
-import { BookingStatus, PaymentType, BookingPayment, BookingWithPayments, Booking } from '@/types/auth';
+import { BookingStatus, PaymentType, BookingPayment, BookingWithPayments, Booking, Subscription } from '@/types/auth';
 
 // Calculate deposit amount (15% of total)
 export const calculateDepositAmount = (totalAmount: number): number => {
@@ -21,7 +21,9 @@ export const createDepositPaymentIntent = async (
       .eq('id', customerId)
       .single();
     
-    const stripeCustomerId = customerData?.subscription?.stripeCustomerId;
+    // Safely access stripeCustomerId from the subscription JSON
+    const subscription = customerData?.subscription as Subscription | null;
+    const stripeCustomerId = subscription?.stripeCustomerId;
     
     if (!stripeCustomerId) {
       return { clientSecret: null, error: 'Customer has no Stripe account' };
@@ -47,7 +49,7 @@ export const createDepositPaymentIntent = async (
       customer_id: customerId,
       painter_id: booking.painter_id,
       amount: booking.deposit_amount,
-      payment_type: 'deposit',
+      payment_type: 'deposit' as PaymentType,
       status: 'pending',
       payment_intent_id: paymentIntent.id,
     });
@@ -72,7 +74,9 @@ export const createFinalPaymentIntent = async (
       .eq('id', customerId)
       .single();
     
-    const stripeCustomerId = customerData?.subscription?.stripeCustomerId;
+    // Safely access stripeCustomerId from the subscription JSON
+    const subscription = customerData?.subscription as Subscription | null;
+    const stripeCustomerId = subscription?.stripeCustomerId;
     
     if (!stripeCustomerId) {
       return { clientSecret: null, error: 'Customer has no Stripe account' };
@@ -101,7 +105,7 @@ export const createFinalPaymentIntent = async (
       customer_id: customerId,
       painter_id: booking.painter_id,
       amount: finalAmount,
-      payment_type: 'final_payment',
+      payment_type: 'final_payment' as PaymentType,
       status: 'pending',
       payment_intent_id: paymentIntent.id,
     });
@@ -193,7 +197,7 @@ export const getBookingWithPayments = async (
     }
     
     // Get related payments
-    const { data: payments, error: paymentsError } = await supabase
+    const { data: paymentsData, error: paymentsError } = await supabase
       .from('booking_payments')
       .select('*')
       .eq('booking_id', bookingId);
@@ -201,6 +205,21 @@ export const getBookingWithPayments = async (
     if (paymentsError) {
       console.error('Error fetching payments:', paymentsError);
     }
+    
+    // Convert payment data to proper BookingPayment type
+    const payments: BookingPayment[] = paymentsData ? paymentsData.map(payment => ({
+      id: payment.id,
+      booking_id: payment.booking_id,
+      customer_id: payment.customer_id,
+      painter_id: payment.painter_id,
+      amount: payment.amount,
+      payment_type: payment.payment_type as PaymentType,
+      status: payment.status as BookingPayment['status'],
+      payment_intent_id: payment.payment_intent_id,
+      payment_method_id: payment.payment_method_id,
+      created_at: payment.created_at,
+      updated_at: payment.updated_at
+    })) : [];
     
     // Get customer and painter names
     const { data: customer } = await supabase
@@ -216,10 +235,10 @@ export const getBookingWithPayments = async (
       .single();
     
     const bookingWithPayments: BookingWithPayments = {
-      ...booking,
+      ...booking as Booking,
       customerName: customer?.name,
       painterName: painter?.name,
-      payments: payments || []
+      payments: payments
     };
     
     return bookingWithPayments;
