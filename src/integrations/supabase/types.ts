@@ -9,6 +9,107 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      booking_payments: {
+        Row: {
+          amount: number
+          booking_id: string
+          created_at: string
+          customer_id: string
+          id: string
+          painter_id: string
+          payment_intent_id: string | null
+          payment_method_id: string | null
+          payment_type: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          booking_id: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          painter_id: string
+          payment_intent_id?: string | null
+          payment_method_id?: string | null
+          payment_type: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          painter_id?: string
+          payment_intent_id?: string | null
+          payment_method_id?: string | null
+          payment_type?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_payments_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookings: {
+        Row: {
+          address: string
+          created_at: string
+          customer_id: string
+          date: string
+          deposit_amount: number
+          id: string
+          notes: string | null
+          painter_id: string
+          phone: string | null
+          project_type: string
+          status: string
+          time: string
+          total_amount: number
+          updated_at: string | null
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          customer_id: string
+          date: string
+          deposit_amount: number
+          id?: string
+          notes?: string | null
+          painter_id: string
+          phone?: string | null
+          project_type: string
+          status?: string
+          time: string
+          total_amount: number
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          customer_id?: string
+          date?: string
+          deposit_amount?: number
+          id?: string
+          notes?: string | null
+          painter_id?: string
+          phone?: string | null
+          project_type?: string
+          status?: string
+          time?: string
+          total_amount?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar: string | null

@@ -70,3 +70,54 @@ export interface AuthContextType {
   updateUserProfile: (data: Partial<User>) => Promise<void>;
   supabase: any; // Using any here to avoid circular imports
 }
+
+// Booking and payment related types
+export type BookingStatus = 
+  | 'pending_deposit' 
+  | 'deposit_paid' 
+  | 'scheduled' 
+  | 'in_progress' 
+  | 'completed' 
+  | 'final_payment_pending' 
+  | 'paid' 
+  | 'cancelled' 
+  | 'refunded';
+
+export type PaymentType = 'deposit' | 'final_payment';
+
+export interface BookingPayment {
+  id: string;
+  booking_id: string;
+  customer_id: string;
+  painter_id: string;
+  amount: number;
+  payment_type: PaymentType;
+  status: 'pending' | 'processing' | 'succeeded' | 'failed' | 'refunded';
+  payment_intent_id?: string;
+  payment_method_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Booking {
+  id: string;
+  customer_id: string;
+  painter_id: string;
+  date: string;
+  time: string;
+  address: string;
+  phone?: string;
+  project_type: string;
+  notes?: string;
+  status: BookingStatus;
+  total_amount: number;
+  deposit_amount: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface BookingWithPayments extends Booking {
+  payments?: BookingPayment[];
+  customerName?: string;
+  painterName?: string;
+}

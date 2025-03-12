@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -19,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import PaymentForm from "@/components/booking/PaymentForm";
+import { BookingWithPayments } from "@/types/auth";
 
 // Initialize Stripe
 const stripePromise = loadStripe("pk_test_51OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcUXQnMhJ97qXKTKhbhLgdpBDVaFMXqiYUkSVSCEZzRMTg500Ip6Sxgus");
@@ -47,12 +47,10 @@ const Booking = () => {
   });
 
   useEffect(() => {
-    // Calculate 15% deposit amount
     const deposit = calculateDepositAmount(totalEstimate);
     setDepositAmount(deposit);
   }, [totalEstimate]);
 
-  // In a real app, this would fetch painter data from an API
   const painter = {
     id: painterId,
     name: "Elite Painters",
@@ -88,7 +86,6 @@ const Booking = () => {
   const handleTypeChange = (value: string) => {
     setBookingDetails(prev => ({ ...prev, projectType: value }));
     
-    // Adjust estimate based on project type
     const newEstimate = value === "exterior" ? 400 : 300;
     setTotalEstimate(newEstimate);
   };
@@ -199,7 +196,6 @@ const Booking = () => {
     try {
       setIsCreatingPayment(true);
       
-      // Create booking in database
       const newBookingId = await createBooking();
       
       if (!newBookingId) {
@@ -209,18 +205,24 @@ const Booking = () => {
       
       setBookingId(newBookingId);
 
-      // Get deposit payment intent
-      const booking = {
+      const booking: BookingWithPayments = {
         id: newBookingId,
-        customerId: user!.id,
-        painterId: painterId!,
-        totalAmount: totalEstimate,
-        depositAmount: depositAmount,
-        status: 'pending_deposit' as any,
+        customer_id: user!.id,
+        painter_id: painterId!,
+        total_amount: totalEstimate,
+        deposit_amount: depositAmount,
+        status: 'pending_deposit',
+        date: selectedDate!.toISOString().split('T')[0],
+        time: selectedTime!,
+        address: bookingDetails.address,
+        project_type: bookingDetails.projectType,
+        phone: bookingDetails.phone,
+        notes: bookingDetails.notes,
+        created_at: new Date().toISOString()
       };
 
       const { clientSecret: secret, error } = await createDepositPaymentIntent(
-        booking as any, 
+        booking, 
         user!.id
       );
 
@@ -228,7 +230,6 @@ const Booking = () => {
         throw new Error("Failed to create payment intent");
       }
 
-      // Set client secret and open payment dialog
       setClientSecret(secret);
       setPaymentDialogOpen(true);
       setIsCreatingPayment(false);
@@ -250,7 +251,6 @@ const Booking = () => {
       description: `Your deposit has been processed and your appointment with ${painter.name} has been scheduled.`,
     });
     
-    // Redirect to profile page
     navigate('/profile');
   };
 
@@ -311,7 +311,6 @@ const Booking = () => {
             </div>
           </div>
 
-          {/* Step 1: Schedule */}
           {currentStep === 1 && (
             <Card>
               <CardHeader>
@@ -352,7 +351,6 @@ const Booking = () => {
             </Card>
           )}
 
-          {/* Step 2: Project Details */}
           {currentStep === 2 && (
             <Card>
               <CardHeader>
@@ -412,7 +410,6 @@ const Booking = () => {
             </Card>
           )}
 
-          {/* Step 3: Confirmation */}
           {currentStep === 3 && (
             <Card>
               <CardHeader>
@@ -552,7 +549,6 @@ const Booking = () => {
         </div>
       </motion.div>
 
-      {/* Payment Dialog */}
       <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

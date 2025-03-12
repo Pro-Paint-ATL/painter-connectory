@@ -1,51 +1,7 @@
 
 import { stripe } from './stripe-server';
 import { supabase } from '@/lib/supabase';
-
-// Define status types for bookings and payments
-export type BookingStatus = 
-  | 'pending_deposit' 
-  | 'deposit_paid' 
-  | 'scheduled' 
-  | 'in_progress' 
-  | 'completed' 
-  | 'final_payment_pending' 
-  | 'paid' 
-  | 'cancelled' 
-  | 'refunded';
-
-export type PaymentType = 'deposit' | 'final_payment';
-
-export interface BookingPayment {
-  id: string;
-  bookingId: string;
-  customerId: string;
-  painterId: string;
-  amount: number;
-  paymentType: PaymentType;
-  status: 'pending' | 'processing' | 'succeeded' | 'failed' | 'refunded';
-  paymentIntentId?: string;
-  paymentMethodId?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface BookingWithPayments {
-  id: string;
-  customerId: string;
-  painterId: string;
-  date: string;
-  time: string;
-  address: string;
-  projectType: string;
-  notes?: string;
-  status: BookingStatus;
-  totalAmount: number;
-  depositAmount: number;
-  painterName?: string;
-  customerName?: string;
-  payments?: BookingPayment[];
-}
+import { BookingStatus, PaymentType, BookingPayment, BookingWithPayments, Booking } from '@/types/auth';
 
 // Calculate deposit amount (15% of total)
 export const calculateDepositAmount = (totalAmount: number): number => {
@@ -73,13 +29,13 @@ export const createDepositPaymentIntent = async (
     
     // Create a payment intent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(booking.depositAmount * 100), // Convert to cents
+      amount: Math.round(booking.deposit_amount * 100), // Convert to cents
       currency: 'usd',
       customer: stripeCustomerId,
       metadata: {
         bookingId: booking.id,
         customerId,
-        painterId: booking.painterId,
+        painterId: booking.painter_id,
         paymentType: 'deposit'
       },
       description: `15% Good Faith Deposit for Booking #${booking.id}`,
@@ -89,8 +45,8 @@ export const createDepositPaymentIntent = async (
     await supabase.from('booking_payments').insert({
       booking_id: booking.id,
       customer_id: customerId,
-      painter_id: booking.painterId,
-      amount: booking.depositAmount,
+      painter_id: booking.painter_id,
+      amount: booking.deposit_amount,
       payment_type: 'deposit',
       status: 'pending',
       payment_intent_id: paymentIntent.id,
@@ -123,7 +79,7 @@ export const createFinalPaymentIntent = async (
     }
     
     // Calculate final payment (total - deposit)
-    const finalAmount = booking.totalAmount - booking.depositAmount;
+    const finalAmount = booking.total_amount - booking.deposit_amount;
     
     // Create a payment intent
     const paymentIntent = await stripe.paymentIntents.create({
@@ -133,7 +89,7 @@ export const createFinalPaymentIntent = async (
       metadata: {
         bookingId: booking.id,
         customerId,
-        painterId: booking.painterId,
+        painterId: booking.painter_id,
         paymentType: 'final_payment'
       },
       description: `Final Payment for Booking #${booking.id}`,
@@ -143,7 +99,7 @@ export const createFinalPaymentIntent = async (
     await supabase.from('booking_payments').insert({
       booking_id: booking.id,
       customer_id: customerId,
-      painter_id: booking.painterId,
+      painter_id: booking.painter_id,
       amount: finalAmount,
       payment_type: 'final_payment',
       status: 'pending',
@@ -225,19 +181,26 @@ export const getBookingWithPayments = async (
 ): Promise<BookingWithPayments | null> => {
   try {
     // Get booking
-    const { data: booking } = await supabase
+    const { data: booking, error: bookingError } = await supabase
       .from('bookings')
       .select('*')
       .eq('id', bookingId)
       .single();
     
-    if (!booking) return null;
+    if (bookingError || !booking) {
+      console.error('Error fetching booking:', bookingError);
+      return null;
+    }
     
     // Get related payments
-    const { data: payments } = await supabase
+    const { data: payments, error: paymentsError } = await supabase
       .from('booking_payments')
       .select('*')
       .eq('booking_id', bookingId);
+    
+    if (paymentsError) {
+      console.error('Error fetching payments:', paymentsError);
+    }
     
     // Get customer and painter names
     const { data: customer } = await supabase
@@ -252,29 +215,14 @@ export const getBookingWithPayments = async (
       .eq('id', booking.painter_id)
       .single();
     
-    return {
+    const bookingWithPayments: BookingWithPayments = {
       ...booking,
-      customerId: booking.customer_id,
-      painterId: booking.painter_id,
-      status: booking.status as BookingStatus,
-      totalAmount: booking.total_amount,
-      depositAmount: booking.deposit_amount,
       customerName: customer?.name,
       painterName: painter?.name,
-      payments: payments ? payments.map(p => ({
-        id: p.id,
-        bookingId: p.booking_id,
-        customerId: p.customer_id,
-        painterId: p.painter_id,
-        amount: p.amount,
-        paymentType: p.payment_type as PaymentType,
-        status: p.status,
-        paymentIntentId: p.payment_intent_id,
-        paymentMethodId: p.payment_method_id,
-        createdAt: p.created_at,
-        updatedAt: p.updated_at
-      })) : []
+      payments: payments || []
     };
+    
+    return bookingWithPayments;
   } catch (error) {
     console.error('Error fetching booking with payments:', error);
     return null;
