@@ -1,45 +1,81 @@
+import { supabase } from "@/lib/supabase";
+import { setupPainterCompany } from './companySetup';
+import { PainterCompanyInfo } from "@/types/auth";
+import { Json } from "@/integrations/supabase/types";
 
-import { supabase } from '@/lib/supabase';
-import { User, PainterCompanyInfo } from '@/types/auth';
-import { setupFeaturedPainterCompany } from './companySetup';
+export const setFeaturedPainter = async (userId: string) => {
+  // Get existing company info
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('company_info')
+    .eq('id', userId)
+    .single();
 
-/**
- * Get all painter users
- */
-export const getAllPainters = async (): Promise<User[]> => {
-  try {
-    const { data, error } = await supabase
+  const companyInfo = profile?.company_info as PainterCompanyInfo;
+  
+  if (!companyInfo) {
+    throw new Error('Company info not found');
+  }
+
+  // Update the company info with featured status
+  await setupPainterCompany(userId, companyInfo, true);
+
+  // Update subscription to set featured flag
+  const { data: subscriptionData } = await supabase
+    .from('profiles')
+    .select('subscription')
+    .eq('id', userId)
+    .single();
+
+  if (subscriptionData?.subscription) {
+    const subscription = subscriptionData.subscription as any;
+    subscription.featured = true;
+
+    await supabase
       .from('profiles')
-      .select('*')
-      .eq('role', 'painter');
-    
-    if (error) {
-      console.error('Error fetching painters:', error);
-      return [];
-    }
-    
-    return data as unknown as User[];
-  } catch (error) {
-    console.error('Exception fetching painters:', error);
+      .update({
+        subscription: subscription as unknown as Json,
+      })
+      .eq('id', userId);
+  }
+
+  return true;
+};
+
+export const removeFeaturedPainter = async (userId: string) => {
+  const { data: subscriptionData } = await supabase
+    .from('profiles')
+    .select('subscription')
+    .eq('id', userId)
+    .single();
+
+  if (subscriptionData?.subscription) {
+    const subscription = subscriptionData.subscription as any;
+    subscription.featured = false;
+
+    await supabase
+      .from('profiles')
+      .update({
+        subscription: subscription as unknown as Json,
+      })
+      .eq('id', userId);
+  }
+
+  return true;
+};
+
+export const getFeaturedPainters = async () => {
+  const { data: painters, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('role', 'painter')
+    .not('subscription', 'is', null)
+    .filter('subscription->featured', 'eq', true);
+
+  if (error) {
+    console.error('Error fetching featured painters:', error);
     return [];
   }
-};
 
-/**
- * Set up a painter as a featured company (admin function)
- */
-export const setAsFeaturedCompany = async (
-  painterId: string, 
-  companyInfo: PainterCompanyInfo
-): Promise<boolean> => {
-  return await setupFeaturedPainterCompany(painterId, companyInfo);
-};
-
-/**
- * Check if current user is an admin
- */
-export const isAdminUser = (email: string | null | undefined): boolean => {
-  if (!email) return false;
-  const ADMIN_EMAILS = ['admin@painterconnectory.com', 'propaintatl@gmail.com', 'your@email.com'];
-  return ADMIN_EMAILS.includes(email.toLowerCase());
+  return painters;
 };

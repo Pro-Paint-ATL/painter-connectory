@@ -6,7 +6,7 @@ import { Json } from "@/integrations/supabase/types";
 /**
  * Creates a subscription record for a painter in their 21-day trial period
  */
-export const createTrialSubscription = async (userId: string): Promise<boolean> => {
+export const createTrialSubscription = async (userId: string, isFeatured: boolean = false): Promise<boolean> => {
   try {
     const startDate = new Date();
     const endDate = new Date(startDate);
@@ -27,7 +27,8 @@ export const createTrialSubscription = async (userId: string): Promise<boolean> 
       amount: 49,
       currency: 'usd',
       interval: 'month',
-      trialEnds: endDate.toISOString()
+      trialEnds: endDate.toISOString(),
+      featured: isFeatured || false
     };
 
     // Update profile with new subscription data while preserving existing data
@@ -55,9 +56,11 @@ export const createTrialSubscription = async (userId: string): Promise<boolean> 
  */
 export const setupPainterCompany = async (
   userId: string,
-  companyInfo: PainterCompanyInfo
+  companyInfo: PainterCompanyInfo,
+  isFeatured: boolean = false
 ): Promise<boolean> => {
   try {
+    // First update the company info
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -69,6 +72,27 @@ export const setupPainterCompany = async (
     if (error) {
       console.error('Error setting up company:', error);
       return false;
+    }
+
+    // If featured flag is provided, update subscription accordingly
+    if (isFeatured) {
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('subscription')
+        .eq('id', userId)
+        .single();
+
+      if (existingProfile?.subscription) {
+        const subscription = existingProfile.subscription as any;
+        subscription.featured = true;
+
+        await supabase
+          .from('profiles')
+          .update({
+            subscription: subscription as unknown as Json,
+          })
+          .eq('id', userId);
+      }
     }
 
     return true;

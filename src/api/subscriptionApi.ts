@@ -3,6 +3,7 @@ import { stripe } from '@/utils/stripe-server';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Json } from '@/integrations/supabase/types';
+import { Subscription } from '@/types/auth';
 
 // Function to create a subscription using real Stripe flow
 export const createSubscriptionForUser = async (
@@ -21,7 +22,12 @@ export const createSubscriptionForUser = async (
       .eq('id', userData.userId)
       .single();
     
-    let stripeCustomerId = profile?.subscription?.stripeCustomerId;
+    // Safely access stripeCustomerId with proper type casting
+    let stripeCustomerId: string | undefined;
+    if (profile?.subscription) {
+      const subscription = profile.subscription as any; // Use any temporarily for access
+      stripeCustomerId = subscription.stripeCustomerId;
+    }
     
     if (!stripeCustomerId) {
       const customer = await stripe.customers.create({
@@ -51,6 +57,20 @@ export const createSubscriptionForUser = async (
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + 1);
     
+    // Safely extract client_secret with proper type checking
+    let clientSecret: string | undefined = undefined;
+    
+    if (subscription.latest_invoice && typeof subscription.latest_invoice !== 'string') {
+      const invoice = subscription.latest_invoice;
+      if (invoice.payment_intent && typeof invoice.payment_intent !== 'string') {
+        clientSecret = invoice.payment_intent.client_secret;
+      }
+    }
+    
+    if (!clientSecret) {
+      throw new Error('Failed to get client secret from subscription');
+    }
+    
     // Update profile with subscription data
     await supabase
       .from('profiles')
@@ -74,7 +94,7 @@ export const createSubscriptionForUser = async (
     
     return {
       subscriptionId: subscription.id,
-      clientSecret: subscription.latest_invoice.payment_intent.client_secret,
+      clientSecret,
     };
   } catch (error) {
     console.error('Error creating subscription:', error);
