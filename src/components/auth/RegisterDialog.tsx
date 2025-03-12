@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -33,23 +33,40 @@ const RegisterDialog = ({
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("customer");
   const [localLoading, setLocalLoading] = useState(false);
+  
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset form state when dialog closes
+      setLocalLoading(false);
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalLoading(true);
+    
     try {
       await onRegister(name, email, password, role);
+    } catch (error) {
+      console.error("Registration error in dialog:", error);
     } finally {
-      // Only reset local loading if parent isLoading is false
-      // This ensures we don't hide the loading state prematurely
-      if (!isLoading) {
-        setLocalLoading(false);
-      }
+      // Always reset local loading regardless of parent loading state
+      setLocalLoading(false);
     }
   };
 
+  // Determine if button should be in loading state
+  const isButtonLoading = isLoading || localLoading;
+
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      // Reset loading state when dialog is manually closed
+      if (!open) {
+        setLocalLoading(false);
+      }
+      onOpenChange(open);
+    }}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create an account</DialogTitle>
@@ -66,7 +83,7 @@ const RegisterDialog = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              disabled={isLoading || localLoading}
+              disabled={isButtonLoading}
             />
           </div>
           <div className="space-y-2">
@@ -78,7 +95,7 @@ const RegisterDialog = ({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              disabled={isLoading || localLoading}
+              disabled={isButtonLoading}
             />
           </div>
           <div className="space-y-2">
@@ -89,7 +106,7 @@ const RegisterDialog = ({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={isLoading || localLoading}
+              disabled={isButtonLoading}
               minLength={6}
             />
             <p className="text-xs text-muted-foreground">
@@ -104,7 +121,7 @@ const RegisterDialog = ({
                 variant={role === "customer" ? "default" : "outline"}
                 className="flex-1"
                 onClick={() => setRole("customer")}
-                disabled={isLoading || localLoading}
+                disabled={isButtonLoading}
               >
                 Customer
               </Button>
@@ -113,14 +130,14 @@ const RegisterDialog = ({
                 variant={role === "painter" ? "default" : "outline"}
                 className="flex-1"
                 onClick={() => setRole("painter")}
-                disabled={isLoading || localLoading}
+                disabled={isButtonLoading}
               >
                 Painter
               </Button>
             </div>
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading || localLoading}>
-            {(isLoading || localLoading) ? (
+          <Button type="submit" className="w-full" disabled={isButtonLoading}>
+            {isButtonLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Creating account...
@@ -135,7 +152,7 @@ const RegisterDialog = ({
               type="button"
               className="text-primary hover:underline"
               onClick={onSwitchToLogin}
-              disabled={isLoading || localLoading}
+              disabled={isButtonLoading}
             >
               Login
             </button>

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
@@ -67,7 +66,6 @@ export const useAuthActions = (user: User | null, setUser: (user: User | null) =
           description: "An account with this email already exists. Please try logging in instead.",
           variant: "destructive"
         });
-        setIsLoading(false);
         return null;
       }
 
@@ -134,6 +132,7 @@ export const useAuthActions = (user: User | null, setUser: (user: User | null) =
       console.error("Registration error:", error);
       return null;
     } finally {
+      // Always reset loading state regardless of success/failure
       setIsLoading(false);
     }
   };
