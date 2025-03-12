@@ -2,6 +2,17 @@
 import { stripe } from './stripe-server';
 import { supabase } from '@/lib/supabase';
 import { BookingStatus, PaymentType, BookingPayment, BookingWithPayments, Booking, Subscription } from '@/types/auth';
+import { Json } from '@/integrations/supabase/types';
+
+// Helper function to safely parse subscription JSON
+const parseSubscription = (subscriptionJson: Json | null): Subscription | null => {
+  if (!subscriptionJson || typeof subscriptionJson !== 'object' || Array.isArray(subscriptionJson)) {
+    return null;
+  }
+  
+  // Cast to unknown first, then to Subscription
+  return subscriptionJson as unknown as Subscription;
+};
 
 // Calculate deposit amount (15% of total)
 export const calculateDepositAmount = (totalAmount: number): number => {
@@ -21,8 +32,8 @@ export const createDepositPaymentIntent = async (
       .eq('id', customerId)
       .single();
     
-    // Safely access stripeCustomerId from the subscription JSON
-    const subscription = customerData?.subscription as Subscription | null;
+    // Safely parse the subscription JSON
+    const subscription = parseSubscription(customerData?.subscription);
     const stripeCustomerId = subscription?.stripeCustomerId;
     
     if (!stripeCustomerId) {
@@ -74,8 +85,8 @@ export const createFinalPaymentIntent = async (
       .eq('id', customerId)
       .single();
     
-    // Safely access stripeCustomerId from the subscription JSON
-    const subscription = customerData?.subscription as Subscription | null;
+    // Safely parse the subscription JSON
+    const subscription = parseSubscription(customerData?.subscription);
     const stripeCustomerId = subscription?.stripeCustomerId;
     
     if (!stripeCustomerId) {
@@ -247,3 +258,4 @@ export const getBookingWithPayments = async (
     return null;
   }
 };
+

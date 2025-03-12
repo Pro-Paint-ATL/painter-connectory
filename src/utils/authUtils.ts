@@ -12,7 +12,7 @@ const ADMIN_EMAILS = ['admin@painterconnectory.com', 'propaintatl@gmail.com'];
  * @param defaultValue Default value if data is not valid
  */
 const parseJsonData = <T>(data: Json | null, defaultValue: T): T => {
-  if (!data || typeof data !== 'object') return defaultValue;
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return defaultValue;
   return data as unknown as T;
 };
 
