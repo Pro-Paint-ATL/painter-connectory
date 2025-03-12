@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -65,18 +66,22 @@ const Booking = () => {
   const [projectType, setProjectType] = useState<string>("");
   const [address, setAddress] = useState<string>(() => {
     if (user?.location) {
-      const location = user.location as UserLocation;
-      return location.address;
+      // Safely cast to UserLocation type
+      const userLocation = user.location as UserLocation;
+      return userLocation.address || "";
     }
-    return '';
+    return "";
   });
+  
   const [phone, setPhone] = useState<string>(() => {
     if (user?.location) {
-      const location = user.location as UserLocation;
-      return location.phone || '';
+      // Safely cast to UserLocation type
+      const userLocation = user.location as UserLocation;
+      return userLocation.phone || "";
     }
-    return '';
+    return "";
   });
+  
   const [notes, setNotes] = useState<string>("");
   const [totalAmount, setTotalAmount] = useState<number>(0);
   const [depositAmount, setDepositAmount] = useState<number>(0);
