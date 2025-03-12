@@ -9,12 +9,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Search, SlidersHorizontal, Shield } from "lucide-react";
 import LocationInput from "@/components/ui/LocationInput";
 import { UserLocation } from "@/types/auth";
-import { PainterSearchFilters } from "@/hooks/usePainterSearch";
+import type { PainterSearchFilters as PainterSearchFiltersType } from "@/hooks/usePainterSearch";
 import { useToast } from "@/hooks/use-toast";
 
 interface PainterSearchFiltersProps {
-  filters: PainterSearchFilters;
-  onFilterChange: (filters: Partial<PainterSearchFilters>) => void;
+  filters: PainterSearchFiltersType;
+  onFilterChange: (filters: Partial<PainterSearchFiltersType>) => void;
   onLocationChange: (location: UserLocation) => void;
 }
 
