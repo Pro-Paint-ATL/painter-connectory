@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { format, addDays, addMonths, startOfWeek, endOfWeek, startOfDay, isSameDay, isAfter, isBefore, isToday } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
@@ -5,6 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
+
+// Define the Availability type
+interface Availability {
+  date: Date;
+  times: string[];
+}
 
 interface BookingCalendarProps {
   painterId: string;

@@ -63,14 +63,20 @@ const Booking = () => {
   const [bookingTime, setBookingTime] = useState<string>("");
   const [projectType, setProjectType] = useState<string>("");
   const [address, setAddress] = useState<string>(() => {
-    if (user?.location && typeof user.location === 'object' && 'address' in user.location) {
-      return user.location.address as string || "";
+    if (user?.location) {
+      const location = user.location;
+      if (typeof location === 'object' && location !== null && 'address' in location) {
+        return location.address as string || "";
+      }
     }
     return "";
   });
   const [phone, setPhone] = useState<string>(() => {
-    if (user?.location && typeof user.location === 'object' && 'phone' in user.location) {
-      return user.location.phone as string || "";
+    if (user?.location) {
+      const location = user.location;
+      if (typeof location === 'object' && location !== null && 'phone' in location) {
+        return location.phone as string || "";
+      }
     }
     return "";
   });
@@ -586,6 +592,7 @@ const Booking = () => {
                       amount={depositAmount} 
                       bookingId={bookingId}
                       onSuccess={handlePaymentSuccess}
+                      onCancel={() => setActiveTab("2")}
                     />
                   </div>
                   
