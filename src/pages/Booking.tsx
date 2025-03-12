@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -42,6 +41,7 @@ import {
 import BookingCalendar from "@/components/booking/BookingCalendar";
 import PaymentForm from "@/components/booking/PaymentForm";
 import { Painter } from "@/types/painter";
+import { Json } from "@/integrations/supabase/types";
 
 const PROJECT_TYPES = [
   "Interior Painting",
@@ -107,6 +107,14 @@ const Booking = () => {
       if (!data) throw new Error("Painter not found");
       
       const companyInfo = data.company_info as any || {};
+      const location = data.location as Json;
+      let locationAddress = "";
+      
+      // Safely handle location data
+      if (location && typeof location === 'object' && !Array.isArray(location)) {
+        locationAddress = (location as any).address || "Location not specified";
+      }
+      
       const formattedPainter: Painter = {
         id: data.id,
         name: data.name || "Unknown Painter",
@@ -114,7 +122,7 @@ const Booking = () => {
         rating: companyInfo.rating || 0,
         reviewCount: companyInfo.reviewCount || 0,
         distance: 0,
-        location: data.location?.address || "Location not specified",
+        location: locationAddress,
         yearsInBusiness: companyInfo.yearsInBusiness || 0,
         isInsured: companyInfo.isInsured || false,
         specialties: companyInfo.specialties || [],
