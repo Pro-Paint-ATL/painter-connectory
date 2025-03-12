@@ -9,14 +9,14 @@ const createSecurityDefinerFunction = async () => {
   try {
     // Check if the function already exists
     const { data, error } = await supabase.rpc('get_current_user_role')
-      .then(response => {
-        return { data: response.data, error: response.error };
+      .catch(err => {
+        return { data: null, error: err };
       });
     
     if (error && error.message.includes('function "get_current_user_role" does not exist')) {
       console.log('Creating security definer function for user roles...');
       
-      // Create the function using supabase SQL query
+      // Create the function using supabase edge function
       const { error: sqlError } = await supabase.functions.invoke('create-role-function', {
         body: { action: 'create_role_function' }
       });
@@ -53,17 +53,25 @@ Promise.resolve().then(() => {
         createSecurityDefinerFunction();
       }
       return Promise.resolve();
+    })
+    .catch((error: Error) => {
+      console.error('Error testing Supabase connection:', error);
     });
-})
-.catch((error: Error) => {
-  console.error('Error testing Supabase connection:', error);
 });
 
 // Helper function to safely get user role using RPC
 export const getUserRole = async () => {
   try {
-    const { data, error } = await supabase.rpc('get_current_user_role');
-    if (error) throw error;
+    const { data, error } = await supabase.rpc('get_current_user_role')
+      .catch(err => {
+        return { data: null, error: err };
+      });
+    
+    if (error) {
+      console.error('Error getting user role:', error);
+      return null;
+    }
+    
     return data as string;
   } catch (error) {
     console.error('Error getting user role:', error);

@@ -37,16 +37,19 @@ export const useProfileAction = (user: User | null, setUser: (user: User | null)
         }
       }
       
+      const updateData: Record<string, any> = {};
+      
+      // Only include fields that are actually being updated
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.avatar !== undefined) updateData.avatar = data.avatar;
+      if (locationData !== undefined) updateData.location = locationData;
+      if (data.role !== undefined) updateData.role = data.role;
+      if (data.subscription !== undefined) updateData.subscription = data.subscription;
+      if (data.companyInfo !== undefined) updateData.company_info = data.companyInfo;
+      
       const { error } = await supabase
         .from('profiles')
-        .update({
-          name: data.name,
-          avatar: data.avatar,
-          location: locationData as any,
-          role: data.role,
-          subscription: data.subscription as any,
-          company_info: data.companyInfo as any
-        })
+        .update(updateData)
         .eq('id', user.id);
 
       if (error) {
@@ -67,8 +70,13 @@ export const useProfileAction = (user: User | null, setUser: (user: User | null)
         title: "Profile Updated",
         description: "Your profile has been successfully updated."
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Update profile error:", error);
+      toast({
+        title: "Update Failed",
+        description: error?.message || "An error occurred while updating your profile",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }

@@ -64,6 +64,9 @@ export const useAuthSession = () => {
           setUser(null);
         } else if (event === 'USER_UPDATED' && session) {
           await handleUserSession(session);
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          // Handle token refresh - this is important for long sessions
+          await handleUserSession(session);
         }
       }
     );
