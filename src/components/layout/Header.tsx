@@ -180,14 +180,24 @@ const Header = () => {
                 <User className="h-5 w-5" />
               </Button>
               {user?.role === "painter" && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => handleNavigation("/painter-dashboard")}
-                  className="gap-2"
-                >
-                  <span className="hidden sm:inline">Dashboard</span>
-                </Button>
+                <>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleNavigation("/painter-dashboard")}
+                    className="gap-2"
+                  >
+                    <span className="hidden sm:inline">Dashboard</span>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleNavigation("/subscription")}
+                    className="gap-2"
+                  >
+                    <span className="hidden sm:inline">Subscription</span>
+                  </Button>
+                </>
               )}
               {user?.role === "admin" && (
                 <Button 
@@ -392,13 +402,22 @@ const Header = () => {
                       Profile
                     </Button>
                     {user?.role === "painter" && (
-                      <Button
-                        variant="ghost"
-                        onClick={() => handleNavigation("/painter-dashboard")}
-                        className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
-                      >
-                        Dashboard
-                      </Button>
+                      <>
+                        <Button
+                          variant="ghost"
+                          onClick={() => handleNavigation("/painter-dashboard")}
+                          className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
+                        >
+                          Dashboard
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={() => handleNavigation("/subscription")}
+                          className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
+                        >
+                          Subscription
+                        </Button>
+                      </>
                     )}
                     {user?.role === "admin" && (
                       <Button

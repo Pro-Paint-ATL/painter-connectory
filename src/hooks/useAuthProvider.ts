@@ -10,13 +10,6 @@ export const useAuthProvider = () => {
   const { login, register, logout, updateUserProfile, isLoading: actionLoading } = useAuthActions(user, setUser);
   const { navigateBasedOnRole, navigate } = useAuthNavigation(user);
 
-  // Handle navigation after auth state changes
-  useEffect(() => {
-    if (user && !isLoading) {
-      navigateBasedOnRole();
-    }
-  }, [user, isLoading]);
-
   // Handle login with navigation
   const handleLogin = async (email: string, password: string) => {
     const loggedInUser = await login(email, password);
@@ -30,7 +23,14 @@ export const useAuthProvider = () => {
   const handleRegister = async (name: string, email: string, password: string, role: any) => {
     const registeredUser = await register(name, email, password, role);
     if (registeredUser) {
-      navigateBasedOnRole();
+      // For painter roles, navigate to subscription page
+      if (registeredUser.role === "painter") {
+        navigate('/subscription');
+      } else if (registeredUser.role === "admin") {
+        navigate('/admin');
+      } else {
+        navigate('/profile');
+      }
     }
     return registeredUser;
   };

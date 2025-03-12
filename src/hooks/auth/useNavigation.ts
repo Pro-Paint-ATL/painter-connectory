@@ -9,7 +9,13 @@ export const useAuthNavigation = (user: User | null) => {
     if (!user) return;
     
     if (user.role === "painter") {
-      navigate("/painter-dashboard");
+      // Painters should go to their dashboard by default
+      // or to subscription page if they don't have an active subscription
+      if (!user.subscription || (user.subscription.status !== "active" && user.subscription.status !== "trial")) {
+        navigate("/subscription");
+      } else {
+        navigate("/painter-dashboard");
+      }
     } else if (user.role === "admin") {
       navigate("/admin");
     } else {
