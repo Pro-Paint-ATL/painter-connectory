@@ -1,1 +1,4 @@
+
 project_id = "onwbydtzjkvgwffharmo"
+[functions.create-role-function]
+verify_jwt = false

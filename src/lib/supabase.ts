@@ -15,28 +15,14 @@ const createSecurityDefinerFunction = async () => {
     
     if (error && error.message.includes('function "get_current_user_role" does not exist')) {
       console.log('Creating security definer function for user roles...');
-      // Create the function if it doesn't exist
-      const createFunctionQuery = `
-        CREATE OR REPLACE FUNCTION public.get_current_user_role()
-        RETURNS TEXT AS $$
-          SELECT role FROM public.profiles WHERE id = auth.uid();
-        $$ LANGUAGE SQL SECURITY DEFINER STABLE;
-      `;
       
-      // Execute the function creation using the REST API
-      const response = await fetch(`${supabase.supabaseUrl}/rest/v1/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.supabaseKey}`,
-          'apikey': supabase.supabaseKey,
-          'X-Client-Info': 'lovable-app'
-        },
-        body: JSON.stringify({ query: createFunctionQuery })
+      // Create the function using supabase SQL query
+      const { error: sqlError } = await supabase.functions.invoke('create-role-function', {
+        body: { action: 'create_role_function' }
       });
       
-      if (!response.ok) {
-        console.error('Error creating security definer function via REST');
+      if (sqlError) {
+        console.error('Error creating security definer function:', sqlError);
       } else {
         console.log('Security definer function created successfully');
       }
