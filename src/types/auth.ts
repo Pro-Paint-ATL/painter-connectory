@@ -12,7 +12,7 @@ export interface UserLocation {
 
 export interface PainterCompanyInfo {
   companyName: string;
-  yearsInBusiness?: number | undefined;
+  yearsInBusiness?: number;
   isInsured: boolean;
   insuranceAmount?: string;
   insuranceDocumentUrl?: string;
@@ -20,6 +20,8 @@ export interface PainterCompanyInfo {
   businessDescription?: string;
   specialties?: string[];
   portfolio?: string[];
+  rating?: number;
+  reviewCount?: number;
 }
 
 export interface Subscription {

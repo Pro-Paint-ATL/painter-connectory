@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +13,7 @@ import PainterCard from "@/components/painters/PainterCard";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { UserLocation } from "@/types/auth";
+import { Painter, PainterProfile } from "@/types/painter";
 import {
   PaintBucket,
   Filter,
@@ -22,22 +22,8 @@ import {
   Shield
 } from "lucide-react";
 
-interface Painter {
-  id: string;
-  name: string;
-  avatar: string;
-  rating: number;
-  reviewCount: number;
-  distance: number;
-  location: string;
-  yearsInBusiness: number;
-  isInsured: boolean;
-  specialties: string[];
-  isSubscribed?: boolean;
-}
-
 const FindPainters = () => {
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number; address: string } | null>(null);
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [maxDistance, setMaxDistance] = useState(30);
   const [minRating, setMinRating] = useState(0);
   const [onlyInsured, setOnlyInsured] = useState(false);
@@ -54,7 +40,6 @@ const FindPainters = () => {
       setLoading(true);
       
       try {
-        // Fetch painter profiles from Supabase
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -78,58 +63,45 @@ const FindPainters = () => {
           return;
         }
         
-        // Transform the data into the Painter interface format
-        const transformedPainters: Painter[] = data.map(profile => {
-          // Parse company_info from JSON
-          const companyInfo = profile.company_info ? 
-            (typeof profile.company_info === 'string' ? 
-              JSON.parse(profile.company_info) : profile.company_info) : 
-            { companyName: '', isInsured: false, specialties: [] };
+        const transformedPainters: Painter[] = data.map((profile: PainterProfile) => {
+          // Parse company_info ensuring type safety
+          const companyInfo = profile.company_info || {
+            companyName: '',
+            isInsured: false,
+            specialties: [],
+            yearsInBusiness: 0,
+            rating: 0,
+            reviewCount: 0
+          };
           
-          // Parse subscription from JSON
-          const subscription = profile.subscription ? 
-            (typeof profile.subscription === 'string' ? 
-              JSON.parse(profile.subscription) : profile.subscription) : 
-            { status: null };
-
-          // Parse location properly
-          let locationObj: UserLocation = { address: 'Location not specified', latitude: 0, longitude: 0 };
+          // Parse subscription with type safety
+          const subscription = profile.subscription || { status: null };
           
-          if (profile.location) {
-            // Handle potential string JSON or already parsed object
-            const parsedLocation = typeof profile.location === 'string' 
-              ? JSON.parse(profile.location) 
-              : profile.location;
-            
-            // Check if parsed location has the required properties
-            if (parsedLocation && typeof parsedLocation === 'object') {
-              locationObj = {
-                address: parsedLocation.address || 'Location not specified',
-                latitude: parsedLocation.latitude || 0,
-                longitude: parsedLocation.longitude || 0
-              };
-            }
-          }
+          // Get location data with type safety
+          const location = profile.location || {
+            address: 'Location not specified',
+            latitude: 0,
+            longitude: 0
+          };
             
           // Calculate distance using location data
           const distance = userLocation ? 
             calculateDistance(
               userLocation.latitude, 
               userLocation.longitude, 
-              locationObj.latitude, 
-              locationObj.longitude
-            ) : 
-            Math.floor(Math.random() * 30) + 1;
+              location.latitude, 
+              location.longitude
+            ) : 0;
             
           return {
             id: profile.id,
             name: companyInfo.companyName || profile.name || 'Unnamed Painter',
             avatar: profile.avatar || '/placeholder.svg',
-            rating: companyInfo.rating || 4 + Math.random(),
-            reviewCount: companyInfo.reviewCount || Math.floor(Math.random() * 50) + 1,
+            rating: companyInfo.rating || 0,
+            reviewCount: companyInfo.reviewCount || 0,
             distance: distance,
-            location: locationObj.address,
-            yearsInBusiness: companyInfo.yearsInBusiness || Math.floor(Math.random() * 10) + 1,
+            location: location.address,
+            yearsInBusiness: companyInfo.yearsInBusiness || 0,
             isInsured: companyInfo.isInsured || false,
             specialties: companyInfo.specialties || [],
             isSubscribed: subscription?.status === 'active' || subscription?.status === 'trial'
@@ -179,9 +151,13 @@ const FindPainters = () => {
     
     let filtered = [...painters];
     
-    filtered = filtered.filter(painter => painter.distance <= maxDistance);
+    if (maxDistance > 0) {
+      filtered = filtered.filter(painter => painter.distance <= maxDistance);
+    }
     
-    filtered = filtered.filter(painter => painter.rating >= minRating);
+    if (minRating > 0) {
+      filtered = filtered.filter(painter => painter.rating >= minRating);
+    }
     
     if (onlyInsured) {
       filtered = filtered.filter(painter => painter.isInsured);
@@ -199,7 +175,7 @@ const FindPainters = () => {
     setFilteredPainters(filtered);
   }, [painters, maxDistance, minRating, onlyInsured, searchTerm]);
 
-  const handleLocationChange = (location: { address: string; latitude: number; longitude: number }) => {
+  const handleLocationChange = (location: UserLocation) => {
     setUserLocation(location);
     toast({
       title: "Location Updated",
