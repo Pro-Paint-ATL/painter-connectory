@@ -1,4 +1,4 @@
-
+import { Json } from "@/integrations/supabase/types";
 import { UserLocation } from './auth';
 
 export interface PainterProfile {
@@ -7,9 +7,9 @@ export interface PainterProfile {
   email: string | null;
   role: string | null;
   avatar: string | null;
-  location: UserLocation | null;
-  company_info: PainterCompanyInfo | null;
-  subscription: PainterSubscription | null;
+  location: Json | null;
+  company_info: Json | null;
+  subscription: Json | null;
 }
 
 export interface PainterSubscription {

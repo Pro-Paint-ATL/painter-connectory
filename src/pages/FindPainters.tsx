@@ -14,6 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { UserLocation } from "@/types/auth";
 import { Painter, PainterProfile } from "@/types/painter";
+import { Json } from "@/integrations/supabase/types";
 import {
   PaintBucket,
   Filter,
@@ -62,49 +63,51 @@ const FindPainters = () => {
           setLoading(false);
           return;
         }
-        
-        const transformedPainters: Painter[] = data.map((profile: PainterProfile) => {
-          // Parse company_info ensuring type safety
-          const companyInfo = profile.company_info || {
-            companyName: '',
-            isInsured: false,
-            specialties: [],
-            yearsInBusiness: 0,
-            rating: 0,
-            reviewCount: 0
-          };
+
+        const transformedPainters: Painter[] = data.map((profile: any) => {
+          const companyInfo = profile.company_info as Json;
+          const subscription = profile.subscription as Json;
+          const location = profile.location as Json;
           
-          // Parse subscription with type safety
-          const subscription = profile.subscription || { status: null };
-          
-          // Get location data with type safety
-          const location = profile.location || {
-            address: 'Location not specified',
+          let locationData: UserLocation = {
+            address: '',
             latitude: 0,
             longitude: 0
           };
+
+          if (location && typeof location === 'object' && !Array.isArray(location)) {
+            locationData = {
+              address: (location as any).address || '',
+              latitude: Number((location as any).latitude) || 0,
+              longitude: Number((location as any).longitude) || 0
+            };
+          }
             
-          // Calculate distance using location data
           const distance = userLocation ? 
             calculateDistance(
               userLocation.latitude, 
               userLocation.longitude, 
-              location.latitude, 
-              location.longitude
+              locationData.latitude,
+              locationData.longitude
             ) : 0;
+
+          const parsedCompanyInfo = companyInfo && typeof companyInfo === 'object' ? companyInfo : {};
             
           return {
             id: profile.id,
-            name: companyInfo.companyName || profile.name || 'Unnamed Painter',
+            name: (parsedCompanyInfo as any)?.companyName || profile.name || 'Unnamed Painter',
             avatar: profile.avatar || '/placeholder.svg',
-            rating: companyInfo.rating || 0,
-            reviewCount: companyInfo.reviewCount || 0,
+            rating: Number((parsedCompanyInfo as any)?.rating) || 0,
+            reviewCount: Number((parsedCompanyInfo as any)?.reviewCount) || 0,
             distance: distance,
-            location: location.address,
-            yearsInBusiness: companyInfo.yearsInBusiness || 0,
-            isInsured: companyInfo.isInsured || false,
-            specialties: companyInfo.specialties || [],
-            isSubscribed: subscription?.status === 'active' || subscription?.status === 'trial'
+            location: locationData.address || 'Location not specified',
+            yearsInBusiness: Number((parsedCompanyInfo as any)?.yearsInBusiness) || 0,
+            isInsured: Boolean((parsedCompanyInfo as any)?.isInsured) || false,
+            specialties: Array.isArray((parsedCompanyInfo as any)?.specialties) ? 
+              (parsedCompanyInfo as any).specialties : [],
+            isSubscribed: subscription && 
+              typeof subscription === 'object' && 
+              ['active', 'trial'].includes(String((subscription as any)?.status))
           };
         });
         
@@ -125,7 +128,6 @@ const FindPainters = () => {
     fetchPainters();
   }, [toast, userLocation]);
 
-  // Simple distance calculation using the Haversine formula
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
     if (!lat1 || !lon1 || !lat2 || !lon2) return 15; // Default distance
     
