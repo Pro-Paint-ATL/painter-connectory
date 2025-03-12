@@ -4,43 +4,51 @@ import { supabase as supabaseClient } from '@/integrations/supabase/client';
 // Export the pre-configured client
 export const supabase = supabaseClient;
 
-// Define the return type for the RPC function
-interface CreateGetRoleFunctionResponse {
-  data: any;
-  error: any;
-}
-
 // Create a security definer function to get user role safely
 const createSecurityDefinerFunction = async () => {
   try {
     // Check if the function already exists
-    const { data: functionExists, error: checkError } = await supabase
-      .from('profiles')
-      .select('id')
-      .limit(1)
+    const { data, error } = await supabase.rpc('get_current_user_role')
       .then(response => {
         return { data: response.data, error: response.error };
       });
     
-    // Only create function if table exists but function doesn't
-    if (functionExists && !checkError) {
-      // Call the function with explicit type casting
-      const { error } = await (supabase.rpc as any)(
-        'create_get_role_function'
-      );
-      if (error) {
-        console.error('Error creating security definer function:', error);
+    if (error && error.message.includes('function "get_current_user_role" does not exist')) {
+      console.log('Creating security definer function for user roles...');
+      // Create the function if it doesn't exist
+      const createFunctionQuery = `
+        CREATE OR REPLACE FUNCTION public.get_current_user_role()
+        RETURNS TEXT AS $$
+          SELECT role FROM public.profiles WHERE id = auth.uid();
+        $$ LANGUAGE SQL SECURITY DEFINER STABLE;
+      `;
+      
+      // Execute the function creation using the REST API
+      const response = await fetch(`${supabase.supabaseUrl}/rest/v1/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabase.supabaseKey}`,
+          'apikey': supabase.supabaseKey,
+          'X-Client-Info': 'lovable-app'
+        },
+        body: JSON.stringify({ query: createFunctionQuery })
+      });
+      
+      if (!response.ok) {
+        console.error('Error creating security definer function via REST');
       } else {
         console.log('Security definer function created successfully');
       }
+    } else if (!error) {
+      console.log('Security definer function already exists');
     }
   } catch (error) {
     console.error('Error checking for security definer function:', error);
   }
 };
 
-// This will log if the connection is successful
-// Wrap the entire chain in a Promise.resolve() to ensure we have a proper Promise
+// Test connection and setup security function if needed
 Promise.resolve().then(() => {
   return supabase
     .from('profiles')
@@ -50,28 +58,29 @@ Promise.resolve().then(() => {
         console.error('Supabase connection error: Invalid API key');
       } else if (response.error && response.error.message.includes('connection')) {
         console.error('Supabase connection error:', response.error.message);
+      } else if (response.error && response.error.message.includes('infinite recursion')) {
+        console.error('Infinite recursion error detected in profiles table policies:', response.error.message);
+        console.log('Please fix the RLS policies on the profiles table');
       } else {
         console.log('Supabase connection successful');
         // Try to create the security definer function if needed
         createSecurityDefinerFunction();
       }
-      return Promise.resolve(); // Return a Promise to maintain the chain
+      return Promise.resolve();
     });
 })
 .catch((error: Error) => {
   console.error('Error testing Supabase connection:', error);
 });
 
-// Create custom functions to interact with RPC safely
-export const createSecurityFunction = async () => {
+// Helper function to safely get user role using RPC
+export const getUserRole = async () => {
   try {
-    // Using type casting to bypass the TypeScript constraint issue
-    const { error } = await (supabase.rpc as any)(
-      'create_get_role_function'
-    );
-    return { error };
+    const { data, error } = await supabase.rpc('get_current_user_role');
+    if (error) throw error;
+    return data as string;
   } catch (error) {
-    console.error('Error creating security function:', error);
-    return { error };
+    console.error('Error getting user role:', error);
+    return null;
   }
 };

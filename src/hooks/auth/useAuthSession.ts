@@ -10,10 +10,16 @@ export const useAuthSession = () => {
 
   const handleUserSession = async (session: any) => {
     if (session) {
-      const formattedUser = await formatUser(session.user);
-      setUser(formattedUser);
-      console.log("User session loaded with role:", formattedUser?.role);
-      return formattedUser;
+      try {
+        const formattedUser = await formatUser(session.user);
+        setUser(formattedUser);
+        console.log("User session loaded with role:", formattedUser?.role);
+        return formattedUser;
+      } catch (error) {
+        console.error("Error formatting user:", error);
+        setUser(null);
+        return null;
+      }
     } else {
       setUser(null);
       return null;
@@ -23,19 +29,24 @@ export const useAuthSession = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        setIsLoading(true);
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
           console.error("Error getting session:", sessionError);
+          setUser(null);
           setIsLoading(false);
           return;
         }
         
         if (session) {
           await handleUserSession(session);
+        } else {
+          setUser(null);
         }
       } catch (error) {
         console.error("Error checking auth:", error);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -43,28 +54,23 @@ export const useAuthSession = () => {
     
     checkAuth();
 
-    try {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          console.log("Auth state changed:", event);
-          if (event === 'SIGNED_IN' && session) {
-            await handleUserSession(session);
-          } else if (event === 'SIGNED_OUT') {
-            setUser(null);
-          } else if (event === 'USER_UPDATED' && session) {
-            const formattedUser = await formatUser(session.user);
-            setUser(formattedUser);
-          }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log("Auth state changed:", event);
+        
+        if (event === 'SIGNED_IN' && session) {
+          await handleUserSession(session);
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+        } else if (event === 'USER_UPDATED' && session) {
+          await handleUserSession(session);
         }
-      );
+      }
+    );
 
-      return () => {
-        subscription?.unsubscribe();
-      };
-    } catch (error) {
-      console.error("Error setting up auth state change listener:", error);
-      setIsLoading(false);
-    }
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
   return { user, setUser, isLoading };
