@@ -102,7 +102,8 @@ export const formatUser = async (supabaseUser: SupabaseUser | null): Promise<Use
       { 
         status: null, 
         plan: null, 
-        startDate: null, 
+        startDate: null,
+        endDate: null, // Added the missing endDate property
         amount: null, 
         currency: null, 
         interval: null 

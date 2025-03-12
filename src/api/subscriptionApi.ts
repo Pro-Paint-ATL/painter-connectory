@@ -21,12 +21,17 @@ export const createSubscriptionForUser = async (
     // 2. Create a subscription for that customer
     const subscription = await createSubscription(customer.id, paymentMethodId);
     
+    // Calculate end date (1 month from now)
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + 1);
+    
     // 3. Return the subscription details
     // In a real app, you would store the subscription details in your database
     return {
       status: "active" as const, // Type assertion to match the expected union type
       plan: "pro" as const, // Fixed to match the expected type
       startDate: new Date().toISOString(),
+      endDate: endDate.toISOString(), // Added the required endDate property
       amount: 49,
       currency: 'USD',
       interval: 'month' as const, // Adding type assertion to match the expected union type
