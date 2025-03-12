@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -37,7 +36,7 @@ import {
   Star,
   PaintBucket
 } from "lucide-react";
-import { BookingWithPayments } from "@/types/auth";
+import { BookingWithPayments, BookingPayment } from "@/types/auth";
 
 const PainterDashboard = () => {
   const { user, updateUserProfile } = useAuth();
@@ -51,7 +50,6 @@ const PainterDashboard = () => {
   );
   const [newSpecialty, setNewSpecialty] = useState("");
   
-  // Stats
   const [stats, setStats] = useState({
     totalEarnings: 0,
     pendingBookings: 0,
@@ -82,7 +80,6 @@ const PainterDashboard = () => {
       
       if (error) throw error;
       
-      // Add customer names
       const bookingsWithCustomers = await Promise.all(
         data.map(async (booking) => {
           const { data: customerData } = await supabase
@@ -91,14 +88,20 @@ const PainterDashboard = () => {
             .eq("id", booking.customer_id)
             .single();
           
+          let typedPayments: BookingPayment[] = [];
+          if (booking.payments && Array.isArray(booking.payments)) {
+            typedPayments = booking.payments as BookingPayment[];
+          }
+          
           return {
             ...booking,
-            customerName: customerData?.name || "Unknown Customer"
-          };
+            customerName: customerData?.name || "Unknown Customer",
+            payments: typedPayments
+          } as BookingWithPayments;
         })
       );
 
-      setBookings(bookingsWithCustomers as BookingWithPayments[]);
+      setBookings(bookingsWithCustomers);
     } catch (error) {
       console.error("Error fetching bookings:", error);
       toast({
@@ -115,7 +118,6 @@ const PainterDashboard = () => {
     if (!user) return;
     
     try {
-      // Total earnings
       const { data: paymentsData } = await supabase
         .from("booking_payments")
         .select("amount")
@@ -127,7 +129,6 @@ const PainterDashboard = () => {
         0
       ) || 0;
       
-      // Booking counts
       const { data: pendingData } = await supabase
         .from("bookings")
         .select("id")
@@ -252,7 +253,6 @@ const PainterDashboard = () => {
   };
   
   const getStatusLabel = (status: string) => {
-    // Convert status from snake_case to Title Case with spaces
     return status
       .split("_")
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))

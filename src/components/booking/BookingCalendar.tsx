@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { format, addDays, addMonths, startOfWeek, endOfWeek, startOfDay, isSameDay, isAfter, isBefore, isToday } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
@@ -11,41 +10,29 @@ interface BookingCalendarProps {
   painterId: string;
   onTimeSelected: (date: Date, time: string) => void;
   onSelectDate?: (date: Date) => void;
+  selectedDate?: Date;
 }
 
-interface Availability {
-  date: Date;
-  times: string[];
-}
-
-const BookingCalendar: React.FC<BookingCalendarProps> = ({ painterId, onTimeSelected, onSelectDate }) => {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+const BookingCalendar: React.FC<BookingCalendarProps> = ({ painterId, onTimeSelected, onSelectDate, selectedDate: externalSelectedDate }) => {
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(externalSelectedDate);
   const [selectedTime, setSelectedTime] = useState<string | undefined>(undefined);
   const [monthOffset, setMonthOffset] = useState(0);
   const [availability, setAvailability] = useState<Availability[]>([]);
 
-  // Generate mock availability data for the painter
   React.useEffect(() => {
-    // In a real app, this would fetch from an API based on the painter's schedule
     const generateMockAvailability = () => {
       const now = new Date();
       const nextThreeMonths = Array.from({ length: 90 }, (_, i) => addDays(now, i + 1));
       
-      // Only include weekdays (exclude weekends)
       const weekdays = nextThreeMonths.filter(date => {
         const day = date.getDay();
-        return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
+        return day !== 0 && day !== 6;
       });
       
-      // Generate random availability slots for each day
       return weekdays.map(date => {
-        // Morning slots: 9am-12pm
         const morningSlots = ["9:00 AM", "10:00 AM", "11:00 AM"];
-        
-        // Afternoon slots: 1pm-5pm
         const afternoonSlots = ["1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"];
         
-        // Randomly select available times from these slots
         const availableTimes = [
           ...morningSlots.filter(() => Math.random() > 0.3),
           ...afternoonSlots.filter(() => Math.random() > 0.3),
@@ -61,7 +48,6 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({ painterId, onTimeSele
     setAvailability(generateMockAvailability());
   }, [painterId]);
 
-  // Get available times for the selected date
   const getAvailableTimesForDate = (date: Date | undefined) => {
     if (!date) return [];
     
@@ -74,7 +60,6 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({ painterId, onTimeSele
 
   const availableTimesForSelectedDate = getAvailableTimesForDate(selectedDate);
 
-  // Check if a date has availability
   const hasAvailability = (date: Date) => {
     const dayAvailability = availability.find(avail => 
       isSameDay(avail.date, date)

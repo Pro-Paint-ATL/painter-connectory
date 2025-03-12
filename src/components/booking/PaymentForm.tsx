@@ -9,9 +9,10 @@ interface PaymentFormProps {
   amount: number;
   onSuccess: () => void;
   onCancel: () => void;
+  bookingId?: string;
 }
 
-const PaymentForm = ({ amount, onSuccess, onCancel }: PaymentFormProps) => {
+const PaymentForm = ({ amount, onSuccess, onCancel, bookingId }: PaymentFormProps) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();

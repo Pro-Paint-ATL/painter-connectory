@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -38,8 +37,8 @@ import {
   CreditCard,
   ChevronRight
 } from "lucide-react";
-import { BookingCalendar } from "@/components/booking/BookingCalendar";
-import { PaymentForm } from "@/components/booking/PaymentForm";
+import BookingCalendar from "@/components/booking/BookingCalendar";
+import PaymentForm from "@/components/booking/PaymentForm";
 import { Painter } from "@/types/painter";
 
 const PROJECT_TYPES = [
@@ -63,14 +62,23 @@ const Booking = () => {
   const [bookingDate, setBookingDate] = useState<Date | undefined>();
   const [bookingTime, setBookingTime] = useState<string>("");
   const [projectType, setProjectType] = useState<string>("");
-  const [address, setAddress] = useState<string>(user?.location?.address || "");
-  const [phone, setPhone] = useState<string>(user?.location?.phone || "");
+  const [address, setAddress] = useState<string>(() => {
+    if (user?.location && typeof user.location === 'object' && 'address' in user.location) {
+      return user.location.address as string || "";
+    }
+    return "";
+  });
+  const [phone, setPhone] = useState<string>(() => {
+    if (user?.location && typeof user.location === 'object' && 'phone' in user.location) {
+      return user.location.phone as string || "";
+    }
+    return "";
+  });
   const [notes, setNotes] = useState<string>("");
   const [totalAmount, setTotalAmount] = useState<number>(0);
   const [depositAmount, setDepositAmount] = useState<number>(0);
   const [bookingId, setBookingId] = useState<string>("");
   
-  // Fetch painter details
   const { 
     data: painter, 
     isLoading, 
@@ -90,7 +98,6 @@ const Booking = () => {
       if (error) throw error;
       if (!data) throw new Error("Painter not found");
       
-      // Format painter data
       const companyInfo = data.company_info as any || {};
       const formattedPainter: Painter = {
         id: data.id,
@@ -98,12 +105,12 @@ const Booking = () => {
         avatar: data.avatar || "",
         rating: companyInfo.rating || 0,
         reviewCount: companyInfo.reviewCount || 0,
-        distance: 0, // Not applicable here
+        distance: 0,
         location: data.location?.address || "Location not specified",
         yearsInBusiness: companyInfo.yearsInBusiness || 0,
         isInsured: companyInfo.isInsured || false,
         specialties: companyInfo.specialties || [],
-        isSubscribed: true // Assume subscribed for simplicity
+        isSubscribed: true
       };
       
       return formattedPainter;
@@ -123,7 +130,6 @@ const Booking = () => {
   }, [user, navigate, toast]);
   
   useEffect(() => {
-    // Set deposit amount to 15% of total amount
     setDepositAmount(Math.round(totalAmount * 0.15 * 100) / 100);
   }, [totalAmount]);
   
@@ -134,7 +140,6 @@ const Booking = () => {
   const handleProjectTypeSelection = (type: string) => {
     setProjectType(type);
     
-    // Set a default price based on project type
     const basePrices: Record<string, number> = {
       "Interior Painting": 500,
       "Exterior Painting": 800,
@@ -206,7 +211,6 @@ const Booking = () => {
     if (!user || !painter || !bookingDate) return;
     
     try {
-      // Format date as ISO string (YYYY-MM-DD)
       const formattedDate = bookingDate.toISOString().split('T')[0];
       
       const { data, error } = await supabase
@@ -235,7 +239,6 @@ const Booking = () => {
         description: "Your booking has been created successfully"
       });
       
-      // Move to payment step
       setActiveTab("3");
     } catch (error) {
       console.error("Error creating booking:", error);
@@ -256,20 +259,17 @@ const Booking = () => {
   };
   
   const handlePaymentSuccess = () => {
-    // Update booking status after successful payment
     if (bookingId) {
       supabase
         .from("bookings")
         .update({ status: "deposit_paid" })
         .eq("id", bookingId);
       
-      // Show success toast and navigate
       toast({
         title: "Payment Successful",
         description: "Your booking is confirmed. The painter will contact you soon."
       });
       
-      // Navigate to profile page
       setTimeout(() => {
         navigate("/profile");
       }, 2000);
@@ -374,8 +374,12 @@ const Booking = () => {
                     <Label>Select Date</Label>
                     <div className="mt-2">
                       <BookingCalendar 
-                        selectedDate={bookingDate}
-                        onDateChange={setBookingDate}
+                        painterId={painterId || ""}
+                        onTimeSelected={(date, time) => {
+                          setBookingDate(date);
+                          handleTimeSelection(time);
+                        }}
+                        onSelectDate={setBookingDate}
                       />
                     </div>
                   </div>
