@@ -9,7 +9,7 @@ const createSecurityDefinerFunction = async () => {
   try {
     // Check if the function already exists
     const { data: roleData, error: roleError } = await supabase
-      .rpc('get_current_user_role' as any);
+      .rpc('get_current_user_role', {});
     
     // If we get here and there's no error, the function exists
     if (!roleError) {
@@ -70,9 +70,9 @@ Promise.resolve().then(async () => {
 // Helper function to safely get user role using RPC
 export const getUserRole = async () => {
   try {
-    // Call the RPC function with proper typing
+    // Call the RPC function with empty params object
     const { data: roleData, error: roleError } = await supabase
-      .rpc('get_current_user_role' as any);
+      .rpc('get_current_user_role', {});
     
     if (roleError) {
       throw roleError;
