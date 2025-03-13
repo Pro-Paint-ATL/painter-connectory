@@ -5,6 +5,7 @@ import {
   Sheet,
   SheetContent,
   SheetTrigger,
+  SheetClose,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,7 +40,8 @@ const MobileMenu = ({
 }: MobileMenuProps) => {
   const navigate = useNavigate();
 
-  const handleNavigation = (path: string) => {
+  const handleNavigation = (path: string, closeSheet: () => void) => {
+    closeSheet(); // Close the sheet before navigation
     navigate(path);
   };
 
@@ -52,78 +54,83 @@ const MobileMenu = ({
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:w-80">
-        <nav className="flex flex-col gap-4 mt-8">
-          <div className="flex items-center space-x-2 mb-6">
-            <Avatar className="w-8 h-8">
-              <AvatarImage 
-                src="/lovable-uploads/bdd722ac-9f89-47c1-b465-bc989b51d903.png" 
-                alt="Painting preparation with ladder" 
-              />
-              <AvatarFallback className="bg-primary/10">
-                <PaintBucket className="h-4 w-4 text-primary" />
-              </AvatarFallback>
-            </Avatar>
-            <span className="font-semibold text-xl">Pro Paint {currentCity.code}</span>
-          </div>
-          {navItems.map((item) => (
-            <Button
-              key={item.href}
-              variant="ghost"
-              onClick={() => handleNavigation(item.href)}
-              className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
-            >
-              {item.icon}
-              {item.label}
-            </Button>
-          ))}
-          {isAuthenticated && (
-            <>
+        {({ close }) => (
+          <nav className="flex flex-col gap-4 mt-8">
+            <div className="flex items-center space-x-2 mb-6">
+              <Avatar className="w-8 h-8">
+                <AvatarImage 
+                  src="/lovable-uploads/bdd722ac-9f89-47c1-b465-bc989b51d903.png" 
+                  alt="Painting preparation with ladder" 
+                />
+                <AvatarFallback className="bg-primary/10">
+                  <PaintBucket className="h-4 w-4 text-primary" />
+                </AvatarFallback>
+              </Avatar>
+              <span className="font-semibold text-xl">Pro Paint {currentCity.code}</span>
+            </div>
+            {navItems.map((item) => (
               <Button
+                key={item.href}
                 variant="ghost"
-                onClick={() => handleNavigation("/profile")}
+                onClick={() => handleNavigation(item.href, close)}
                 className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
               >
-                <User className="h-4 w-4 mr-2" />
-                Profile
+                {item.icon}
+                {item.label}
               </Button>
-              {user?.role === "painter" && (
-                <>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleNavigation("/painter-dashboard")}
-                    className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
-                  >
-                    Dashboard
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleNavigation("/subscription")}
-                    className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
-                  >
-                    Subscription
-                  </Button>
-                </>
-              )}
-              {user?.role === "admin" && (
+            ))}
+            {isAuthenticated && (
+              <>
                 <Button
                   variant="ghost"
-                  onClick={() => handleNavigation("/admin")}
+                  onClick={() => handleNavigation("/profile", close)}
                   className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
                 >
-                  Admin Dashboard
+                  <User className="h-4 w-4 mr-2" />
+                  Profile
                 </Button>
-              )}
-              <Button
-                variant="ghost"
-                onClick={onLogout}
-                className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            </>
-          )}
-        </nav>
+                {user?.role === "painter" && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleNavigation("/painter-dashboard", close)}
+                      className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
+                    >
+                      Dashboard
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleNavigation("/subscription", close)}
+                      className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
+                    >
+                      Subscription
+                    </Button>
+                  </>
+                )}
+                {user?.role === "admin" && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleNavigation("/admin", close)}
+                    className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
+                  >
+                    Admin Dashboard
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    close();
+                    onLogout();
+                  }}
+                  className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              </>
+            )}
+          </nav>
+        )}
       </SheetContent>
     </Sheet>
   );
