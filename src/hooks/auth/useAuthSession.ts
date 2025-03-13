@@ -36,14 +36,14 @@ export const useAuthSession = () => {
   };
 
   useEffect(() => {
-    // Add a safety timeout to ensure isLoading is eventually set to false
+    // Add a faster safety timeout to ensure isLoading is eventually set to false
     const safetyTimeout = setTimeout(() => {
       if (isLoading && !isInitialized) {
         console.log("Safety timeout triggered - forcing auth state to be initialized");
         setIsLoading(false);
         setIsInitialized(true);
       }
-    }, 5000); // 5 second safety timeout
+    }, 3000); // 3 second safety timeout (reduced from 5)
 
     const checkAuth = async () => {
       try {
@@ -89,18 +89,26 @@ export const useAuthSession = () => {
         if (event === 'SIGNED_IN' && session) {
           console.log("User signed in:", session.user.id);
           await handleUserSession(session);
+          setIsLoading(false);
+          setIsInitialized(true);
         } else if (event === 'SIGNED_OUT') {
           console.log("User signed out");
           setUser(null);
+          setIsLoading(false);
+          setIsInitialized(true);
         } else if (event === 'USER_UPDATED' && session) {
           console.log("User updated:", session.user.id);
           await handleUserSession(session);
+          setIsLoading(false);
+          setIsInitialized(true);
         } else if (event === 'TOKEN_REFRESHED' && session) {
           console.log("Token refreshed for user:", session.user.id);
           await handleUserSession(session);
+          setIsLoading(false);
+          setIsInitialized(true);
         }
         
-        // Ensure loading is set to false after auth state changes
+        // Always ensure loading is set to false and initialized is set to true after auth state changes
         setIsLoading(false);
         setIsInitialized(true);
       }

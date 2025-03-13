@@ -29,6 +29,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearTimeout(timer);
   }, [auth.isLoading, showLoader]);
 
+  // If we've finished initialization but not loading, don't show loader
+  if (auth.isInitialized && !auth.isLoading) {
+    return (
+      <AuthContext.Provider
+        value={{
+          ...auth,
+          supabase
+        }}
+      >
+        {children}
+      </AuthContext.Provider>
+    );
+  }
+
   // Show a loading indicator while authentication is being determined
   // But add a timeout to prevent infinite loading
   if (auth.isLoading && showLoader) {
@@ -40,6 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   }
 
+  // Default case: Auth is not initialized but not loading
   return (
     <AuthContext.Provider
       value={{
