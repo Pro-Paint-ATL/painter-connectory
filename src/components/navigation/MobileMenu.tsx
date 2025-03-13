@@ -54,83 +54,82 @@ const MobileMenu = ({
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:w-80">
-        {({ close }) => (
-          <nav className="flex flex-col gap-4 mt-8">
-            <div className="flex items-center space-x-2 mb-6">
-              <Avatar className="w-8 h-8">
-                <AvatarImage 
-                  src="/lovable-uploads/bdd722ac-9f89-47c1-b465-bc989b51d903.png" 
-                  alt="Painting preparation with ladder" 
-                />
-                <AvatarFallback className="bg-primary/10">
-                  <PaintBucket className="h-4 w-4 text-primary" />
-                </AvatarFallback>
-              </Avatar>
-              <span className="font-semibold text-xl">Pro Paint {currentCity.code}</span>
-            </div>
-            {navItems.map((item) => (
+        {/* Use proper children rendering instead of the function component pattern */}
+        <div className="flex flex-col gap-4 mt-8">
+          <div className="flex items-center space-x-2 mb-6">
+            <Avatar className="w-8 h-8">
+              <AvatarImage 
+                src="/lovable-uploads/bdd722ac-9f89-47c1-b465-bc989b51d903.png" 
+                alt="Painting preparation with ladder" 
+              />
+              <AvatarFallback className="bg-primary/10">
+                <PaintBucket className="h-4 w-4 text-primary" />
+              </AvatarFallback>
+            </Avatar>
+            <span className="font-semibold text-xl">Pro Paint {currentCity.code}</span>
+          </div>
+          {navItems.map((item) => (
+            <Button
+              key={item.href}
+              variant="ghost"
+              onClick={() => handleNavigation(item.href, () => document.querySelector<HTMLButtonElement>('[data-radix-collection-item]')?.click())}
+              className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
+            >
+              {item.icon}
+              {item.label}
+            </Button>
+          ))}
+          {isAuthenticated && (
+            <>
               <Button
-                key={item.href}
                 variant="ghost"
-                onClick={() => handleNavigation(item.href, close)}
+                onClick={() => handleNavigation("/profile", () => document.querySelector<HTMLButtonElement>('[data-radix-collection-item]')?.click())}
                 className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
               >
-                {item.icon}
-                {item.label}
+                <User className="h-4 w-4 mr-2" />
+                Profile
               </Button>
-            ))}
-            {isAuthenticated && (
-              <>
-                <Button
-                  variant="ghost"
-                  onClick={() => handleNavigation("/profile", close)}
-                  className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  Profile
-                </Button>
-                {user?.role === "painter" && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleNavigation("/painter-dashboard", close)}
-                      className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
-                    >
-                      Dashboard
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleNavigation("/subscription", close)}
-                      className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
-                    >
-                      Subscription
-                    </Button>
-                  </>
-                )}
-                {user?.role === "admin" && (
+              {user?.role === "painter" && (
+                <>
                   <Button
                     variant="ghost"
-                    onClick={() => handleNavigation("/admin", close)}
+                    onClick={() => handleNavigation("/painter-dashboard", () => document.querySelector<HTMLButtonElement>('[data-radix-collection-item]')?.click())}
                     className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
                   >
-                    Admin Dashboard
+                    Dashboard
                   </Button>
-                )}
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleNavigation("/subscription", () => document.querySelector<HTMLButtonElement>('[data-radix-collection-item]')?.click())}
+                    className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
+                  >
+                    Subscription
+                  </Button>
+                </>
+              )}
+              {user?.role === "admin" && (
                 <Button
                   variant="ghost"
-                  onClick={() => {
-                    close();
-                    onLogout();
-                  }}
+                  onClick={() => handleNavigation("/admin", () => document.querySelector<HTMLButtonElement>('[data-radix-collection-item]')?.click())}
                   className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
                 >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
+                  Admin Dashboard
                 </Button>
-              </>
-            )}
-          </nav>
-        )}
+              )}
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  document.querySelector<HTMLButtonElement>('[data-radix-collection-item]')?.click();
+                  onLogout();
+                }}
+                className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            </>
+          )}
+        </div>
       </SheetContent>
     </Sheet>
   );
