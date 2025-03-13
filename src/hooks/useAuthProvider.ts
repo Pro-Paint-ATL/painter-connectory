@@ -24,6 +24,7 @@ export const useAuthProvider = () => {
         console.log("User logged in successfully, navigating based on role");
         navigateBasedOnRole();
       }
+      setIsLoggingIn(false); // Always set loading to false
       return loggedInUser;
     } catch (error) {
       console.error("Login handler error:", error);
@@ -32,9 +33,8 @@ export const useAuthProvider = () => {
         description: "Failed to log in. Please try again.",
         variant: "destructive"
       });
+      setIsLoggingIn(false); // Always set loading to false
       return null;
-    } finally {
-      setIsLoggingIn(false);
     }
   };
 
@@ -60,9 +60,6 @@ export const useAuthProvider = () => {
           console.log("Customer registered, navigating to profile");
           navigate('/profile');
         }
-        
-        setIsRegistering(false); // Make sure we reset isRegistering here
-        return registeredUser;
       } else {
         console.log("Registration did not return a user object");
         toast({
@@ -72,8 +69,8 @@ export const useAuthProvider = () => {
         });
       }
       
-      setIsRegistering(false); // Make sure we reset isRegistering here
-      return null;
+      setIsRegistering(false); // Always set loading to false
+      return registeredUser;
     } catch (error) {
       console.error("Registration handler error:", error);
       toast({
@@ -82,7 +79,7 @@ export const useAuthProvider = () => {
         variant: "destructive"
       });
       
-      setIsRegistering(false); // Make sure we reset isRegistering here
+      setIsRegistering(false); // Always set loading to false
       return null;
     }
   };
@@ -104,8 +101,8 @@ export const useAuthProvider = () => {
   };
 
   // Combined loading state from all sources
-  // Only consider sessionLoading if the auth hasn't been initialized yet
-  const isLoading = (!isInitialized && sessionLoading) || actionLoading || isRegistering || isLoggingIn;
+  // Don't consider sessionLoading if we're already initialized
+  const isLoading = (isInitialized ? false : sessionLoading) || actionLoading || isRegistering || isLoggingIn;
 
   return {
     user,

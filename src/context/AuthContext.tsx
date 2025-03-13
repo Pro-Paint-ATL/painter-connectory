@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useEffect } from "react";
 import { AuthContextType } from "@/types/auth";
 import { useAuthProvider } from "@/hooks/useAuthProvider";
 import { supabase } from "@/lib/supabase";
@@ -13,24 +13,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Add a timeout to prevent infinite loading
   const [showLoader, setShowLoader] = React.useState(false);
   
-  React.useEffect(() => {
-    // Only show the loader after a short delay to prevent flashing
-    const timer = setTimeout(() => {
-      if (auth.isLoading) {
+  useEffect(() => {
+    if (auth.isLoading) {
+      // Only show loader after a short delay to prevent flashing
+      const timer = setTimeout(() => {
         setShowLoader(true);
-      }
-    }, 500);
-    
-    // Clear the loader when auth is no longer loading
-    if (!auth.isLoading && showLoader) {
+      }, 300); // shorter delay to prevent UI flashing
+      
+      return () => clearTimeout(timer);
+    } else {
+      // Clear the loader immediately when loading stops
       setShowLoader(false);
     }
-    
-    return () => clearTimeout(timer);
-  }, [auth.isLoading, showLoader]);
+  }, [auth.isLoading]);
 
-  // If we've finished initialization but not loading, don't show loader
-  if (auth.isInitialized && !auth.isLoading) {
+  // If initialization is complete or we're not loading, show the content
+  if (auth.isInitialized || !auth.isLoading) {
     return (
       <AuthContext.Provider
         value={{
@@ -43,8 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   }
 
-  // Show a loading indicator while authentication is being determined
-  // But add a timeout to prevent infinite loading
+  // Only show loader if we're still initializing and the timeout has passed
   if (auth.isLoading && showLoader) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -54,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   }
 
-  // Default case: Auth is not initialized but not loading
+  // If we're loading but loader shouldn't show yet, render invisible placeholder
   return (
     <AuthContext.Provider
       value={{

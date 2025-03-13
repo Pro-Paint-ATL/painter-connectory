@@ -36,14 +36,14 @@ export const useAuthSession = () => {
   };
 
   useEffect(() => {
-    // Add a faster safety timeout to ensure isLoading is eventually set to false
+    // Very short safety timeout to ensure auth state is initialized
     const safetyTimeout = setTimeout(() => {
       if (isLoading && !isInitialized) {
         console.log("Safety timeout triggered - forcing auth state to be initialized");
         setIsLoading(false);
         setIsInitialized(true);
       }
-    }, 3000); // 3 second safety timeout (reduced from 5)
+    }, 2000); // 2 second safety timeout (reduced from 3)
 
     const checkAuth = async () => {
       try {
@@ -106,11 +106,11 @@ export const useAuthSession = () => {
           await handleUserSession(session);
           setIsLoading(false);
           setIsInitialized(true);
+        } else {
+          // For any other event, make sure we're not stuck in loading
+          setIsLoading(false);
+          setIsInitialized(true);
         }
-        
-        // Always ensure loading is set to false and initialized is set to true after auth state changes
-        setIsLoading(false);
-        setIsInitialized(true);
       }
     );
 
