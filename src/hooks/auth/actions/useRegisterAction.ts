@@ -3,15 +3,15 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { User, UserRole } from "@/types/auth";
 import { formatUser } from "@/utils/authUtils";
-import { useAuthCore } from "./useAuthCore";
 import { createTrialSubscription } from "@/utils/companySetup";
+import { useState } from "react";
 
 export const useRegisterAction = (user: User | null, setUser: (user: User | null) => void) => {
-  const { startLoading, stopLoading, handleError } = useAuthCore(user, setUser);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const register = async (name: string, email: string, password: string, role: UserRole) => {
-    startLoading();
+    setIsLoading(true);
     try {
       const safeRole = role === "admin" ? "customer" : role;
       
@@ -30,7 +30,7 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
           description: "An account with this email already exists. Please try logging in instead.",
           variant: "destructive"
         });
-        stopLoading();
+        setIsLoading(false);
         return null;
       }
 
@@ -75,7 +75,7 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
               }
             }
             
-            stopLoading();
+            setIsLoading(false);
             setUser(formattedUser);
             return formattedUser;
           }
@@ -86,7 +86,7 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
             variant: "destructive"
           });
         }
-        stopLoading();
+        setIsLoading(false);
         return null;
       }
 
@@ -112,11 +112,11 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
           description: `Your account has been created as a ${safeRole}.`
         });
 
-        stopLoading();
+        setIsLoading(false);
         return formattedUser;
       }
       
-      stopLoading();
+      setIsLoading(false);
       return null;
     } catch (error) {
       console.error("Registration error:", error);
@@ -125,12 +125,13 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
-      stopLoading();
+      setIsLoading(false);
       return null;
     }
   };
 
   return {
     register,
+    isLoading
   };
 };

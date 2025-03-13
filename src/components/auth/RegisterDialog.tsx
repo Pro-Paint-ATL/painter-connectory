@@ -51,7 +51,7 @@ const RegisterDialog = ({
     if (!isLoading && localLoading) {
       setLocalLoading(false);
     }
-  }, [isLoading]);
+  }, [isLoading, localLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

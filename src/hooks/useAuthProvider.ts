@@ -61,6 +61,7 @@ export const useAuthProvider = () => {
           navigate('/profile');
         }
         
+        setIsRegistering(false); // Make sure we reset isRegistering here
         return registeredUser;
       } else {
         console.log("Registration did not return a user object");
@@ -70,6 +71,8 @@ export const useAuthProvider = () => {
           variant: "destructive"
         });
       }
+      
+      setIsRegistering(false); // Make sure we reset isRegistering here
       return null;
     } catch (error) {
       console.error("Registration handler error:", error);
@@ -78,10 +81,9 @@ export const useAuthProvider = () => {
         description: "There was a problem creating your account. Please try again.",
         variant: "destructive"
       });
+      
+      setIsRegistering(false); // Make sure we reset isRegistering here
       return null;
-    } finally {
-      // Always reset registration state
-      setIsRegistering(false);
     }
   };
 
