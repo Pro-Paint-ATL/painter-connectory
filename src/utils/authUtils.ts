@@ -41,8 +41,8 @@ export const formatUser = async (supabaseUser: SupabaseUser | null): Promise<Use
 
     // Try to get the role from security definer function first to avoid recursion
     try {
-      // Use direct rpc call with explicit count param to bypass TypeScript checks
-      const { data: roleData, error: roleError } = await supabase.rpc(
+      // Use any type to bypass TypeScript type checking
+      const { data: roleData, error: roleError } = await (supabase as any).rpc(
         'get_current_user_role',
         {},
         { count: 'exact' }

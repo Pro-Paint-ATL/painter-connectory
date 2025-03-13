@@ -8,8 +8,8 @@ export const supabase = supabaseClient;
 const createSecurityDefinerFunction = async () => {
   try {
     // Check if the function already exists
-    // Use a direct query approach to bypass TypeScript type checking
-    const { error: roleError } = await supabaseClient.rpc(
+    // Use any type to bypass TypeScript type checking
+    const { error: roleError } = await (supabaseClient as any).rpc(
       'get_current_user_role',
       {},
       { count: 'exact', head: true }
@@ -74,8 +74,8 @@ Promise.resolve().then(async () => {
 // Helper function to safely get user role using RPC
 export const getUserRole = async () => {
   try {
-    // Use a direct query with explicit type casting to bypass TypeScript checks
-    const { data: roleData, error: roleError } = await supabaseClient.rpc(
+    // Use any type to bypass TypeScript type checking
+    const { data: roleData, error: roleError } = await (supabaseClient as any).rpc(
       'get_current_user_role',
       {},
       { count: 'exact' }
