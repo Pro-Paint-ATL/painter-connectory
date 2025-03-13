@@ -8,26 +8,33 @@ export const supabase = supabaseClient;
 const createSecurityDefinerFunction = async () => {
   try {
     // Check if the function already exists
-    const { data, error } = await supabase.rpc('get_current_user_role');
+    const response = await supabase.rpc('get_current_user_role', {});
     
-    if (error && error.message.includes('function "get_current_user_role" does not exist')) {
+    // If we get here, the function exists
+    console.log('Security definer function already exists');
+    return;
+  } catch (error: any) {
+    // Check if the error is because the function doesn't exist
+    if (error.message && error.message.includes('function "get_current_user_role" does not exist')) {
       console.log('Creating security definer function for user roles...');
       
       // Create the function using supabase edge function
-      const { error: sqlError } = await supabase.functions.invoke('create-role-function', {
-        body: { action: 'create_role_function' }
-      });
-      
-      if (sqlError) {
-        console.error('Error creating security definer function:', sqlError);
-      } else {
-        console.log('Security definer function created successfully');
+      try {
+        const { data, error: functionError } = await supabase.functions.invoke('create-role-function', {
+          body: { action: 'create_role_function' }
+        });
+        
+        if (functionError) {
+          console.error('Error creating security definer function:', functionError);
+        } else {
+          console.log('Security definer function created successfully');
+        }
+      } catch (invokeError) {
+        console.error('Error invoking edge function:', invokeError);
       }
-    } else if (!error) {
-      console.log('Security definer function already exists');
+    } else {
+      console.error('Error checking for security definer function:', error);
     }
-  } catch (error) {
-    console.error('Error checking for security definer function:', error);
   }
 };
 
@@ -59,14 +66,9 @@ Promise.resolve().then(() => {
 // Helper function to safely get user role using RPC
 export const getUserRole = async () => {
   try {
-    const { data, error } = await supabase.rpc('get_current_user_role');
-    
-    if (error) {
-      console.error('Error getting user role:', error);
-      return null;
-    }
-    
-    return data as string;
+    // Use empty object parameter to satisfy TypeScript
+    const response = await supabase.rpc('get_current_user_role', {});
+    return response.data as string;
   } catch (error) {
     console.error('Error getting user role:', error);
     return null;

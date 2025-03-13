@@ -27,4 +27,3 @@ enabled = true
 [functions]
 [functions.serve]
 port = 54321
-
