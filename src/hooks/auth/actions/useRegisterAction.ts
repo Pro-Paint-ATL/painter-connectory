@@ -75,8 +75,8 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
               }
             }
             
-            setIsLoading(false);
             setUser(formattedUser);
+            setIsLoading(false);
             return formattedUser;
           }
         } else {

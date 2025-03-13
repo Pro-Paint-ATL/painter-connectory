@@ -24,7 +24,6 @@ export const useAuthProvider = () => {
         console.log("User logged in successfully, navigating based on role");
         navigateBasedOnRole();
       }
-      setIsLoggingIn(false); // Always set loading to false
       return loggedInUser;
     } catch (error) {
       console.error("Login handler error:", error);
@@ -33,8 +32,9 @@ export const useAuthProvider = () => {
         description: "Failed to log in. Please try again.",
         variant: "destructive"
       });
-      setIsLoggingIn(false); // Always set loading to false
       return null;
+    } finally {
+      setIsLoggingIn(false); // Always set loading to false
     }
   };
 
@@ -69,7 +69,6 @@ export const useAuthProvider = () => {
         });
       }
       
-      setIsRegistering(false); // Always set loading to false
       return registeredUser;
     } catch (error) {
       console.error("Registration handler error:", error);
@@ -78,9 +77,10 @@ export const useAuthProvider = () => {
         description: "There was a problem creating your account. Please try again.",
         variant: "destructive"
       });
-      
-      setIsRegistering(false); // Always set loading to false
       return null;
+    } finally {
+      console.log("Registration process complete, resetting isRegistering state");
+      setIsRegistering(false); // Always set loading to false in finally block
     }
   };
 

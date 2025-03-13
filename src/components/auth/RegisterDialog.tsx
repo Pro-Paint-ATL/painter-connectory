@@ -62,20 +62,26 @@ const RegisterDialog = ({
     
     try {
       await onRegister(name, email, password, role);
-      // localLoading will be reset by useEffect when parent isLoading changes
+      // Dialog will be closed by parent component upon successful registration
     } catch (error) {
       console.error("Registration error in dialog:", error);
-      setLocalLoading(false); // Reset on error
+    } finally {
+      // If the parent's isLoading state doesn't change in a timely manner, forcefully reset our local state
+      setTimeout(() => {
+        setLocalLoading(false);
+      }, 2000);
     }
   };
 
-  // Handle dialog close manually
+  // Handle dialog close - force it closed if we really need to
   const handleOpenChange = (open: boolean) => {
-    if (!open && (localLoading || isLoading)) {
-      // If closing while loading, force reset the loading states
+    if (!open) {
+      // If closing, always reset states to ensure we don't get stuck
       setLocalLoading(false);
+      onOpenChange(false);
+    } else {
+      onOpenChange(open);
     }
-    onOpenChange(open);
   };
 
   // Determine if button should be in loading state
