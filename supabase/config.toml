@@ -25,4 +25,5 @@ enabled = true
 enabled = true
 
 [functions]
-serve_from_storage = false
+[functions.serve]
+from_storage = false

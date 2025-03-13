@@ -41,8 +41,7 @@ export const formatUser = async (supabaseUser: SupabaseUser | null): Promise<Use
 
     // Try to get the role from security definer function first to avoid recursion
     const roleResponse = await supabase.rpc('get_current_user_role')
-      .then(response => response)
-      .catch(() => ({ data: null }));
+      .then(response => response);
       
     if (roleResponse.data) {
       defaultUser.role = roleResponse.data as UserRole;
