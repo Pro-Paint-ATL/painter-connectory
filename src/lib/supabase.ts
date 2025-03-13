@@ -8,16 +8,16 @@ export const supabase = supabaseClient;
 const createSecurityDefinerFunction = async () => {
   try {
     // Check if the function already exists
-    const { data, error } = await supabase.rpc('get_current_user_role') as unknown as { data: string | null, error: any };
+    const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role', {}) as unknown as { data: string | null, error: any };
     
     // If we get here and there's no error, the function exists
-    if (!error) {
+    if (!roleError) {
       console.log('Security definer function already exists');
       return;
     }
     
     // Check if the error is because the function doesn't exist
-    if (error.message && error.message.includes('function "get_current_user_role" does not exist')) {
+    if (roleError.message && roleError.message.includes('function "get_current_user_role" does not exist')) {
       console.log('Creating security definer function for user roles...');
       
       // Create the function using supabase edge function
@@ -35,7 +35,7 @@ const createSecurityDefinerFunction = async () => {
         console.error('Error invoking edge function:', invokeError);
       }
     } else {
-      console.error('Error checking for security definer function:', error);
+      console.error('Error checking for security definer function:', roleError);
     }
   } catch (error) {
     console.error('Error in createSecurityDefinerFunction:', error);
@@ -69,14 +69,14 @@ Promise.resolve().then(async () => {
 // Helper function to safely get user role using RPC
 export const getUserRole = async () => {
   try {
-    // Call the RPC function with proper type casting
-    const { data, error } = await supabase.rpc('get_current_user_role') as unknown as { data: string | null, error: any };
+    // Call the RPC function with proper type casting and empty parameters object
+    const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role', {}) as unknown as { data: string | null, error: any };
     
-    if (error) {
-      throw error;
+    if (roleError) {
+      throw roleError;
     }
     
-    return data as string;
+    return roleData as string;
   } catch (error) {
     console.error('Error getting user role:', error);
     return null;
