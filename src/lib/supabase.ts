@@ -7,8 +7,9 @@ export const supabase = supabaseClient;
 // Create a security definer function to get user role safely
 const createSecurityDefinerFunction = async () => {
   try {
-    // Check if the function already exists
-    const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role', {}) as unknown as { data: string | null, error: any };
+    // Check if the function already exists - use type assertions to bypass type checking
+    const { data: roleData, error: roleError } = await supabase
+      .rpc('get_current_user_role', {}, { count: 'exact' }) as { data: string | null, error: any };
     
     // If we get here and there's no error, the function exists
     if (!roleError) {
@@ -69,8 +70,9 @@ Promise.resolve().then(async () => {
 // Helper function to safely get user role using RPC
 export const getUserRole = async () => {
   try {
-    // Call the RPC function with proper type casting and empty parameters object
-    const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role', {}) as unknown as { data: string | null, error: any };
+    // Call the RPC function with proper type assertion to bypass type checking
+    const { data: roleData, error: roleError } = await supabase
+      .rpc('get_current_user_role', {}, { count: 'exact' }) as { data: string | null, error: any };
     
     if (roleError) {
       throw roleError;
