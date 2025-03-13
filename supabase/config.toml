@@ -26,4 +26,5 @@ enabled = true
 
 [functions]
 [functions.serve]
-from_storage = false
+port = 54321
+

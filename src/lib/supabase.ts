@@ -8,8 +8,7 @@ export const supabase = supabaseClient;
 const createSecurityDefinerFunction = async () => {
   try {
     // Check if the function already exists
-    const { data, error } = await supabase.rpc('get_current_user_role')
-      .then(response => response);
+    const { data, error } = await supabase.rpc('get_current_user_role');
     
     if (error && error.message.includes('function "get_current_user_role" does not exist')) {
       console.log('Creating security definer function for user roles...');
@@ -60,8 +59,7 @@ Promise.resolve().then(() => {
 // Helper function to safely get user role using RPC
 export const getUserRole = async () => {
   try {
-    const { data, error } = await supabase.rpc('get_current_user_role')
-      .then(response => response);
+    const { data, error } = await supabase.rpc('get_current_user_role');
     
     if (error) {
       console.error('Error getting user role:', error);
