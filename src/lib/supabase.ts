@@ -8,7 +8,7 @@ export const supabase = supabaseClient;
 const createSecurityDefinerFunction = async () => {
   try {
     // Check if the function already exists
-    const { data, error } = await supabase.rpc('get_current_user_role', {});
+    const { data, error } = await supabase.rpc('get_current_user_role');
     
     // If we get here and there's no error, the function exists
     if (!error) {
@@ -69,8 +69,8 @@ Promise.resolve().then(async () => {
 // Helper function to safely get user role using RPC
 export const getUserRole = async () => {
   try {
-    // Use empty object parameter to satisfy TypeScript
-    const { data, error } = await supabase.rpc('get_current_user_role', {});
+    // Call the RPC function without passing empty object parameter
+    const { data, error } = await supabase.rpc('get_current_user_role');
     
     if (error) {
       throw error;
