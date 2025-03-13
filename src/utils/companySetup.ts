@@ -8,17 +8,14 @@ import { Json } from "@/integrations/supabase/types";
  */
 export const createTrialSubscription = async (userId: string, isFeatured: boolean = false): Promise<boolean> => {
   try {
+    console.log("Creating trial subscription for user:", userId);
+    
     const startDate = new Date();
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + 21); // 21 days trial
 
-    // Get existing profile to preserve other data
-    const { data: existingProfile } = await supabase
-      .from('profiles')
-      .select('subscription')
-      .eq('id', userId)
-      .single();
-
+    // Instead of getting existing profile first (which can trigger the recursion),
+    // directly update with the new subscription data
     const subscription: Subscription = {
       status: 'trial',
       plan: 'pro',
@@ -31,7 +28,7 @@ export const createTrialSubscription = async (userId: string, isFeatured: boolea
       featured: isFeatured || false
     };
 
-    // Update profile with new subscription data while preserving existing data
+    // Update profile with new subscription data
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -41,9 +38,36 @@ export const createTrialSubscription = async (userId: string, isFeatured: boolea
 
     if (error) {
       console.error('Error creating trial subscription:', error);
+      
+      // Try an alternative approach if we hit the recursion error
+      if (error.message && error.message.includes('infinite recursion')) {
+        console.log('Attempting alternative approach for trial subscription');
+        
+        // Use RPC function if available, or fall back to a different approach
+        // For now, let's try using upsert instead
+        const { error: upsertError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: userId,
+            subscription: subscription as unknown as Json
+          }, {
+            onConflict: 'id',
+            ignoreDuplicates: false
+          });
+        
+        if (upsertError) {
+          console.error('Alternative approach also failed:', upsertError);
+          return false;
+        }
+        
+        console.log('Alternative approach succeeded');
+        return true;
+      }
+      
       return false;
     }
 
+    console.log('Trial subscription created successfully');
     return true;
   } catch (error) {
     console.error('Exception creating trial subscription:', error);
