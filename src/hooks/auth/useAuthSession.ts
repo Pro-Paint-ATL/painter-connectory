@@ -7,6 +7,7 @@ import { formatUser } from "@/utils/authUtils";
 export const useAuthSession = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const handleUserSession = async (session: any) => {
     if (session) {
@@ -35,16 +36,27 @@ export const useAuthSession = () => {
   };
 
   useEffect(() => {
+    // Add a safety timeout to ensure isLoading is eventually set to false
+    const safetyTimeout = setTimeout(() => {
+      if (isLoading && !isInitialized) {
+        console.log("Safety timeout triggered - forcing auth state to be initialized");
+        setIsLoading(false);
+        setIsInitialized(true);
+      }
+    }, 5000); // 5 second safety timeout
+
     const checkAuth = async () => {
       try {
         setIsLoading(true);
         console.log("Checking auth state...");
+        
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
           console.error("Error getting session:", sessionError);
           setUser(null);
           setIsLoading(false);
+          setIsInitialized(true);
           return;
         }
         
@@ -55,10 +67,15 @@ export const useAuthSession = () => {
           console.log("No existing session found");
           setUser(null);
         }
+        
+        // Mark auth as initialized and stop loading regardless of the result
+        setIsInitialized(true);
+        setIsLoading(false);
       } catch (error) {
         console.error("Error checking auth:", error);
         setUser(null);
-      } finally {
+        // Ensure we're not stuck in loading state even if there's an error
+        setIsInitialized(true);
         setIsLoading(false);
       }
     };
@@ -82,14 +99,19 @@ export const useAuthSession = () => {
           console.log("Token refreshed for user:", session.user.id);
           await handleUserSession(session);
         }
+        
+        // Ensure loading is set to false after auth state changes
+        setIsLoading(false);
+        setIsInitialized(true);
       }
     );
 
     return () => {
       console.log("Cleaning up auth subscription");
       subscription?.unsubscribe();
+      clearTimeout(safetyTimeout);
     };
   }, []);
 
-  return { user, setUser, isLoading };
+  return { user, setUser, isLoading, isInitialized };
 };

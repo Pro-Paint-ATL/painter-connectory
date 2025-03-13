@@ -8,7 +8,7 @@ import { UserRole } from "@/types/auth";
 import { useToast } from "./use-toast";
 
 export const useAuthProvider = () => {
-  const { user, setUser, isLoading: sessionLoading } = useAuthSession();
+  const { user, setUser, isLoading: sessionLoading, isInitialized } = useAuthSession();
   const { login, register, logout, updateUserProfile, isLoading: actionLoading } = useAuthActions(user, setUser);
   const { navigateBasedOnRole, navigate } = useAuthNavigation(user);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -102,12 +102,14 @@ export const useAuthProvider = () => {
   };
 
   // Combined loading state from all sources
-  const isLoading = sessionLoading || actionLoading || isRegistering || isLoggingIn;
+  // Only consider sessionLoading if the auth hasn't been initialized yet
+  const isLoading = (!isInitialized && sessionLoading) || actionLoading || isRegistering || isLoggingIn;
 
   return {
     user,
     isAuthenticated: !!user,
     isLoading,
+    isInitialized,
     login: handleLogin,
     register: handleRegister,
     logout: handleLogout,

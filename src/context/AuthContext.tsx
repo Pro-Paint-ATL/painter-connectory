@@ -10,8 +10,28 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const auth = useAuthProvider();
 
+  // Add a timeout to prevent infinite loading
+  const [showLoader, setShowLoader] = React.useState(false);
+  
+  React.useEffect(() => {
+    // Only show the loader after a short delay to prevent flashing
+    const timer = setTimeout(() => {
+      if (auth.isLoading) {
+        setShowLoader(true);
+      }
+    }, 500);
+    
+    // Clear the loader when auth is no longer loading
+    if (!auth.isLoading && showLoader) {
+      setShowLoader(false);
+    }
+    
+    return () => clearTimeout(timer);
+  }, [auth.isLoading, showLoader]);
+
   // Show a loading indicator while authentication is being determined
-  if (auth.isLoading) {
+  // But add a timeout to prevent infinite loading
+  if (auth.isLoading && showLoader) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
