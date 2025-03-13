@@ -40,113 +40,100 @@ const LoadingPage = () => (
   </div>
 );
 
-const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading } = useAuth();
+// Move route components outside of AppRoutes
+const AppContent = () => {
+  const { user, isLoading, isAuthenticated } = useAuth();
   
   if (isLoading) {
     return <LoadingPage />;
   }
   
-  if (!user || user.role !== "admin") {
-    return <Navigate to="/" replace />;
-  }
-  
-  return <>{children}</>;
-};
+  // Create protected route components using the authenticated user info
+  const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+    if (!user || user.role !== "admin") {
+      return <Navigate to="/" replace />;
+    }
+    return <>{children}</>;
+  };
 
-const PainterRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return <LoadingPage />;
-  }
-  
-  if (!user || user.role !== "painter") {
-    return <Navigate to="/" replace />;
-  }
-  
-  return <>{children}</>;
-};
+  const PainterRoute = ({ children }: { children: React.ReactNode }) => {
+    if (!user || user.role !== "painter") {
+      return <Navigate to="/" replace />;
+    }
+    return <>{children}</>;
+  };
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return <LoadingPage />;
-  }
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
-  }
-  
-  return <>{children}</>;
-};
-
-const AppRoutes = () => {
-  const { user, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return <LoadingPage />;
-  }
+  const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+    if (!isAuthenticated) {
+      return <Navigate to="/" replace />;
+    }
+    return <>{children}</>;
+  };
   
   return (
-    <Suspense fallback={<LoadingPage />}>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/calculator" element={<EstimateCalculator />} />
-        <Route path="/find-painters" element={<FindPainters />} />
-        <Route path="/painter/:id" element={<PainterProfile />} />
-        <Route 
-          path="/profile" 
-          element={
-            <ProtectedRoute>
-              <CustomerProfile />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/painter-dashboard" 
-          element={
-            <PainterRoute>
-              <PainterDashboard />
-            </PainterRoute>
-          } 
-        />
-        <Route 
-          path="/booking/:painterId" 
-          element={
-            <ProtectedRoute>
-              <Booking />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/subscription" 
-          element={
-            <ProtectedRoute>
-              <PainterSubscription />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/admin" 
-          element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          } 
-        />
-        <Route 
-          path="/admin/subscriptions" 
-          element={
-            <AdminRoute>
-              <SubscriptionManagement />
-            </AdminRoute>
-          } 
-        />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Suspense>
+    <div className="flex min-h-screen flex-col">
+      <Header />
+      <main className="flex-1">
+        <Suspense fallback={<LoadingPage />}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/calculator" element={<EstimateCalculator />} />
+            <Route path="/find-painters" element={<FindPainters />} />
+            <Route path="/painter/:id" element={<PainterProfile />} />
+            <Route 
+              path="/profile" 
+              element={
+                <ProtectedRoute>
+                  <CustomerProfile />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/painter-dashboard" 
+              element={
+                <PainterRoute>
+                  <PainterDashboard />
+                </PainterRoute>
+              } 
+            />
+            <Route 
+              path="/booking/:painterId" 
+              element={
+                <ProtectedRoute>
+                  <Booking />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/subscription" 
+              element={
+                <ProtectedRoute>
+                  <PainterSubscription />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin" 
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/subscriptions" 
+              element={
+                <AdminRoute>
+                  <SubscriptionManagement />
+                </AdminRoute>
+              } 
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </main>
+      <Footer />
+    </div>
   );
 };
 
@@ -189,13 +176,7 @@ const App = () => {
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <div className="flex min-h-screen flex-col">
-              <Header />
-              <main className="flex-1">
-                <AppRoutes />
-              </main>
-              <Footer />
-            </div>
+            <AppContent />
           </TooltipProvider>
         </AuthProvider>
       </BrowserRouter>

@@ -36,14 +36,14 @@ export const useAuthSession = () => {
   };
 
   useEffect(() => {
-    // Even shorter safety timeout to avoid stuck states
+    // Very short safety timeout to avoid stuck states - 1 second max
     const safetyTimeout = setTimeout(() => {
       if (isLoading && !isInitialized) {
         console.log("Safety timeout triggered - forcing auth state to be initialized");
         setIsLoading(false);
         setIsInitialized(true);
       }
-    }, 1500); // 1.5 second safety timeout (reduced from 2)
+    }, 1000); // 1 second safety timeout (reduced from 1.5)
 
     const checkAuth = async () => {
       try {
