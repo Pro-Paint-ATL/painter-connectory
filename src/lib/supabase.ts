@@ -8,11 +8,12 @@ export const supabase = supabaseClient;
 const createSecurityDefinerFunction = async () => {
   try {
     // Check if the function already exists
-    const response = await supabaseClient.from('rpc/get_current_user_role')
-      .select('*', { head: true })
-      .then(res => ({ data: res.data, error: res.error }));
-    
-    const { error: roleError } = response;
+    // Use a direct query approach to bypass TypeScript type checking
+    const { error: roleError } = await supabaseClient.rpc(
+      'get_current_user_role',
+      {},
+      { count: 'exact', head: true }
+    );
     
     // If we get here and there's no error, the function exists
     if (!roleError) {
@@ -73,18 +74,18 @@ Promise.resolve().then(async () => {
 // Helper function to safely get user role using RPC
 export const getUserRole = async () => {
   try {
-    // Instead of using rpc directly, we'll use a raw query approach to bypass TypeScript checks
-    const response = await supabaseClient.from('rpc/get_current_user_role')
-      .select('*')
-      .single()
-      .then(res => ({ data: res.data, error: res.error }));
-    
-    const { data: roleData, error: roleError } = response;
+    // Use a direct query with explicit type casting to bypass TypeScript checks
+    const { data: roleData, error: roleError } = await supabaseClient.rpc(
+      'get_current_user_role',
+      {},
+      { count: 'exact' }
+    );
     
     if (roleError) {
       throw roleError;
     }
     
+    // Cast the result to string since we know the function returns a string
     return roleData as string;
   } catch (error) {
     console.error('Error getting user role:', error);
