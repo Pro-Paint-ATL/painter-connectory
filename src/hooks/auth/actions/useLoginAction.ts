@@ -12,6 +12,7 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
   const login = async (email: string, password: string) => {
     startLoading();
     try {
+      console.log("Starting login process for:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -23,12 +24,15 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
           description: error.message,
           variant: "destructive"
         });
+        console.error("Login error:", error.message);
         stopLoading();
         return null;
       }
 
       if (data.user) {
+        console.log("User authenticated, formatting user data");
         const formattedUser = await formatUser(data.user);
+        console.log("Formatted user:", formattedUser);
         setUser(formattedUser);
         
         toast({
@@ -40,6 +44,7 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
         stopLoading();
         return formattedUser;
       }
+      console.log("No user data returned from authentication");
       stopLoading();
       return null;
     } catch (error) {
