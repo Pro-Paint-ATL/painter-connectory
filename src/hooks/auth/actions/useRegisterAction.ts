@@ -1,161 +1,96 @@
 
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { User, UserRole } from "@/types/auth";
 import { formatUser } from "@/utils/authUtils";
-import { createTrialSubscription } from "@/utils/companySetup";
-import { useState } from "react";
+import { createCompanyProfile } from "@/utils/companySetup";
+import { useToast } from "@/hooks/use-toast";
+import { useAuthCore } from "./useAuthCore";
 
 export const useRegisterAction = (user: User | null, setUser: (user: User | null) => void) => {
-  const [isLoading, setIsLoading] = useState(false);
+  const { startLoading, stopLoading, setError } = useAuthCore(user, setUser);
   const { toast } = useToast();
 
   const register = async (name: string, email: string, password: string, role: UserRole) => {
-    if (isLoading) return null; // Prevent multiple calls while loading
-    
-    setIsLoading(true);
     console.log("Starting registration process with role:", role);
+    startLoading();
     
     try {
-      // Use customer role if admin is attempted (for safety)
-      const safeRole = role === "admin" ? "customer" : role;
-      
-      // Check if user already exists
-      const { data: existingUsers } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('email', email)
-        .maybeSingle();
-
-      if (existingUsers) {
-        toast({
-          title: "Registration Failed",
-          description: "An account with this email already exists. Please try logging in instead.",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        return null;
-      }
-
-      // Perform the signup
+      // Step 1: Create auth user
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             name,
-            role: safeRole
-          },
-          emailRedirectTo: window.location.origin
+            role
+          }
         }
       });
 
       if (error) {
-        console.error("Signup error:", error.message);
-        
-        // Handle specific error cases
-        if (error.message.includes("User already registered")) {
-          toast({
-            title: "Already Registered",
-            description: "This email is already registered. Please log in instead.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Registration Error",
-            description: error.message || "Failed to register",
-            variant: "destructive"
-          });
-        }
-        
-        setIsLoading(false);
+        console.error("Registration auth error:", error.message);
+        toast({
+          title: "Registration Failed",
+          description: error.message,
+          variant: "destructive"
+        });
+        stopLoading();
         return null;
       }
 
-      // At this point registration succeeded
-      if (data.user) {
-        console.log("User registered successfully, formatting user data");
-        let formattedUser = null;
-        
-        try {
-          // Create a basic user object first as fallback
-          const basicUser: User = {
-            id: data.user.id,
-            name: name,
-            email: email,
-            role: safeRole
-          };
-          
-          // Set the user immediately to prevent loading state issues
-          setUser(basicUser);
-          
-          // Try to format the user for more complete data
-          formattedUser = await formatUser(data.user);
-          
-          if (formattedUser) {
-            console.log("User formatted:", formattedUser);
-            setUser(formattedUser);
-          } else {
-            formattedUser = basicUser;
-          }
-          
-          // If this is a painter, try to create a trial subscription
-          if (safeRole === "painter") {
-            try {
-              console.log("Creating trial subscription for painter");
-              await createTrialSubscription(formattedUser.id);
-            } catch (subError) {
-              console.error("Error creating trial subscription:", subError);
-              // Don't block registration if subscription setup fails
-            }
-          }
-          
-          toast({
-            title: "Registration Successful",
-            description: `Welcome! Your account has been created.`
-          });
-          
-          return formattedUser;
-        } catch (formatError) {
-          console.error("Failed to format user:", formatError);
-          
-          // Already set a basic user above, so just return it
-          return {
-            id: data.user.id,
-            name: name,
-            email: email,
-            role: safeRole
-          };
-        }
-      } else {
-        console.log("Registration succeeded but no user data returned");
+      if (!data.user) {
+        console.error("No user data returned from registration");
         toast({
-          title: "Registration Issue",
-          description: "Your account may have been created but we couldn't log you in automatically.",
+          title: "Registration Error",
+          description: "Failed to create account. Please try again.",
           variant: "destructive"
         });
-        setIsLoading(false);
+        stopLoading();
         return null;
       }
-    } catch (err) {
-      console.error("Unexpected registration error:", err);
+
+      console.log("Auth user created successfully");
+
+      // Step 2: Initialize profile info for user
+      let userProfile = await formatUser(data.user);
+      setUser(userProfile);
+
+      // Step 3: Create company profile for painters
+      if (role === "painter") {
+        console.log("Creating company profile for painter");
+        const success = await createCompanyProfile(data.user.id, name);
+        
+        if (!success) {
+          console.warn("Could not create company profile, but continuing registration");
+          // We don't fail the registration - just log a warning
+        }
+      }
+
+      // Get the latest user data
+      userProfile = await formatUser(data.user);
+      setUser(userProfile);
+      
+      console.log("User registered successfully with role:", role);
+      toast({
+        title: "Registration Successful",
+        description: `Welcome to PainterMatch, ${name}!`
+      });
+      
+      stopLoading();
+      return userProfile;
+    } catch (error) {
+      console.error("Exception during registration:", error);
       toast({
         title: "Registration Error",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
-      setIsLoading(false);
+      stopLoading();
       return null;
-    } finally {
-      // Ensure loading is reset with a slight delay to allow state updates to propagate
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 100);
     }
   };
 
   return {
-    register,
-    isLoading
+    register
   };
 };

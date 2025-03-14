@@ -58,10 +58,7 @@ export const useAuthProvider = () => {
       });
       return null;
     } finally {
-      // Use setTimeout to ensure state updates don't conflict
-      setTimeout(() => {
-        setIsLoggingIn(false);
-      }, 100);
+      setIsLoggingIn(false);
     }
   };
 
@@ -111,10 +108,7 @@ export const useAuthProvider = () => {
       
       return null;
     } finally {
-      // Use setTimeout to ensure state updates don't conflict
-      setTimeout(() => {
-        setIsRegistering(false);
-      }, 100);
+      setIsRegistering(false);
     }
   };
 
@@ -135,7 +129,6 @@ export const useAuthProvider = () => {
   };
 
   // Combined loading state with a more reliable approach
-  // Give more weight to the registering and logging in states which are directly user-triggered
   const isLoading = isRegistering || isLoggingIn || ((!isInitialized) && sessionLoading) || actionLoading;
 
   return {
