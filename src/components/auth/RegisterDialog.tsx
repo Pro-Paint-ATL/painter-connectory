@@ -34,12 +34,11 @@ const RegisterDialog = ({
   const [role, setRole] = useState<UserRole>("customer");
   const [localLoading, setLocalLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [formSubmitted, setFormSubmitted] = useState(false);
   
   // Reset form when dialog opens/closes
   useEffect(() => {
     if (!isOpen) {
-      // Wait a bit before resetting the form to avoid flicker
+      // Wait a bit before resetting the form to avoid flickering
       const timeout = setTimeout(() => {
         setName("");
         setEmail("");
@@ -47,34 +46,10 @@ const RegisterDialog = ({
         setRole("customer");
         setLocalLoading(false);
         setErrorMessage(null);
-        setFormSubmitted(false);
       }, 300);
       return () => clearTimeout(timeout);
     }
   }, [isOpen]);
-
-  // When parent isLoading changes to false, also reset local loading
-  useEffect(() => {
-    if (!isLoading && localLoading) {
-      setLocalLoading(false);
-    }
-  }, [isLoading, localLoading]);
-
-  // Safety timeout to prevent UI from getting stuck
-  useEffect(() => {
-    let timeout: NodeJS.Timeout;
-    
-    if (localLoading) {
-      timeout = setTimeout(() => {
-        setLocalLoading(false);
-        setErrorMessage("Registration is taking longer than expected. Please try again.");
-      }, 5000); // 5 seconds timeout
-    }
-    
-    return () => {
-      if (timeout) clearTimeout(timeout);
-    };
-  }, [localLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,70 +58,37 @@ const RegisterDialog = ({
     
     setErrorMessage(null);
     setLocalLoading(true);
-    setFormSubmitted(true);
     
     try {
       await onRegister(name, email, password, role);
-      // Don't close the dialog here - let the parent component decide
+      // Don't close the dialog here - parent component will handle it
     } catch (error: any) {
       console.error("Registration error in dialog:", error);
       setErrorMessage(error?.message || "An unexpected error occurred. Please try again.");
-      setFormSubmitted(false);
     } finally {
-      // If the parent's isLoading state doesn't change in a timely manner, forcefully reset our local state
-      setTimeout(() => {
-        setLocalLoading(false);
-      }, 500);
+      setLocalLoading(false);
     }
   };
-
-  // Prevent auto-closing the dialog on button click outside the form
-  const handleDialogInteraction = (e: React.MouseEvent) => {
-    if (localLoading || isLoading) {
-      e.stopPropagation();
-      e.preventDefault();
-    }
-  };
-
-  // Handle dialog close - force it closed if we really need to
-  const handleOpenChange = (open: boolean) => {
-    // Prevent dialog from closing during loading state
-    if (!open && (localLoading || isLoading)) {
-      return;
-    }
-    
-    if (!open) {
-      // If closing, always reset states to ensure we don't get stuck
-      setTimeout(() => {
-        setLocalLoading(false);
-        setFormSubmitted(false);
-      }, 300);
-    }
-    
-    onOpenChange(open);
-  };
-
-  // Only close automatically after successful registration and only after a delay
-  useEffect(() => {
-    if (isOpen && formSubmitted && !isLoading && !localLoading && !errorMessage) {
-      // If there's no error and loading is complete, and form was submitted, the registration might have been successful
-      const successTimer = setTimeout(() => {
-        onOpenChange(false);
-      }, 1000);
-      
-      return () => clearTimeout(successTimer);
-    }
-  }, [isOpen, isLoading, localLoading, errorMessage, onOpenChange, formSubmitted]);
 
   // Determine if button should be in loading state
   const isButtonLoading = isLoading || localLoading;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      // Prevent dialog from closing during loading state
+      if (!open && isButtonLoading) {
+        return;
+      }
+      onOpenChange(open);
+    }}>
       <DialogContent 
         className="sm:max-w-[425px]"
-        onClick={handleDialogInteraction}
         onPointerDownOutside={e => {
+          if (isButtonLoading) {
+            e.preventDefault();
+          }
+        }}
+        onEscapeKeyDown={e => {
           if (isButtonLoading) {
             e.preventDefault();
           }

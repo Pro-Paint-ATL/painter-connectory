@@ -2,7 +2,6 @@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { User, UserRole } from "@/types/auth";
-import { formatUser } from "@/utils/authUtils";
 import { useState } from "react";
 
 export const useRegisterAction = (user: User | null, setUser: (user: User | null) => void) => {
@@ -43,13 +42,11 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
           data: {
             name,
             role: safeRole
-          },
-          emailRedirectTo: window.location.origin
+          }
         }
       });
 
       if (error) {
-        // Handle specific error cases
         if (error.message.includes("User already registered")) {
           toast({
             title: "Registration Failed",
@@ -100,31 +97,23 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
             email: email,
             role: safeRole,
             created_at: new Date().toISOString()
-          }, {
-            onConflict: 'id',
-            ignoreDuplicates: false
           });
           
         if (profileError) {
           console.error("Error creating initial profile:", profileError);
-          // Continue anyway since we've already set the basic user
         } else {
           console.log("Initial profile created successfully");
         }
       } catch (profileErr) {
         console.error("Exception creating initial profile:", profileErr);
-        // Continue anyway since we've already set the basic user
       }
       
-      // Add small delay before showing success message to prevent UI flicker
-      setTimeout(() => {
-        toast({
-          title: "Registration Successful",
-          description: `Your account has been created as a ${safeRole}.`
-        });
-        setIsLoading(false);
-      }, 300);
-
+      toast({
+        title: "Registration Successful",
+        description: `Your account has been created as a ${safeRole}.`
+      });
+      
+      setIsLoading(false);
       return basicUser;
     } catch (error) {
       console.error("Registration error:", error);

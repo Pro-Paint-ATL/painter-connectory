@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -78,16 +79,17 @@ const Header = () => {
       const result = await register(name, email, password, role);
       
       if (result) {
-        console.log("Registration successful, dialog will close automatically");
+        console.log("Registration successful");
+        // Close dialog after short delay to allow user to see success message
         setTimeout(() => {
           setIsRegisterOpen(false);
-        }, 1000);
+        }, 1500);
       } else {
-        console.log("Registration failed, keeping dialog open");
-        setIsLoading(false);
+        console.log("Registration failed");
       }
     } catch (error) {
       console.error("Registration failed:", error);
+    } finally {
       setIsLoading(false);
     }
   };
