@@ -1,36 +1,23 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, PaintBucket, Shield, Clock, Users, CreditCard, Lock, AlertCircle } from "lucide-react";
+import { CheckCircle2, PaintBucket, Shield, Clock, Users, CreditCard, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { createTrialSubscription } from "@/utils/companySetup";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Direct Stripe checkout link
 const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/9AQeVl7aMbAbaHedQQ";
 
 const PainterSubscription = () => {
-  const { user, updateUserProfile } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isRedirectDialogOpen, setIsRedirectDialogOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Effect to check if user has subscription after component mounts
-  // This can help if the subscription was created but the UI didn't update
-  useEffect(() => {
-    if (user && (user.subscription?.status === "active" || user.subscription?.status === "trial")) {
-      // If user already has a subscription, force a page refresh to update UI
-      window.location.reload();
-    }
-  }, [user]);
 
   // Check if user is a painter
   if (user?.role !== "painter") {
@@ -105,69 +92,24 @@ const PainterSubscription = () => {
     if (!user) return;
     
     setIsProcessing(true);
-    setErrorMessage(null);
+    const success = await createTrialSubscription(user.id);
     
-    try {
-      // First try the normal way
-      const success = await createTrialSubscription(user.id);
+    if (success) {
+      toast({
+        title: "Free Trial Started!",
+        description: "Your 21-day free trial has been activated. Enjoy all Pro features!",
+      });
       
-      if (success) {
-        toast({
-          title: "Free Trial Started!",
-          description: "Your 21-day free trial has been activated. Enjoy all Pro features!",
-        });
-        
-        // Update local user object to avoid needing a page refresh
-        if (updateUserProfile) {
-          const startDate = new Date();
-          const endDate = new Date(startDate);
-          endDate.setDate(endDate.getDate() + 21);
-          
-          await updateUserProfile({
-            subscription: {
-              status: 'trial',
-              plan: 'pro',
-              startDate: startDate.toISOString(),
-              endDate: endDate.toISOString(),
-              amount: 49,
-              currency: 'usd',
-              interval: 'month',
-              trialEnds: endDate.toISOString(),
-            }
-          });
-        }
-        
-        // Navigate to dashboard after success
-        toast({
-          title: "Redirecting...",
-          description: "Taking you to your dashboard."
-        });
-        setTimeout(() => navigate("/painter-dashboard"), 1500);
-      } else {
-        // If failed and we haven't retried too many times
-        if (retryCount < 2) {
-          setRetryCount(prev => prev + 1);
-          setErrorMessage("Trial activation encountered an issue. Please try again.");
-        } else {
-          toast({
-            title: "Error Starting Trial",
-            description: "There was a problem activating your free trial. Please try the Stripe subscription option instead.",
-            variant: "destructive"
-          });
-          setErrorMessage("We're having technical difficulties with trial activation. Please use the Stripe option below.");
-        }
-      }
-    } catch (error) {
-      console.error("Error in handleStartTrial:", error);
-      setErrorMessage("An unexpected error occurred. Please try the Stripe subscription option instead.");
+      // Force refresh to update user subscription info
+      window.location.reload();
+    } else {
       toast({
         title: "Error Starting Trial",
-        description: "There was a problem activating your free trial. Please try again or use Stripe checkout.",
+        description: "There was a problem activating your free trial. Please try again.",
         variant: "destructive"
       });
-    } finally {
-      setIsProcessing(false);
     }
+    setIsProcessing(false);
   };
 
   // Handle external Stripe checkout
@@ -267,16 +209,6 @@ const PainterSubscription = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {errorMessage && (
-                  <Alert variant="destructive" className="mb-4">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Subscription Error</AlertTitle>
-                    <AlertDescription>
-                      {errorMessage}
-                    </AlertDescription>
-                  </Alert>
-                )}
-              
                 <div className="rounded-lg bg-primary/5 p-4">
                   <h3 className="font-medium mb-2 flex items-center gap-2">
                     <CheckCircle2 className="h-5 w-5 text-primary" />
