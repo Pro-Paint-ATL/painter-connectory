@@ -7,7 +7,7 @@ export const useAuthNavigation = (user: User | null) => {
 
   const navigateBasedOnRole = () => {
     if (!user) {
-      navigate("/");
+      console.log("No user to navigate with");
       return;
     }
     

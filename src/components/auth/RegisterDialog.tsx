@@ -63,7 +63,7 @@ const RegisterDialog = ({
       timeout = setTimeout(() => {
         setLocalLoading(false);
         setErrorMessage("Registration is taking longer than expected. Please try again or check if your account was created.");
-      }, 15000); // 15 seconds timeout
+      }, 10000); // 10 seconds timeout - reduced from 15
     }
     
     return () => {
@@ -82,14 +82,14 @@ const RegisterDialog = ({
     try {
       await onRegister(name, email, password, role);
       // Dialog will be closed by parent component upon successful registration
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error in dialog:", error);
-      setErrorMessage("An unexpected error occurred. Please try again.");
+      setErrorMessage(error?.message || "An unexpected error occurred. Please try again.");
     } finally {
       // If the parent's isLoading state doesn't change in a timely manner, forcefully reset our local state
       setTimeout(() => {
         setLocalLoading(false);
-      }, 2000);
+      }, 1000);
     }
   };
 

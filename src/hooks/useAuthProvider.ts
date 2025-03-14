@@ -15,6 +15,32 @@ export const useAuthProvider = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
 
+  // Register event listener for painter registration
+  useEffect(() => {
+    const handleOpenRegisterPainter = () => {
+      // Wait for DOM to update
+      setTimeout(() => {
+        const registerButton = document.querySelector('button:has-text("Sign Up")');
+        if (registerButton) {
+          (registerButton as HTMLButtonElement).click();
+          // Wait for dialog to open
+          setTimeout(() => {
+            const painterButton = document.querySelector('button:has-text("Painter")');
+            if (painterButton) {
+              (painterButton as HTMLButtonElement).click();
+            }
+          }, 300);
+        }
+      }, 300);
+    };
+
+    window.addEventListener('open-register-painter', handleOpenRegisterPainter);
+    
+    return () => {
+      window.removeEventListener('open-register-painter', handleOpenRegisterPainter);
+    };
+  }, []);
+
   // Add registration timeout to prevent UI from getting stuck
   useEffect(() => {
     if (isRegistering) {
@@ -25,11 +51,11 @@ export const useAuthProvider = () => {
           setIsRegistering(false);
           toast({
             title: "Registration taking longer than expected",
-            description: "Please check if your account was created and try logging in.",
+            description: "Please check if your account was created and try logging in instead.",
             variant: "destructive"
           });
         }
-      }, 20000); // 20 seconds timeout
+      }, 15000); // 15 seconds timeout - reduced from 20
       
       return () => clearTimeout(timeout);
     }
@@ -42,7 +68,8 @@ export const useAuthProvider = () => {
       const loggedInUser = await login(email, password);
       if (loggedInUser) {
         console.log("User logged in successfully, navigating based on role");
-        navigateBasedOnRole();
+        // Small delay to ensure user state is fully updated
+        setTimeout(() => navigateBasedOnRole(), 100);
       }
       return loggedInUser;
     } catch (error) {
@@ -64,6 +91,9 @@ export const useAuthProvider = () => {
     setIsRegistering(true);
     
     try {
+      // Clear any previous toasts to avoid confusion
+      // toast.dismiss();
+      
       const registeredUser = await register(name, email, password, role);
       
       if (registeredUser) {
@@ -72,9 +102,14 @@ export const useAuthProvider = () => {
         // For painter roles, navigate to subscription page
         if (registeredUser.role === "painter") {
           console.log("Painter registered, navigating to subscription page");
+          toast({
+            title: "Account Created!",
+            description: "Your painter account has been created. You can now set up your subscription.",
+          });
+          // Small delay to ensure UI updates before navigation
           setTimeout(() => {
             navigate('/subscription');
-          }, 100);
+          }, 300);
         } else if (registeredUser.role === "admin") {
           console.log("Admin registered, navigating to admin dashboard");
           navigate('/admin');
@@ -92,11 +127,12 @@ export const useAuthProvider = () => {
       }
       
       return registeredUser;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration handler error:", error);
+      const errorMessage = error?.message || "There was a problem creating your account";
       toast({
         title: "Registration Error",
-        description: "There was a problem creating your account. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
       return null;

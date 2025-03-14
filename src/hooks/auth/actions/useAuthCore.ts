@@ -15,8 +15,12 @@ export const useAuthCore = (user: User | null, setUser: (user: User | null | ((p
     setError(null);
   };
   
-  const stopLoading = () => {
+  const stopLoading = (errorMsg?: string) => {
     setIsLoading(false);
+    if (errorMsg) {
+      setError(errorMsg);
+      console.error("Auth error:", errorMsg);
+    }
   };
   
   const handleError = (errorMessage: string) => {

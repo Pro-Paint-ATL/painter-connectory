@@ -11,9 +11,14 @@ const PricingInfo: React.FC = () => {
       <p className="text-muted-foreground mb-6">
         Unlock premium benefits and get more clients with our painter subscription
       </p>
-      <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
-        <p className="mb-2">No credit card required for trial. Cancel anytime.</p>
-        <p className="text-xs">After signing up, click the button on the next page to activate your trial.</p>
+      <div className="text-sm bg-muted p-4 rounded-md space-y-2">
+        <p className="font-medium text-foreground">Important Information:</p>
+        <ul className="list-disc list-inside text-muted-foreground">
+          <li>No credit card required for trial</li>
+          <li>Cancel anytime during your trial period</li>
+          <li>Use the button below to activate your free trial</li>
+          <li>If you encounter any issues, please try refreshing the page</li>
+        </ul>
       </div>
     </div>
   );
