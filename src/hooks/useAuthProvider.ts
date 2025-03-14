@@ -128,7 +128,7 @@ export const useAuthProvider = () => {
     }
   };
 
-  // Combined loading state with a more reliable approach
+  // Combined loading state
   const isLoading = isRegistering || isLoggingIn || ((!isInitialized) && sessionLoading) || actionLoading;
 
   return {
