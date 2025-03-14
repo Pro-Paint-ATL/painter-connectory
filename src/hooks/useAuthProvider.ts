@@ -3,9 +3,9 @@ import { useAuthSession } from "./auth/useAuthSession";
 import { useAuthActions } from "./auth/useAuthActions";
 import { useAuthNavigation } from "./auth/useNavigation";
 import { supabase } from "@/lib/supabase";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { UserRole } from "@/types/auth";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "./use-toast";
 
 export const useAuthProvider = () => {
   const { user, setUser, isLoading: sessionLoading, isInitialized } = useAuthSession();
@@ -15,34 +15,10 @@ export const useAuthProvider = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
 
-  // Make sure to initialize the RPC functions
-  useEffect(() => {
-    const initRpcFunctions = async () => {
-      try {
-        console.log("Initializing RPC functions...");
-        const { data, error } = await supabase.functions.invoke('create-rpc-functions', {
-          body: { action: 'create_rpc_functions' }
-        });
-        
-        if (error) {
-          console.error("Error initializing RPC functions:", error);
-        } else {
-          console.log("RPC functions initialized:", data);
-        }
-      } catch (e) {
-        console.error("Failed to initialize RPC functions:", e);
-      }
-    };
-    
-    initRpcFunctions();
-  }, []);
-
   // Handle login with navigation
   const handleLogin = async (email: string, password: string) => {
-    if (isLoggingIn) return null; // Prevent multiple simultaneous logins
-    
-    setIsLoggingIn(true);
     try {
+      setIsLoggingIn(true);
       const loggedInUser = await login(email, password);
       if (loggedInUser) {
         console.log("User logged in successfully, navigating based on role");
@@ -58,14 +34,12 @@ export const useAuthProvider = () => {
       });
       return null;
     } finally {
-      setIsLoggingIn(false);
+      setIsLoggingIn(false); // Always set loading to false
     }
   };
 
   // Handle registration with navigation
   const handleRegister = async (name: string, email: string, password: string, role: UserRole) => {
-    if (isRegistering) return null; // Prevent multiple simultaneous registrations
-    
     console.log("Registering user with role:", role);
     setIsRegistering(true);
     
@@ -75,7 +49,7 @@ export const useAuthProvider = () => {
       if (registeredUser) {
         console.log("User registered successfully with role:", registeredUser.role);
         
-        // Navigate based on role
+        // For painter roles, navigate to subscription page
         if (registeredUser.role === "painter") {
           console.log("Painter registered, navigating to subscription page");
           navigate('/subscription');
@@ -90,7 +64,7 @@ export const useAuthProvider = () => {
         console.log("Registration did not return a user object");
         toast({
           title: "Registration Issue",
-          description: "There was a problem with your registration. Please try again.",
+          description: "Your account may have been created but we couldn't log you in automatically. Please try logging in.",
           variant: "destructive"
         });
       }
@@ -105,7 +79,8 @@ export const useAuthProvider = () => {
       });
       return null;
     } finally {
-      setIsRegistering(false); // Make sure to reset isRegistering in all code paths
+      console.log("Registration process complete, resetting isRegistering state");
+      setIsRegistering(false); // Always set loading to false in finally block
     }
   };
 
@@ -125,8 +100,9 @@ export const useAuthProvider = () => {
     }
   };
 
-  // Combined loading state
-  const isLoading = isRegistering || isLoggingIn || ((!isInitialized) && sessionLoading) || actionLoading;
+  // Combined loading state from all sources
+  // Don't consider sessionLoading if we're already initialized
+  const isLoading = (isInitialized ? false : sessionLoading) || actionLoading || isRegistering || isLoggingIn;
 
   return {
     user,

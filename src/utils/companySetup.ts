@@ -1,115 +1,103 @@
 
 import { supabase } from "@/lib/supabase";
-import { Subscription } from "@/types/auth";
+import { PainterCompanyInfo, Subscription } from "@/types/auth";
 import { Json } from "@/integrations/supabase/types";
 
-// Create a company profile for a newly registered user
-export async function createCompanyProfile(userId: string, name: string) {
+/**
+ * Creates a subscription record for a painter in their 21-day trial period
+ */
+export const createTrialSubscription = async (userId: string, isFeatured: boolean = false): Promise<boolean> => {
   try {
-    // Create basic company info
-    const companyInfo = {
-      name: name,
-      established: new Date().getFullYear(),
-      employees: 1,
-      location: {
-        city: "",
-        state: "",
-        zip: ""
-      },
-      verified: false
-    };
+    const startDate = new Date();
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 21); // 21 days trial
 
-    // Update profile with company info using RPC function to bypass RLS
-    const { error } = await supabase.rpc(
-      'update_user_profile',
-      {
-        user_id: userId,
-        company_info_data: companyInfo,
-        role_value: 'painter'  // Ensure role is set correctly
-      }
-    );
+    // Get existing profile to preserve other data
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('subscription')
+      .eq('id', userId)
+      .single();
 
-    if (error) {
-      console.error("Error creating company profile:", error);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Exception in creating company profile:", error);
-    return false;
-  }
-}
-
-// Create a trial subscription for a painter
-export async function createTrialSubscription(userId: string) {
-  try {
-    // Calculate trial end date (21 days from now)
-    const trialEndDate = new Date();
-    trialEndDate.setDate(trialEndDate.getDate() + 21);
-
-    // Create subscription object
-    const subscriptionData: Subscription = {
-      status: "trial",
-      plan: "pro",
-      startDate: new Date().toISOString(),
-      endDate: trialEndDate.toISOString(),
+    const subscription: Subscription = {
+      status: 'trial',
+      plan: 'pro',
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
       amount: 49,
-      currency: "USD",
-      interval: "month",
-      stripeCustomerId: null,
-      stripeSubscriptionId: null,
-      paymentMethodId: null,
-      lastFour: null,
-      brand: null
+      currency: 'usd',
+      interval: 'month',
+      trialEnds: endDate.toISOString(),
+      featured: isFeatured || false
     };
 
-    // Update profile with subscription data using RPC function
-    const { error } = await supabase.rpc(
-      'update_user_subscription',
-      {
-        user_id: userId,
-        subscription_data: subscriptionData
-      }
-    );
+    // Update profile with new subscription data while preserving existing data
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        subscription: subscription as unknown as Json,
+      })
+      .eq('id', userId);
 
     if (error) {
-      console.error("Error creating trial subscription:", error);
+      console.error('Error creating trial subscription:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error("Exception in creating trial subscription:", error);
+    console.error('Exception creating trial subscription:', error);
     return false;
   }
-}
+};
 
-// Export a function to replace the one referenced in adminUtils.ts
-export async function setupPainterCompany(
-  userId: string, 
-  companyInfo: any,
-  featured: boolean = false
-) {
+/**
+ * Sets up a painter's company profile
+ */
+export const setupPainterCompany = async (
+  userId: string,
+  companyInfo: PainterCompanyInfo,
+  isFeatured: boolean = false
+): Promise<boolean> => {
   try {
-    // Update profile with company info using RPC function to bypass RLS
-    const { error } = await supabase.rpc(
-      'update_user_profile',
-      {
-        user_id: userId,
-        company_info_data: companyInfo,
-        role_value: 'painter'
-      }
-    );
+    // First update the company info
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        company_info: companyInfo as unknown as Json,
+        role: 'painter'
+      })
+      .eq('id', userId);
 
     if (error) {
-      console.error("Error updating painter company:", error);
+      console.error('Error setting up company:', error);
       return false;
     }
-    
+
+    // If featured flag is provided, update subscription accordingly
+    if (isFeatured) {
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('subscription')
+        .eq('id', userId)
+        .single();
+
+      if (existingProfile?.subscription) {
+        const subscription = existingProfile.subscription as any;
+        subscription.featured = true;
+
+        await supabase
+          .from('profiles')
+          .update({
+            subscription: subscription as unknown as Json,
+          })
+          .eq('id', userId);
+      }
+    }
+
     return true;
   } catch (error) {
-    console.error("Exception in updating painter company:", error);
+    console.error('Exception setting up company:', error);
     return false;
   }
-}
+};

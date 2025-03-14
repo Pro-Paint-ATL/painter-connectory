@@ -33,47 +33,25 @@ const RegisterDialog = ({
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("customer");
   const [localLoading, setLocalLoading] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(isOpen);
   
   // Reset form when dialog opens/closes
   useEffect(() => {
-    setDialogOpen(isOpen);
-    
     if (!isOpen) {
       // Reset form state when dialog closes
-      setTimeout(() => {
-        setName("");
-        setEmail("");
-        setPassword("");
-        setRole("customer");
-        setLocalLoading(false);
-      }, 300); // Delay to allow dialog animation to complete
+      setName("");
+      setEmail("");
+      setPassword("");
+      setRole("customer");
+      setLocalLoading(false);
     }
   }, [isOpen]);
 
-  // Sync local loading state with external loading state
+  // When parent isLoading changes to false, also reset local loading
   useEffect(() => {
     if (!isLoading && localLoading) {
       setLocalLoading(false);
     }
   }, [isLoading, localLoading]);
-
-  // Force dialog closed if registration completes successfully
-  useEffect(() => {
-    if (dialogOpen && !isLoading && localLoading) {
-      // This suggests registration completed successfully or failed
-      setLocalLoading(false);
-      
-      // If we're not loading anymore, and we were previously loading, close the dialog
-      // as it likely means registration was successful
-      setTimeout(() => {
-        if (!isLoading) {
-          setDialogOpen(false);
-          onOpenChange(false);
-        }
-      }, 500);
-    }
-  }, [isLoading, localLoading, dialogOpen, onOpenChange]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,29 +62,33 @@ const RegisterDialog = ({
     
     try {
       await onRegister(name, email, password, role);
-      // Local loading will be reset through the useEffect when isLoading changes
+      // Dialog will be closed by parent component upon successful registration
     } catch (error) {
       console.error("Registration error in dialog:", error);
-      setLocalLoading(false);
+    } finally {
+      // If the parent's isLoading state doesn't change in a timely manner, forcefully reset our local state
+      setTimeout(() => {
+        setLocalLoading(false);
+      }, 2000);
     }
   };
 
   // Handle dialog close - force it closed if we really need to
   const handleOpenChange = (open: boolean) => {
-    // If we're trying to close during loading, prevent it
-    if (!open && (isLoading || localLoading)) {
-      return;
+    if (!open) {
+      // If closing, always reset states to ensure we don't get stuck
+      setLocalLoading(false);
+      onOpenChange(false);
+    } else {
+      onOpenChange(open);
     }
-    
-    setDialogOpen(open);
-    onOpenChange(open);
   };
 
   // Determine if button should be in loading state
   const isButtonLoading = isLoading || localLoading;
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create an account</DialogTitle>
