@@ -41,9 +41,9 @@ export const useAuthProvider = () => {
   // Handle registration with navigation
   const handleRegister = async (name: string, email: string, password: string, role: UserRole) => {
     console.log("Registering user with role:", role);
-    setIsRegistering(true);
     
     try {
+      setIsRegistering(true);
       const registeredUser = await register(name, email, password, role);
       
       if (registeredUser) {
@@ -61,11 +61,6 @@ export const useAuthProvider = () => {
           navigate('/profile');
         }
         
-        // Force reset loading state to ensure we don't get stuck
-        setTimeout(() => {
-          setIsRegistering(false);
-        }, 100);
-        
         return registeredUser;
       } else {
         console.log("Registration did not return a user object");
@@ -75,8 +70,6 @@ export const useAuthProvider = () => {
           variant: "destructive"
         });
         
-        // Force reset loading state
-        setIsRegistering(false);
         return null;
       }
     } catch (error) {
@@ -87,9 +80,10 @@ export const useAuthProvider = () => {
         variant: "destructive"
       });
       
-      // Force reset loading state
-      setIsRegistering(false);
       return null;
+    } finally {
+      // Always reset the registration state regardless of outcome
+      setIsRegistering(false);
     }
   };
 
@@ -108,17 +102,6 @@ export const useAuthProvider = () => {
       });
     }
   };
-
-  // Make sure registration state gets reset if it's been active for too long (10 seconds)
-  useEffect(() => {
-    if (isRegistering) {
-      const forceReset = setTimeout(() => {
-        setIsRegistering(false);
-      }, 10000);
-      
-      return () => clearTimeout(forceReset);
-    }
-  }, [isRegistering]);
 
   // Combined loading state from all sources
   // Don't consider sessionLoading if we're already initialized

@@ -46,15 +46,11 @@ const RegisterDialog = ({
     }
   }, [isOpen]);
 
-  // Use a stronger effect to ensure loading state gets reset
+  // Sync local loading state with external loading state
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!isLoading && localLoading) {
-        setLocalLoading(false);
-      }
-    }, 500);
-    
-    return () => clearTimeout(timer);
+    if (!isLoading && localLoading) {
+      setLocalLoading(false);
+    }
   }, [isLoading, localLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,23 +62,12 @@ const RegisterDialog = ({
     
     try {
       await onRegister(name, email, password, role);
-      // Dialog will be closed by parent component upon successful registration
+      // Local loading will be reset through the useEffect when isLoading changes
     } catch (error) {
       console.error("Registration error in dialog:", error);
       setLocalLoading(false);
     }
   };
-
-  // Force reset loading state if it's been active for too long (5 seconds)
-  useEffect(() => {
-    if (localLoading) {
-      const forceReset = setTimeout(() => {
-        setLocalLoading(false);
-      }, 5000);
-      
-      return () => clearTimeout(forceReset);
-    }
-  }, [localLoading]);
 
   // Handle dialog close - force it closed if we really need to
   const handleOpenChange = (open: boolean) => {
