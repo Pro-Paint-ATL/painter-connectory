@@ -13,9 +13,8 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
   const register = async (name: string, email: string, password: string, role: UserRole) => {
     setIsLoading(true);
     try {
+      console.log("Starting registration process for role:", role);
       const safeRole = role === "admin" ? "customer" : role;
-      
-      console.log("Registering with role:", safeRole);
       
       // Check if user already exists to provide a better error message
       const { data: existingUsers } = await supabase
@@ -80,70 +79,104 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
         return null;
       }
 
-      if (data.user) {
-        console.log("User metadata after signup:", data.user.user_metadata);
-        
-        // Create a profile first before attempting trial subscription
-        try {
-          // First make sure the profile exists before we try to update subscription
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .upsert({
-              id: data.user.id,
-              name: name,
-              email: email,
-              role: safeRole,
-              created_at: new Date().toISOString()
-            }, {
-              onConflict: 'id',
-              ignoreDuplicates: false
-            });
-            
-          if (profileError) {
-            console.error("Error creating profile:", profileError);
-            // Continue - we can still try to format the user
-          } else {
-            console.log("Profile created successfully");
-          }
-        } catch (profileErr) {
-          console.error("Exception creating profile:", profileErr);
-          // Continue anyway - we'll still try to format the user
-        }
-        
-        // Now format the user and try to get their data
-        const formattedUser = await formatUser(data.user);
-        
-        // If user is a painter and we have a formatted user, set up trial subscription
-        // But don't block registration if this fails
-        if (safeRole === "painter" && formattedUser) {
-          console.log("Setting up trial for painter:", formattedUser.id);
-          try {
-            const subscriptionCreated = await createTrialSubscription(formattedUser.id);
-            console.log("Trial subscription setup result:", subscriptionCreated);
-            
-            if (!subscriptionCreated) {
-              // Log the issue but don't block registration
-              console.log("Trial subscription setup failed, but continuing registration");
-            }
-          } catch (subError) {
-            console.error("Error creating trial subscription:", subError);
-            // Don't block registration if subscription setup fails
-          }
-        }
-        
-        setUser(formattedUser);
-        
+      if (!data.user) {
         toast({
-          title: "Registration Successful",
-          description: `Your account has been created as a ${safeRole}.`
+          title: "Registration Failed",
+          description: "No user data returned from registration",
+          variant: "destructive"
         });
-
         setIsLoading(false);
-        return formattedUser;
+        return null;
+      }
+
+      console.log("User created successfully with metadata:", data.user.user_metadata);
+      
+      try {
+        // First make sure the profile exists before we try to update subscription
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
+            name: name,
+            email: email,
+            role: safeRole,
+            created_at: new Date().toISOString()
+          }, {
+            onConflict: 'id',
+            ignoreDuplicates: false
+          });
+          
+        if (profileError) {
+          console.error("Error creating initial profile:", profileError);
+          // Continue anyway - we'll try to format the user
+          toast({
+            title: "Profile Creation Warning",
+            description: "Your account was created, but there was an issue setting up your profile.",
+          });
+        } else {
+          console.log("Initial profile created successfully");
+        }
+      } catch (profileErr) {
+        console.error("Exception creating initial profile:", profileErr);
+        // Continue anyway - we'll still try to format the user
       }
       
+      // Now format the user and try to get their data
+      let formattedUser: User | null = null;
+      try {
+        formattedUser = await formatUser(data.user);
+        console.log("User formatted successfully:", formattedUser);
+      } catch (formatError) {
+        console.error("Error formatting user:", formatError);
+        // Try a simpler approach
+        formattedUser = {
+          id: data.user.id,
+          name: name,
+          email: email,
+          role: safeRole
+        };
+        console.log("Created basic user object as fallback");
+      }
+      
+      // If user is a painter and we have a formatted user, set up trial subscription
+      // But don't block registration if this fails
+      if (safeRole === "painter" && formattedUser) {
+        console.log("Setting up trial for painter:", formattedUser.id);
+        try {
+          // Create a simple object for company info if not present
+          if (!formattedUser.companyInfo) {
+            formattedUser.companyInfo = {
+              companyName: '',
+              isInsured: false,
+              specialties: []
+            };
+          }
+          
+          // Create trial subscription - this is non-blocking
+          setTimeout(async () => {
+            try {
+              const subscriptionCreated = await createTrialSubscription(formattedUser!.id);
+              console.log("Delayed trial subscription setup result:", subscriptionCreated);
+            } catch (delayedSubError) {
+              console.error("Error in delayed subscription setup:", delayedSubError);
+            }
+          }, 500);
+        } catch (subError) {
+          console.error("Error in trial subscription setup:", subError);
+          // Don't block registration if subscription setup fails
+        }
+      }
+      
+      // Set the user state even if trial creation fails
+      setUser(formattedUser);
+      
+      toast({
+        title: "Registration Successful",
+        description: `Your account has been created as a ${safeRole}.`
+      });
+
       setIsLoading(false);
-      return null;
+      return formattedUser;
     } catch (error) {
       console.error("Registration error:", error);
       toast({

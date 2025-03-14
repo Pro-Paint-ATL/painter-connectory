@@ -33,6 +33,7 @@ const RegisterDialog = ({
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("customer");
   const [localLoading, setLocalLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   // Reset form when dialog opens/closes
   useEffect(() => {
@@ -43,6 +44,7 @@ const RegisterDialog = ({
       setPassword("");
       setRole("customer");
       setLocalLoading(false);
+      setErrorMessage(null);
     }
   }, [isOpen]);
 
@@ -53,11 +55,28 @@ const RegisterDialog = ({
     }
   }, [isLoading, localLoading]);
 
+  // Safety timeout to prevent UI from getting stuck
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    
+    if (localLoading) {
+      timeout = setTimeout(() => {
+        setLocalLoading(false);
+        setErrorMessage("Registration is taking longer than expected. Please try again or check if your account was created.");
+      }, 15000); // 15 seconds timeout
+    }
+    
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [localLoading]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (localLoading || isLoading) return; // Prevent multiple submissions
     
+    setErrorMessage(null);
     setLocalLoading(true);
     
     try {
@@ -65,6 +84,7 @@ const RegisterDialog = ({
       // Dialog will be closed by parent component upon successful registration
     } catch (error) {
       console.error("Registration error in dialog:", error);
+      setErrorMessage("An unexpected error occurred. Please try again.");
     } finally {
       // If the parent's isLoading state doesn't change in a timely manner, forcefully reset our local state
       setTimeout(() => {
@@ -97,6 +117,11 @@ const RegisterDialog = ({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+          {errorMessage && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-800">
+              {errorMessage}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
             <Input

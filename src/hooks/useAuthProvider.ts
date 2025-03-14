@@ -15,6 +15,26 @@ export const useAuthProvider = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
 
+  // Add registration timeout to prevent UI from getting stuck
+  useEffect(() => {
+    if (isRegistering) {
+      const timeout = setTimeout(() => {
+        // If registration is taking too long, reset the state
+        if (isRegistering) {
+          console.log("Registration timeout reached, resetting state");
+          setIsRegistering(false);
+          toast({
+            title: "Registration taking longer than expected",
+            description: "Please check if your account was created and try logging in.",
+            variant: "destructive"
+          });
+        }
+      }, 20000); // 20 seconds timeout
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [isRegistering, toast]);
+
   // Handle login with navigation
   const handleLogin = async (email: string, password: string) => {
     try {
@@ -52,7 +72,9 @@ export const useAuthProvider = () => {
         // For painter roles, navigate to subscription page
         if (registeredUser.role === "painter") {
           console.log("Painter registered, navigating to subscription page");
-          navigate('/subscription');
+          setTimeout(() => {
+            navigate('/subscription');
+          }, 100);
         } else if (registeredUser.role === "admin") {
           console.log("Admin registered, navigating to admin dashboard");
           navigate('/admin');

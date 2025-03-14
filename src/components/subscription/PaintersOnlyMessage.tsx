@@ -24,6 +24,11 @@ const PaintersOnlyMessage: React.FC = () => {
           If you'd like to register as a painter, please sign up with a painter account or
           contact support to change your account type.
         </p>
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
+          <p className="text-sm text-amber-800">
+            To create a painter account, log out first and register as a painter.
+          </p>
+        </div>
       </CardContent>
       <CardFooter className="flex justify-between">
         <Button variant="outline" onClick={() => navigate("/")}>Return to Home</Button>

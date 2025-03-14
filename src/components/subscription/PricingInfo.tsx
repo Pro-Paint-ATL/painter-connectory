@@ -9,10 +9,11 @@ const PricingInfo: React.FC = () => {
         Start with a 21-day free trial
       </div>
       <p className="text-muted-foreground mb-6">
-        Unlock premium benefits and get more clients
+        Unlock premium benefits and get more clients with our painter subscription
       </p>
-      <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
-        No credit card required for trial. Cancel anytime.
+      <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+        <p className="mb-2">No credit card required for trial. Cancel anytime.</p>
+        <p className="text-xs">After signing up, click the button on the next page to activate your trial.</p>
       </div>
     </div>
   );

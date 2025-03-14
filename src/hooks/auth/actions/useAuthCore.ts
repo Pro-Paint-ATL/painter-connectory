@@ -25,6 +25,10 @@ export const useAuthCore = (user: User | null, setUser: (user: User | null | ((p
     console.error("Auth error:", errorMessage);
   };
   
+  const resetError = () => {
+    setError(null);
+  };
+  
   return {
     user,
     setUser,
@@ -33,6 +37,7 @@ export const useAuthCore = (user: User | null, setUser: (user: User | null | ((p
     startLoading,
     stopLoading,
     handleError,
+    resetError,
     setIsLoading,
     setError
   };
