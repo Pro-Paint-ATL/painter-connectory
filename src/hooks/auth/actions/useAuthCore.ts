@@ -6,7 +6,7 @@ import { User } from "@/types/auth";
  * Core hook that provides shared state for auth actions
  * This hook centralizes loading state and user management for auth operations
  */
-export const useAuthCore = (user: User | null, setUser: (user: User | null) => void) => {
+export const useAuthCore = (user: User | null, setUser: (user: User | null | ((prev: User | null) => User | null)) => void) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -22,6 +22,7 @@ export const useAuthCore = (user: User | null, setUser: (user: User | null) => v
   const handleError = (errorMessage: string) => {
     setError(errorMessage);
     setIsLoading(false);
+    console.error("Auth error:", errorMessage);
   };
   
   return {
@@ -32,7 +33,7 @@ export const useAuthCore = (user: User | null, setUser: (user: User | null) => v
     startLoading,
     stopLoading,
     handleError,
-    setIsLoading, // Keep for backward compatibility
+    setIsLoading,
     setError
   };
 };

@@ -14,8 +14,7 @@ export const createTrialSubscription = async (userId: string, isFeatured: boolea
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + 21); // 21 days trial
 
-    // Instead of getting existing profile first (which can trigger the recursion),
-    // directly update with the new subscription data
+    // Create the subscription object
     const subscription: Subscription = {
       status: 'trial',
       plan: 'pro',
@@ -28,23 +27,25 @@ export const createTrialSubscription = async (userId: string, isFeatured: boolea
       featured: isFeatured || false
     };
 
-    // Update profile with new subscription data
-    const { error } = await supabase
+    // Check if profile exists first
+    const { data: existingProfile, error: profileError } = await supabase
       .from('profiles')
-      .update({
-        subscription: subscription as unknown as Json,
-      })
-      .eq('id', userId);
-
-    if (error) {
-      console.error('Error creating trial subscription:', error);
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
       
-      // Try an alternative approach if we hit the recursion error
-      if (error.message && error.message.includes('infinite recursion')) {
-        console.log('Attempting alternative approach for trial subscription');
-        
-        // Use RPC function if available, or fall back to a different approach
-        // For now, let's try using upsert instead
+    if (profileError) {
+      console.error('Error checking profile existence:', profileError);
+      if (profileError.message.includes('infinite recursion')) {
+        console.log('Recursion error detected, trying alternative approach');
+      }
+    }
+
+    // If profile doesn't exist or we got recursion error, try to create it first
+    if (!existingProfile || profileError?.message.includes('infinite recursion')) {
+      console.log('Profile not found or recursion error, creating profile with subscription');
+      
+      try {
         const { error: upsertError } = await supabase
           .from('profiles')
           .upsert({
@@ -56,19 +57,81 @@ export const createTrialSubscription = async (userId: string, isFeatured: boolea
           });
         
         if (upsertError) {
-          console.error('Alternative approach also failed:', upsertError);
-          return false;
+          console.error('Upsert approach failed:', upsertError);
+          
+          // Try one more alternative approach if this also failed
+          // Use Supabase functions.invoke if available to bypass RLS
+          try {
+            const { data, error: fnError } = await supabase.functions.invoke('update-profile', {
+              body: { 
+                userId: userId, 
+                data: { subscription: subscription }
+              }
+            });
+            
+            if (fnError) {
+              console.error('Edge function approach also failed:', fnError);
+              return false;
+            }
+            
+            console.log('Edge function approach succeeded:', data);
+            return true;
+          } catch (fnError) {
+            console.error('Exception in edge function approach:', fnError);
+            return false;
+          }
         }
         
-        console.log('Alternative approach succeeded');
+        console.log('Profile upsert with subscription succeeded');
         return true;
+      } catch (upsertError) {
+        console.error('Exception in profile upsert:', upsertError);
+        return false;
       }
+    } else {
+      // Profile exists, update it with the subscription
+      console.log('Updating existing profile with subscription');
       
-      return false;
-    }
+      // Standard approach - update the profile
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          subscription: subscription as unknown as Json,
+        })
+        .eq('id', userId);
 
-    console.log('Trial subscription created successfully');
-    return true;
+      if (error) {
+        console.error('Error updating profile with subscription:', error);
+        
+        // If standard update fails, try upsert as alternative
+        if (error.message && error.message.includes('infinite recursion')) {
+          console.log('Recursion error in update, trying upsert approach');
+          
+          const { error: upsertError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: userId,
+              subscription: subscription as unknown as Json
+            }, {
+              onConflict: 'id',
+              ignoreDuplicates: false
+            });
+          
+          if (upsertError) {
+            console.error('Upsert approach also failed:', upsertError);
+            return false;
+          }
+          
+          console.log('Upsert approach succeeded');
+          return true;
+        }
+        
+        return false;
+      }
+
+      console.log('Trial subscription created successfully');
+      return true;
+    }
   } catch (error) {
     console.error('Exception creating trial subscription:', error);
     return false;
@@ -95,7 +158,29 @@ export const setupPainterCompany = async (
 
     if (error) {
       console.error('Error setting up company:', error);
-      return false;
+      
+      // If update fails due to recursion, try upsert
+      if (error.message && error.message.includes('infinite recursion')) {
+        const { error: upsertError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: userId,
+            company_info: companyInfo as unknown as Json,
+            role: 'painter'
+          }, {
+            onConflict: 'id',
+            ignoreDuplicates: false
+          });
+          
+        if (upsertError) {
+          console.error('Upsert approach also failed:', upsertError);
+          return false;
+        }
+        
+        console.log('Upsert approach succeeded for company setup');
+      } else {
+        return false;
+      }
     }
 
     // If featured flag is provided, update subscription accordingly

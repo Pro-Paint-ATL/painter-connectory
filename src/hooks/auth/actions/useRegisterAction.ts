@@ -65,16 +65,6 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
           if (data.user) {
             const formattedUser = await formatUser(data.user);
             
-            // If user is a painter, set up trial subscription
-            if (safeRole === "painter" && formattedUser) {
-              try {
-                await createTrialSubscription(formattedUser.id);
-              } catch (subError) {
-                console.error("Error creating trial subscription:", subError);
-                // Don't block registration if subscription setup fails
-              }
-            }
-            
             setUser(formattedUser);
             setIsLoading(false);
             return formattedUser;
@@ -93,12 +83,48 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
       if (data.user) {
         console.log("User metadata after signup:", data.user.user_metadata);
         
+        // Create a profile first before attempting trial subscription
+        try {
+          // First make sure the profile exists before we try to update subscription
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: data.user.id,
+              name: name,
+              email: email,
+              role: safeRole,
+              created_at: new Date().toISOString()
+            }, {
+              onConflict: 'id',
+              ignoreDuplicates: false
+            });
+            
+          if (profileError) {
+            console.error("Error creating profile:", profileError);
+            // Continue - we can still try to format the user
+          } else {
+            console.log("Profile created successfully");
+          }
+        } catch (profileErr) {
+          console.error("Exception creating profile:", profileErr);
+          // Continue anyway - we'll still try to format the user
+        }
+        
+        // Now format the user and try to get their data
         const formattedUser = await formatUser(data.user);
         
-        // If user is a painter, set up trial subscription
+        // If user is a painter and we have a formatted user, set up trial subscription
+        // But don't block registration if this fails
         if (safeRole === "painter" && formattedUser) {
+          console.log("Setting up trial for painter:", formattedUser.id);
           try {
-            await createTrialSubscription(formattedUser.id);
+            const subscriptionCreated = await createTrialSubscription(formattedUser.id);
+            console.log("Trial subscription setup result:", subscriptionCreated);
+            
+            if (!subscriptionCreated) {
+              // Log the issue but don't block registration
+              console.log("Trial subscription setup failed, but continuing registration");
+            }
           } catch (subError) {
             console.error("Error creating trial subscription:", subError);
             // Don't block registration if subscription setup fails

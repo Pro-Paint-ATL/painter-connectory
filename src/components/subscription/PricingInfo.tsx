@@ -11,6 +11,9 @@ const PricingInfo: React.FC = () => {
       <p className="text-muted-foreground mb-6">
         Unlock premium benefits and get more clients
       </p>
+      <div className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
+        No credit card required for trial. Cancel anytime.
+      </div>
     </div>
   );
 };

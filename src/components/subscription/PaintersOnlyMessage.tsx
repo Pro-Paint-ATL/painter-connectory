@@ -1,8 +1,9 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardFooter, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { LucideInfo } from "lucide-react";
 
 const PaintersOnlyMessage: React.FC = () => {
   const navigate = useNavigate();
@@ -10,13 +11,23 @@ const PaintersOnlyMessage: React.FC = () => {
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>Subscription Available for Painters Only</CardTitle>
+        <div className="flex items-center gap-2">
+          <LucideInfo className="h-5 w-5 text-primary" />
+          <CardTitle>Subscription Available for Painters Only</CardTitle>
+        </div>
         <CardDescription>
-          This subscription plan is only available for painter accounts.
+          This subscription plan is specifically designed for professional painter accounts.
         </CardDescription>
       </CardHeader>
-      <CardFooter>
-        <Button onClick={() => navigate("/")}>Return to Home</Button>
+      <CardContent>
+        <p className="text-sm text-muted-foreground mb-4">
+          If you'd like to register as a painter, please sign up with a painter account or
+          contact support to change your account type.
+        </p>
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        <Button variant="outline" onClick={() => navigate("/")}>Return to Home</Button>
+        <Button onClick={() => navigate("/find-painters")}>Find Painters</Button>
       </CardFooter>
     </Card>
   );
