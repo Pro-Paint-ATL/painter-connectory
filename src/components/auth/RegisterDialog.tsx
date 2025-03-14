@@ -65,11 +65,7 @@ const RegisterDialog = ({
       // Dialog will be closed by parent component upon successful registration
     } catch (error) {
       console.error("Registration error in dialog:", error);
-    } finally {
-      // If the parent's isLoading state doesn't change in a timely manner, forcefully reset our local state
-      setTimeout(() => {
-        setLocalLoading(false);
-      }, 2000);
+      setLocalLoading(false); // Make sure to reset loading on error
     }
   };
 

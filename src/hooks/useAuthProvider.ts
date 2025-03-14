@@ -23,8 +23,9 @@ export const useAuthProvider = () => {
       if (loggedInUser) {
         console.log("User logged in successfully, navigating based on role");
         navigateBasedOnRole();
+        return loggedInUser;
       }
-      return loggedInUser;
+      return null;
     } catch (error) {
       console.error("Login handler error:", error);
       toast({
@@ -60,8 +61,6 @@ export const useAuthProvider = () => {
           console.log("Customer registered, navigating to profile");
           navigate('/profile');
         }
-        setIsRegistering(false);
-        return registeredUser;
       } else {
         console.log("Registration did not return a user object");
         toast({
@@ -69,9 +68,9 @@ export const useAuthProvider = () => {
           description: "Your account may have been created but we couldn't log you in automatically. Please try logging in.",
           variant: "destructive"
         });
-        setIsRegistering(false);
-        return null;
       }
+      
+      return registeredUser;
     } catch (error) {
       console.error("Registration handler error:", error);
       toast({
@@ -79,8 +78,9 @@ export const useAuthProvider = () => {
         description: "There was a problem creating your account. Please try again.",
         variant: "destructive"
       });
-      setIsRegistering(false);
       return null;
+    } finally {
+      setIsRegistering(false); // Always set isRegistering to false regardless of outcome
     }
   };
 

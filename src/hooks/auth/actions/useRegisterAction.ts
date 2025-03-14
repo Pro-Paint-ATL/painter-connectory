@@ -98,7 +98,9 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
         // If user is a painter, set up trial subscription
         if (safeRole === "painter" && formattedUser) {
           try {
+            console.log("Setting up trial subscription for painter");
             await createTrialSubscription(formattedUser.id);
+            console.log("Trial subscription setup complete");
           } catch (subError) {
             console.error("Error creating trial subscription:", subError);
             // Don't block registration if subscription setup fails

@@ -8,16 +8,10 @@ import { Json } from "@/integrations/supabase/types";
  */
 export const createTrialSubscription = async (userId: string, isFeatured: boolean = false): Promise<boolean> => {
   try {
+    console.log("Creating trial subscription for user:", userId);
     const startDate = new Date();
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + 21); // 21 days trial
-
-    // Get existing profile to preserve other data
-    const { data: existingProfile } = await supabase
-      .from('profiles')
-      .select('subscription')
-      .eq('id', userId)
-      .single();
 
     const subscription: Subscription = {
       status: 'trial',
@@ -31,7 +25,7 @@ export const createTrialSubscription = async (userId: string, isFeatured: boolea
       featured: isFeatured || false
     };
 
-    // Update profile with new subscription data while preserving existing data
+    // Update profile with new subscription data
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -44,6 +38,7 @@ export const createTrialSubscription = async (userId: string, isFeatured: boolea
       return false;
     }
 
+    console.log("Trial subscription created successfully");
     return true;
   } catch (error) {
     console.error('Exception creating trial subscription:', error);
