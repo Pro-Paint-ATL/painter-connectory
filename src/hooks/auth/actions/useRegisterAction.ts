@@ -11,7 +11,9 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
   const { toast } = useToast();
 
   const register = async (name: string, email: string, password: string, role: UserRole) => {
+    console.log("Starting registration process with role:", role);
     setIsLoading(true);
+    
     try {
       const safeRole = role === "admin" ? "customer" : role;
       
@@ -68,10 +70,10 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
             // If user is a painter, set up trial subscription
             if (safeRole === "painter" && formattedUser) {
               try {
+                console.log("Creating trial subscription for painter from error handler");
                 await createTrialSubscription(formattedUser.id);
               } catch (subError) {
-                console.error("Error creating trial subscription:", subError);
-                // Don't block registration if subscription setup fails
+                console.error("Error creating trial subscription from error handler:", subError);
               }
             }
             
@@ -91,19 +93,19 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
       }
 
       if (data.user) {
-        console.log("User metadata after signup:", data.user.user_metadata);
+        console.log("User registered successfully, formatting user data");
         
         const formattedUser = await formatUser(data.user);
+        console.log("Formatted user data:", formattedUser);
         
         // If user is a painter, set up trial subscription
         if (safeRole === "painter" && formattedUser) {
           try {
-            console.log("Setting up trial subscription for painter");
-            await createTrialSubscription(formattedUser.id);
-            console.log("Trial subscription setup complete");
+            console.log("Creating trial subscription for painter");
+            const success = await createTrialSubscription(formattedUser.id);
+            console.log("Trial subscription setup result:", success);
           } catch (subError) {
             console.error("Error creating trial subscription:", subError);
-            // Don't block registration if subscription setup fails
           }
         }
         
@@ -114,14 +116,16 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
           description: `Your account has been created as a ${safeRole}.`
         });
 
+        console.log("Registration completed, returning user data");
         setIsLoading(false);
         return formattedUser;
       }
       
+      console.log("No user returned from registration");
       setIsLoading(false);
       return null;
     } catch (error) {
-      console.error("Registration error:", error);
+      console.error("Unexpected registration error:", error);
       toast({
         title: "Registration Error",
         description: "An unexpected error occurred. Please try again.",

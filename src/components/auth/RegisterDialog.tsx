@@ -58,6 +58,7 @@ const RegisterDialog = ({
     
     if (localLoading || isLoading) return; // Prevent multiple submissions
     
+    console.log("Form submitted with role:", role);
     setLocalLoading(true);
     
     try {
@@ -67,6 +68,14 @@ const RegisterDialog = ({
       console.error("Registration error in dialog:", error);
       setLocalLoading(false); // Make sure to reset loading on error
     }
+    
+    // Add a safety timeout to ensure loading state is reset after a while
+    setTimeout(() => {
+      if (localLoading) {
+        console.log("Safety timeout triggered - forcing loading state to reset");
+        setLocalLoading(false);
+      }
+    }, 5000);
   };
 
   // Handle dialog close - force it closed if we really need to

@@ -9,6 +9,24 @@ import { Json } from "@/integrations/supabase/types";
 export const createTrialSubscription = async (userId: string, isFeatured: boolean = false): Promise<boolean> => {
   try {
     console.log("Creating trial subscription for user:", userId);
+    
+    // First check if user exists
+    const { data: userExists, error: userCheckError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
+      
+    if (userCheckError) {
+      console.error('Error checking if user exists:', userCheckError);
+      return false;
+    }
+    
+    if (!userExists) {
+      console.error('User does not exist, cannot create subscription');
+      return false;
+    }
+    
     const startDate = new Date();
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + 21); // 21 days trial
@@ -30,6 +48,7 @@ export const createTrialSubscription = async (userId: string, isFeatured: boolea
       .from('profiles')
       .update({
         subscription: subscription as unknown as Json,
+        role: 'painter' // Ensure role is set to painter
       })
       .eq('id', userId);
 
@@ -55,6 +74,25 @@ export const setupPainterCompany = async (
   isFeatured: boolean = false
 ): Promise<boolean> => {
   try {
+    console.log("Setting up company profile for painter:", userId);
+    
+    // First check if user exists
+    const { data: userExists, error: userCheckError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
+      
+    if (userCheckError) {
+      console.error('Error checking if user exists:', userCheckError);
+      return false;
+    }
+    
+    if (!userExists) {
+      console.error('User does not exist, cannot setup company');
+      return false;
+    }
+    
     // First update the company info
     const { error } = await supabase
       .from('profiles')
@@ -75,7 +113,7 @@ export const setupPainterCompany = async (
         .from('profiles')
         .select('subscription')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (existingProfile?.subscription) {
         const subscription = existingProfile.subscription as any;
@@ -89,7 +127,8 @@ export const setupPainterCompany = async (
           .eq('id', userId);
       }
     }
-
+    
+    console.log("Company profile setup successfully");
     return true;
   } catch (error) {
     console.error('Exception setting up company:', error);
