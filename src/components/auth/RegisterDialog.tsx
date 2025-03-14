@@ -32,81 +32,64 @@ const RegisterDialog = ({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("customer");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
   
-  console.log("RegisterDialog isLoading:", isLoading, "isSubmitting:", isSubmitting);
-  
-  // Reset form when dialog opens
+  // Reset form when dialog opens/closes
   useEffect(() => {
-    if (isOpen) {
-      setErrorMessage(null);
+    if (!isOpen) {
+      // Reset form state when dialog closes
+      setName("");
+      setEmail("");
+      setPassword("");
+      setRole("customer");
+      setLocalLoading(false);
     }
   }, [isOpen]);
-  
-  // Reset form when dialog closes
+
+  // When parent isLoading changes to false, also reset local loading
   useEffect(() => {
-    if (!isOpen && !isLoading && !isSubmitting) {
-      // Wait for transition to finish before resetting form
-      const timeout = setTimeout(() => {
-        setName("");
-        setEmail("");
-        setPassword("");
-        setRole("customer");
-        setErrorMessage(null);
-      }, 300);
-      return () => clearTimeout(timeout);
+    if (!isLoading && localLoading) {
+      setLocalLoading(false);
     }
-  }, [isOpen, isLoading, isSubmitting]);
+  }, [isLoading, localLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isLoading || isSubmitting) return; // Prevent multiple submissions
+    if (localLoading || isLoading) return; // Prevent multiple submissions
     
-    setErrorMessage(null);
-    setIsSubmitting(true);
+    setLocalLoading(true);
     
     try {
-      console.log("Starting registration from dialog");
       await onRegister(name, email, password, role);
-      console.log("Registration completed");
-    } catch (error: any) {
+      // Dialog will be closed by parent component upon successful registration
+    } catch (error) {
       console.error("Registration error in dialog:", error);
-      setErrorMessage(error?.message || "An unexpected error occurred. Please try again.");
     } finally {
-      console.log("Registration finally block, resetting submission state");
-      setIsSubmitting(false);
+      // If the parent's isLoading state doesn't change in a timely manner, forcefully reset our local state
+      setTimeout(() => {
+        setLocalLoading(false);
+      }, 2000);
     }
   };
 
-  // Determine if we should show loading state
-  const showLoading = isLoading || isSubmitting;
+  // Handle dialog close - force it closed if we really need to
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      // If closing, always reset states to ensure we don't get stuck
+      setLocalLoading(false);
+      onOpenChange(false);
+    } else {
+      onOpenChange(open);
+    }
+  };
+
+  // Determine if button should be in loading state
+  const isButtonLoading = isLoading || localLoading;
 
   return (
-    <Dialog 
-      open={isOpen} 
-      onOpenChange={(open) => {
-        // Prevent dialog from closing during loading state
-        if (!open && showLoading) {
-          return;
-        }
-        onOpenChange(open);
-      }}
-    >
-      <DialogContent 
-        className="sm:max-w-[425px]"
-        onPointerDownOutside={e => {
-          if (showLoading) {
-            e.preventDefault();
-          }
-        }}
-        onEscapeKeyDown={e => {
-          if (showLoading) {
-            e.preventDefault();
-          }
-        }}
-      >
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create an account</DialogTitle>
           <DialogDescription>
@@ -114,11 +97,6 @@ const RegisterDialog = ({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-          {errorMessage && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-800">
-              {errorMessage}
-            </div>
-          )}
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
             <Input
@@ -127,7 +105,7 @@ const RegisterDialog = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              disabled={showLoading}
+              disabled={isButtonLoading}
             />
           </div>
           <div className="space-y-2">
@@ -139,7 +117,7 @@ const RegisterDialog = ({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              disabled={showLoading}
+              disabled={isButtonLoading}
             />
           </div>
           <div className="space-y-2">
@@ -150,7 +128,7 @@ const RegisterDialog = ({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={showLoading}
+              disabled={isButtonLoading}
               minLength={6}
             />
             <p className="text-xs text-muted-foreground">
@@ -165,7 +143,7 @@ const RegisterDialog = ({
                 variant={role === "customer" ? "default" : "outline"}
                 className="flex-1"
                 onClick={() => setRole("customer")}
-                disabled={showLoading}
+                disabled={isButtonLoading}
               >
                 Customer
               </Button>
@@ -174,14 +152,14 @@ const RegisterDialog = ({
                 variant={role === "painter" ? "default" : "outline"}
                 className="flex-1"
                 onClick={() => setRole("painter")}
-                disabled={showLoading}
+                disabled={isButtonLoading}
               >
                 Painter
               </Button>
             </div>
           </div>
-          <Button type="submit" className="w-full" disabled={showLoading}>
-            {showLoading ? (
+          <Button type="submit" className="w-full" disabled={isButtonLoading}>
+            {isButtonLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Creating account...
@@ -196,7 +174,7 @@ const RegisterDialog = ({
               type="button"
               className="text-primary hover:underline"
               onClick={onSwitchToLogin}
-              disabled={showLoading}
+              disabled={isButtonLoading}
             >
               Login
             </button>

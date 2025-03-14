@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -75,15 +76,8 @@ const Header = () => {
     setIsLoading(true);
     try {
       console.log("Registering with role:", role);
-      const result = await register(name, email, password, role);
-      
-      if (result) {
-        console.log("Registration successful");
-        // Close dialog after short delay to allow user to see success message
-        setTimeout(() => {
-          setIsRegisterOpen(false);
-        }, 1500);
-      }
+      await register(name, email, password, role);
+      setIsRegisterOpen(false);
     } catch (error) {
       console.error("Registration failed:", error);
     } finally {

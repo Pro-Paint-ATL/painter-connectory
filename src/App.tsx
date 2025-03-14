@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Suspense, lazy, useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import Header from "./components/layout/Header";
@@ -39,6 +39,103 @@ const LoadingPage = () => (
     <span className="ml-2">Loading...</span>
   </div>
 );
+
+// Move route components outside of AppRoutes
+const AppContent = () => {
+  const { user, isLoading, isAuthenticated } = useAuth();
+  
+  if (isLoading) {
+    return <LoadingPage />;
+  }
+  
+  // Create protected route components using the authenticated user info
+  const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+    if (!user || user.role !== "admin") {
+      return <Navigate to="/" replace />;
+    }
+    return <>{children}</>;
+  };
+
+  const PainterRoute = ({ children }: { children: React.ReactNode }) => {
+    if (!user || user.role !== "painter") {
+      return <Navigate to="/" replace />;
+    }
+    return <>{children}</>;
+  };
+
+  const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+    if (!isAuthenticated) {
+      return <Navigate to="/" replace />;
+    }
+    return <>{children}</>;
+  };
+  
+  return (
+    <div className="flex min-h-screen flex-col">
+      <Header />
+      <main className="flex-1">
+        <Suspense fallback={<LoadingPage />}>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/calculator" element={<EstimateCalculator />} />
+            <Route path="/find-painters" element={<FindPainters />} />
+            <Route path="/painter/:id" element={<PainterProfile />} />
+            <Route 
+              path="/profile" 
+              element={
+                <ProtectedRoute>
+                  <CustomerProfile />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/painter-dashboard" 
+              element={
+                <PainterRoute>
+                  <PainterDashboard />
+                </PainterRoute>
+              } 
+            />
+            <Route 
+              path="/booking/:painterId" 
+              element={
+                <ProtectedRoute>
+                  <Booking />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/subscription" 
+              element={
+                <ProtectedRoute>
+                  <PainterSubscription />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin" 
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/subscriptions" 
+              element={
+                <AdminRoute>
+                  <SubscriptionManagement />
+                </AdminRoute>
+              } 
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </main>
+      <Footer />
+    </div>
+  );
+};
 
 const App = () => {
   // Add error handling for the entire app
@@ -79,27 +176,7 @@ const App = () => {
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <div className="flex min-h-screen flex-col">
-              <Header />
-              <main className="flex-1">
-                <Suspense fallback={<LoadingPage />}>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/calculator" element={<EstimateCalculator />} />
-                    <Route path="/find-painters" element={<FindPainters />} />
-                    <Route path="/painter/:id" element={<PainterProfile />} />
-                    <Route path="/profile" element={<CustomerProfile />} />
-                    <Route path="/painter-dashboard" element={<PainterDashboard />} />
-                    <Route path="/booking/:painterId" element={<Booking />} />
-                    <Route path="/subscription" element={<PainterSubscription />} />
-                    <Route path="/admin" element={<AdminDashboard />} />
-                    <Route path="/admin/subscriptions" element={<SubscriptionManagement />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </Suspense>
-              </main>
-              <Footer />
-            </div>
+            <AppContent />
           </TooltipProvider>
         </AuthProvider>
       </BrowserRouter>

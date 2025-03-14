@@ -6,7 +6,7 @@ import { formatUser } from "@/utils/authUtils";
 import { useAuthCore } from "./useAuthCore";
 
 export const useLoginAction = (user: User | null, setUser: (user: User | null) => void) => {
-  const { isLoading, startLoading, stopLoading } = useAuthCore(user, setUser);
+  const { isLoading, setIsLoading, startLoading, stopLoading } = useAuthCore(user, setUser);
   const { toast } = useToast();
 
   const login = async (email: string, password: string) => {
@@ -25,7 +25,7 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
           variant: "destructive"
         });
         console.error("Login error:", error.message);
-        stopLoading(error.message);
+        stopLoading();
         return null;
       }
 
@@ -45,17 +45,16 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
         return formattedUser;
       }
       console.log("No user data returned from authentication");
-      stopLoading("No user data returned from authentication");
+      stopLoading();
       return null;
-    } catch (error: any) {
-      const errorMessage = error?.message || "An unexpected error occurred during login";
-      console.error("Login error:", errorMessage);
+    } catch (error) {
+      console.error("Login error:", error);
       toast({
         title: "Login Error",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
-      stopLoading(errorMessage);
+      stopLoading();
       return null;
     }
   };
