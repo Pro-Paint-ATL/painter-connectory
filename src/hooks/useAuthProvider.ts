@@ -108,7 +108,6 @@ export const useAuthProvider = () => {
       
       return null;
     } finally {
-      // Always reset the registering state, even if there's an error
       setIsRegistering(false);
     }
   };

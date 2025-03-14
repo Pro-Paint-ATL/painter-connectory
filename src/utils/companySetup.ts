@@ -23,8 +23,8 @@ export async function createCompanyProfile(userId: string, name: string) {
     const { error } = await supabase.rpc(
       'update_user_profile',
       {
-        user_id: userId,
-        company_info_data: companyInfo,
+        user_id: userId as unknown as Json,
+        company_info_data: companyInfo as unknown as Json,
         role_value: 'painter'  // Ensure role is set correctly
       }
     );
@@ -68,8 +68,8 @@ export async function createTrialSubscription(userId: string) {
     const { error } = await supabase.rpc(
       'update_user_subscription',
       {
-        user_id: userId,
-        subscription_data: subscriptionData
+        user_id: userId as unknown as Json,
+        subscription_data: subscriptionData as unknown as Json
       }
     );
 
@@ -96,8 +96,8 @@ export async function setupPainterCompany(
     const { error } = await supabase.rpc(
       'update_user_profile',
       {
-        user_id: userId,
-        company_info_data: companyInfo,
+        user_id: userId as unknown as Json,
+        company_info_data: companyInfo as unknown as Json,
         role_value: 'painter'
       }
     );
