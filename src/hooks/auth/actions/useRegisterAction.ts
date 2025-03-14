@@ -93,29 +93,48 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
       if (data.user) {
         console.log("User metadata after signup:", data.user.user_metadata);
         
-        const formattedUser = await formatUser(data.user);
-        
-        // If user is a painter, set up trial subscription
-        if (safeRole === "painter" && formattedUser) {
-          try {
-            await createTrialSubscription(formattedUser.id);
-          } catch (subError) {
-            console.error("Error creating trial subscription:", subError);
-            // Don't block registration if subscription setup fails
+        try {
+          const formattedUser = await formatUser(data.user);
+          
+          // If user is a painter, set up trial subscription
+          if (safeRole === "painter" && formattedUser) {
+            try {
+              const subscriptionResult = await createTrialSubscription(formattedUser.id);
+              console.log("Trial subscription creation result:", subscriptionResult);
+            } catch (subError) {
+              console.error("Error creating trial subscription:", subError);
+              // Don't block registration if subscription setup fails
+            }
           }
-        }
-        
-        setUser(formattedUser);
-        
-        toast({
-          title: "Registration Successful",
-          description: `Your account has been created as a ${safeRole}.`
-        });
+          
+          setUser(formattedUser);
+          
+          toast({
+            title: "Registration Successful",
+            description: `Your account has been created as a ${safeRole}.`
+          });
 
-        setIsLoading(false);
-        return formattedUser;
+          setIsLoading(false);
+          return formattedUser;
+        } catch (formatError) {
+          console.error("Error formatting user:", formatError);
+          // Even if there's an error formatting the user, we still want to return something
+          // so the registration doesn't get stuck
+          
+          const basicUser: User = {
+            id: data.user.id,
+            name: name,
+            email: email,
+            role: safeRole
+          };
+          
+          setUser(basicUser);
+          setIsLoading(false);
+          return basicUser;
+        }
       }
       
+      console.log("No user data returned from signup");
       setIsLoading(false);
       return null;
     } catch (error) {

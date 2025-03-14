@@ -60,6 +60,13 @@ export const useAuthProvider = () => {
           console.log("Customer registered, navigating to profile");
           navigate('/profile');
         }
+        
+        // Force reset loading state to ensure we don't get stuck
+        setTimeout(() => {
+          setIsRegistering(false);
+        }, 100);
+        
+        return registeredUser;
       } else {
         console.log("Registration did not return a user object");
         toast({
@@ -67,9 +74,11 @@ export const useAuthProvider = () => {
           description: "Your account may have been created but we couldn't log you in automatically. Please try logging in.",
           variant: "destructive"
         });
+        
+        // Force reset loading state
+        setIsRegistering(false);
+        return null;
       }
-      
-      return registeredUser;
     } catch (error) {
       console.error("Registration handler error:", error);
       toast({
@@ -77,10 +86,10 @@ export const useAuthProvider = () => {
         description: "There was a problem creating your account. Please try again.",
         variant: "destructive"
       });
+      
+      // Force reset loading state
+      setIsRegistering(false);
       return null;
-    } finally {
-      console.log("Registration process complete, resetting isRegistering state");
-      setIsRegistering(false); // Always set loading to false in finally block
     }
   };
 
@@ -99,6 +108,17 @@ export const useAuthProvider = () => {
       });
     }
   };
+
+  // Make sure registration state gets reset if it's been active for too long (10 seconds)
+  useEffect(() => {
+    if (isRegistering) {
+      const forceReset = setTimeout(() => {
+        setIsRegistering(false);
+      }, 10000);
+      
+      return () => clearTimeout(forceReset);
+    }
+  }, [isRegistering]);
 
   // Combined loading state from all sources
   // Don't consider sessionLoading if we're already initialized
