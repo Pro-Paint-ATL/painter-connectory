@@ -87,6 +87,7 @@ export const useAuthProvider = () => {
           navigate('/profile');
         }
         
+        setIsRegistering(false); // Make sure to reset isRegistering before returning
         return registeredUser;
       } else {
         console.log("Registration did not return a user object");
@@ -96,6 +97,7 @@ export const useAuthProvider = () => {
           variant: "destructive"
         });
         
+        setIsRegistering(false); // Make sure to reset isRegistering before returning
         return null;
       }
     } catch (error) {
@@ -106,9 +108,8 @@ export const useAuthProvider = () => {
         variant: "destructive"
       });
       
+      setIsRegistering(false); // Make sure to reset isRegistering before returning
       return null;
-    } finally {
-      setIsRegistering(false);
     }
   };
 
