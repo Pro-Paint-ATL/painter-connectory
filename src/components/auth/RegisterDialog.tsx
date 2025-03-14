@@ -34,17 +34,22 @@ const RegisterDialog = ({
   const [role, setRole] = useState<UserRole>("customer");
   const [localLoading, setLocalLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [formSubmitted, setFormSubmitted] = useState(false);
   
   // Reset form when dialog opens/closes
   useEffect(() => {
     if (!isOpen) {
-      // Reset form state when dialog closes
-      setName("");
-      setEmail("");
-      setPassword("");
-      setRole("customer");
-      setLocalLoading(false);
-      setErrorMessage(null);
+      // Wait a bit before resetting the form to avoid flicker
+      const timeout = setTimeout(() => {
+        setName("");
+        setEmail("");
+        setPassword("");
+        setRole("customer");
+        setLocalLoading(false);
+        setErrorMessage(null);
+        setFormSubmitted(false);
+      }, 300);
+      return () => clearTimeout(timeout);
     }
   }, [isOpen]);
 
@@ -78,6 +83,7 @@ const RegisterDialog = ({
     
     setErrorMessage(null);
     setLocalLoading(true);
+    setFormSubmitted(true);
     
     try {
       await onRegister(name, email, password, role);
@@ -85,6 +91,7 @@ const RegisterDialog = ({
     } catch (error: any) {
       console.error("Registration error in dialog:", error);
       setErrorMessage(error?.message || "An unexpected error occurred. Please try again.");
+      setFormSubmitted(false);
     } finally {
       // If the parent's isLoading state doesn't change in a timely manner, forcefully reset our local state
       setTimeout(() => {
@@ -93,35 +100,58 @@ const RegisterDialog = ({
     }
   };
 
-  // Handle dialog close - force it closed if we really need to
-  const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      // If closing, always reset states to ensure we don't get stuck
-      setLocalLoading(false);
-      onOpenChange(false);
-    } else {
-      onOpenChange(open);
+  // Prevent auto-closing the dialog on button click outside the form
+  const handleDialogInteraction = (e: React.MouseEvent) => {
+    if (localLoading || isLoading) {
+      e.stopPropagation();
+      e.preventDefault();
     }
   };
 
-  // Force a close after successful registration
+  // Handle dialog close - force it closed if we really need to
+  const handleOpenChange = (open: boolean) => {
+    // Prevent dialog from closing during loading state
+    if (!open && (localLoading || isLoading)) {
+      return;
+    }
+    
+    if (!open) {
+      // If closing, always reset states to ensure we don't get stuck
+      setTimeout(() => {
+        setLocalLoading(false);
+        setFormSubmitted(false);
+      }, 300);
+    }
+    
+    onOpenChange(open);
+  };
+
+  // Only close automatically after successful registration and only after a delay
   useEffect(() => {
-    if (isOpen && !isLoading && !localLoading && !errorMessage) {
-      // If there's no error and loading is complete, the registration might have been successful
+    if (isOpen && formSubmitted && !isLoading && !localLoading && !errorMessage) {
+      // If there's no error and loading is complete, and form was submitted, the registration might have been successful
       const successTimer = setTimeout(() => {
         onOpenChange(false);
       }, 1000);
       
       return () => clearTimeout(successTimer);
     }
-  }, [isOpen, isLoading, localLoading, errorMessage, onOpenChange]);
+  }, [isOpen, isLoading, localLoading, errorMessage, onOpenChange, formSubmitted]);
 
   // Determine if button should be in loading state
   const isButtonLoading = isLoading || localLoading;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent 
+        className="sm:max-w-[425px]"
+        onClick={handleDialogInteraction}
+        onPointerDownOutside={e => {
+          if (isButtonLoading) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Create an account</DialogTitle>
           <DialogDescription>

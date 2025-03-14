@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -76,11 +75,19 @@ const Header = () => {
     setIsLoading(true);
     try {
       console.log("Registering with role:", role);
-      await register(name, email, password, role);
-      setIsRegisterOpen(false);
+      const result = await register(name, email, password, role);
+      
+      if (result) {
+        console.log("Registration successful, dialog will close automatically");
+        setTimeout(() => {
+          setIsRegisterOpen(false);
+        }, 1000);
+      } else {
+        console.log("Registration failed, keeping dialog open");
+        setIsLoading(false);
+      }
     } catch (error) {
       console.error("Registration failed:", error);
-    } finally {
       setIsLoading(false);
     }
   };

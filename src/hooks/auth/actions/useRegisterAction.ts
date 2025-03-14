@@ -116,13 +116,15 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
         // Continue anyway since we've already set the basic user
       }
       
-      // Complete registration even if we can't fully format the user
-      toast({
-        title: "Registration Successful",
-        description: `Your account has been created as a ${safeRole}.`
-      });
+      // Add small delay before showing success message to prevent UI flicker
+      setTimeout(() => {
+        toast({
+          title: "Registration Successful",
+          description: `Your account has been created as a ${safeRole}.`
+        });
+        setIsLoading(false);
+      }, 300);
 
-      setIsLoading(false);
       return basicUser;
     } catch (error) {
       console.error("Registration error:", error);
