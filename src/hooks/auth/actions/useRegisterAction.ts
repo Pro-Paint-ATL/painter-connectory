@@ -2,12 +2,12 @@
 import { supabase } from "@/lib/supabase";
 import { User, UserRole } from "@/types/auth";
 import { formatUser } from "@/utils/authUtils";
-import { createCompanyProfile } from "@/utils/companySetup";
+import { createCompanyProfile, createTrialSubscription } from "@/utils/companySetup";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthCore } from "./useAuthCore";
 
 export const useRegisterAction = (user: User | null, setUser: (user: User | null) => void) => {
-  const { startLoading, stopLoading, setError } = useAuthCore(user, setUser);
+  const { startLoading, stopLoading, setError, isLoading } = useAuthCore(user, setUser);
   const { toast } = useToast();
 
   const register = async (name: string, email: string, password: string, role: UserRole) => {
@@ -64,6 +64,14 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
           console.warn("Could not create company profile, but continuing registration");
           // We don't fail the registration - just log a warning
         }
+        
+        // Step 4: Create trial subscription for painters
+        console.log("Creating trial subscription for painter");
+        const subscriptionSuccess = await createTrialSubscription(data.user.id);
+        
+        if (!subscriptionSuccess) {
+          console.warn("Could not create trial subscription, but continuing registration");
+        }
       }
 
       // Get the latest user data
@@ -91,6 +99,7 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
   };
 
   return {
-    register
+    register,
+    isLoading
   };
 };

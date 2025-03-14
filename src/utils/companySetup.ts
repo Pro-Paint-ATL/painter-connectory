@@ -24,7 +24,7 @@ export async function createCompanyProfile(userId: string, name: string) {
       'update_user_profile',
       { 
         user_id: userId, 
-        company_info_data: companyInfo, 
+        company_info_data: companyInfo as Json, 
         role_value: 'painter'  // Ensure role is set correctly
       }
     );
@@ -69,7 +69,7 @@ export async function createTrialSubscription(userId: string) {
       'update_user_subscription',
       { 
         user_id: userId, 
-        subscription_data: subscriptionData 
+        subscription_data: subscriptionData as Json
       }
     );
 
@@ -81,6 +81,35 @@ export async function createTrialSubscription(userId: string) {
     return true;
   } catch (error) {
     console.error("Exception in creating trial subscription:", error);
+    return false;
+  }
+}
+
+// Export a function to replace the one referenced in adminUtils.ts
+export async function setupPainterCompany(
+  userId: string, 
+  companyInfo: any,
+  featured: boolean = false
+) {
+  try {
+    // Update profile with company info using RPC function to bypass RLS
+    const { error } = await supabase.rpc(
+      'update_user_profile',
+      { 
+        user_id: userId, 
+        company_info_data: companyInfo as Json, 
+        role_value: 'painter'
+      }
+    );
+
+    if (error) {
+      console.error("Error updating painter company:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Exception in updating painter company:", error);
     return false;
   }
 }
