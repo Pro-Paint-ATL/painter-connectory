@@ -51,11 +51,11 @@ export const useAuthProvider = () => {
           setIsRegistering(false);
           toast({
             title: "Registration taking longer than expected",
-            description: "Please check if your account was created and try logging in instead.",
+            description: "Please try again. If the problem persists, try a different email address.",
             variant: "destructive"
           });
         }
-      }, 15000); // 15 seconds timeout - reduced from 20
+      }, 10000); // 10 seconds timeout
       
       return () => clearTimeout(timeout);
     }
@@ -91,9 +91,6 @@ export const useAuthProvider = () => {
     setIsRegistering(true);
     
     try {
-      // Clear any previous toasts to avoid confusion
-      // toast.dismiss();
-      
       const registeredUser = await register(name, email, password, role);
       
       if (registeredUser) {
@@ -106,10 +103,7 @@ export const useAuthProvider = () => {
             title: "Account Created!",
             description: "Your painter account has been created. You can now set up your subscription.",
           });
-          // Small delay to ensure UI updates before navigation
-          setTimeout(() => {
-            navigate('/subscription');
-          }, 300);
+          navigate('/subscription');
         } else if (registeredUser.role === "admin") {
           console.log("Admin registered, navigating to admin dashboard");
           navigate('/admin');
@@ -121,7 +115,7 @@ export const useAuthProvider = () => {
         console.log("Registration did not return a user object");
         toast({
           title: "Registration Issue",
-          description: "Your account may have been created but we couldn't log you in automatically. Please try logging in.",
+          description: "There was a problem creating your account. Please try again.",
           variant: "destructive"
         });
       }

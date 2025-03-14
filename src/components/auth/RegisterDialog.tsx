@@ -62,8 +62,8 @@ const RegisterDialog = ({
     if (localLoading) {
       timeout = setTimeout(() => {
         setLocalLoading(false);
-        setErrorMessage("Registration is taking longer than expected. Please try again or check if your account was created.");
-      }, 10000); // 10 seconds timeout - reduced from 15
+        setErrorMessage("Registration is taking longer than expected. Please try again.");
+      }, 5000); // 5 seconds timeout
     }
     
     return () => {
@@ -81,7 +81,7 @@ const RegisterDialog = ({
     
     try {
       await onRegister(name, email, password, role);
-      // Dialog will be closed by parent component upon successful registration
+      // Don't close the dialog here - let the parent component decide
     } catch (error: any) {
       console.error("Registration error in dialog:", error);
       setErrorMessage(error?.message || "An unexpected error occurred. Please try again.");
@@ -89,7 +89,7 @@ const RegisterDialog = ({
       // If the parent's isLoading state doesn't change in a timely manner, forcefully reset our local state
       setTimeout(() => {
         setLocalLoading(false);
-      }, 1000);
+      }, 500);
     }
   };
 
@@ -103,6 +103,18 @@ const RegisterDialog = ({
       onOpenChange(open);
     }
   };
+
+  // Force a close after successful registration
+  useEffect(() => {
+    if (isOpen && !isLoading && !localLoading && !errorMessage) {
+      // If there's no error and loading is complete, the registration might have been successful
+      const successTimer = setTimeout(() => {
+        onOpenChange(false);
+      }, 1000);
+      
+      return () => clearTimeout(successTimer);
+    }
+  }, [isOpen, isLoading, localLoading, errorMessage, onOpenChange]);
 
   // Determine if button should be in loading state
   const isButtonLoading = isLoading || localLoading;

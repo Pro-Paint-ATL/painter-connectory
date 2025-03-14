@@ -1,5 +1,7 @@
 
 import React from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
 
 const PricingInfo: React.FC = () => {
   return (
@@ -11,13 +13,28 @@ const PricingInfo: React.FC = () => {
       <p className="text-muted-foreground mb-6">
         Unlock premium benefits and get more clients with our painter subscription
       </p>
-      <div className="text-sm bg-muted p-4 rounded-md space-y-2">
-        <p className="font-medium text-foreground">Important Information:</p>
-        <ul className="list-disc list-inside text-muted-foreground">
-          <li>No credit card required for trial</li>
-          <li>Cancel anytime during your trial period</li>
-          <li>Use the button below to activate your free trial</li>
-          <li>If you encounter any issues, please try refreshing the page</li>
+      
+      <Alert className="mb-4">
+        <InfoIcon className="h-4 w-4" />
+        <AlertTitle>Important Information</AlertTitle>
+        <AlertDescription>
+          <ul className="list-disc list-inside space-y-1 mt-2">
+            <li>No credit card required for trial</li>
+            <li>Cancel anytime during your trial period</li>
+            <li>Use the button below to activate your free trial</li>
+            <li>If you encounter any issues, please try refreshing the page</li>
+          </ul>
+        </AlertDescription>
+      </Alert>
+      
+      <div className="text-sm p-4 rounded-md bg-yellow-50 border border-yellow-200 text-yellow-800">
+        <p className="font-medium">Having trouble signing up?</p>
+        <p className="mt-1">If you're experiencing issues creating your account, please try the following:</p>
+        <ul className="list-disc list-inside mt-2">
+          <li>Make sure you've selected "Painter" during registration</li>
+          <li>Try using a different email address</li>
+          <li>Ensure your password is at least 6 characters</li>
+          <li>If problems persist, please contact support</li>
         </ul>
       </div>
     </div>
