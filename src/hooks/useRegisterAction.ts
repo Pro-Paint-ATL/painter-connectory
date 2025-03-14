@@ -4,7 +4,7 @@ import { User, UserRole } from "@/types/auth";
 import { formatUser } from "@/utils/authUtils";
 import { createCompanyProfile, createTrialSubscription } from "@/utils/companySetup";
 import { useToast } from "@/hooks/use-toast";
-import { useAuthCore } from "./actions/useAuthCore";
+import { useAuthCore } from "@/hooks/auth/actions/useAuthCore";
 
 export const useRegisterAction = (user: User | null, setUser: (user: User | null) => void) => {
   const { startLoading, stopLoading, setError, isLoading } = useAuthCore(user, setUser);

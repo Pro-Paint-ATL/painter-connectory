@@ -26,8 +26,7 @@ export async function createCompanyProfile(userId: string, name: string) {
         user_id: userId,
         company_info_data: companyInfo,
         role_value: 'painter'  // Ensure role is set correctly
-      },
-      { count: 'exact' } // Add this options parameter to fix TypeScript error
+      }
     );
 
     if (error) {
@@ -71,8 +70,7 @@ export async function createTrialSubscription(userId: string) {
       {
         user_id: userId,
         subscription_data: subscriptionData
-      },
-      { count: 'exact' } // Add this options parameter to fix TypeScript error
+      }
     );
 
     if (error) {
@@ -101,8 +99,7 @@ export async function setupPainterCompany(
         user_id: userId,
         company_info_data: companyInfo,
         role_value: 'painter'
-      },
-      { count: 'exact' } // Add this options parameter to fix TypeScript error
+      }
     );
 
     if (error) {

@@ -86,9 +86,6 @@ export const useAuthProvider = () => {
           console.log("Customer registered, navigating to profile");
           navigate('/profile');
         }
-        
-        setIsRegistering(false); // Make sure to reset isRegistering before returning
-        return registeredUser;
       } else {
         console.log("Registration did not return a user object");
         toast({
@@ -96,10 +93,9 @@ export const useAuthProvider = () => {
           description: "There was a problem with your registration. Please try again.",
           variant: "destructive"
         });
-        
-        setIsRegistering(false); // Make sure to reset isRegistering before returning
-        return null;
       }
+      
+      return registeredUser;
     } catch (error) {
       console.error("Registration handler error:", error);
       toast({
@@ -107,9 +103,9 @@ export const useAuthProvider = () => {
         description: "There was a problem creating your account. Please try again.",
         variant: "destructive"
       });
-      
-      setIsRegistering(false); // Make sure to reset isRegistering before returning
       return null;
+    } finally {
+      setIsRegistering(false); // Make sure to reset isRegistering in all code paths
     }
   };
 
