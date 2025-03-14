@@ -9,6 +9,8 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
   const { toast } = useToast();
 
   const register = async (name: string, email: string, password: string, role: UserRole) => {
+    if (isLoading) return null;
+    
     setIsLoading(true);
     
     try {
@@ -35,6 +37,7 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
         return null;
       }
 
+      // Attempt to sign up
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -88,25 +91,25 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
       setUser(basicUser);
       
       // Create the profile in the background
-      try {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: data.user.id,
-            name: name,
-            email: email,
-            role: safeRole,
-            created_at: new Date().toISOString()
-          });
-          
-        if (profileError) {
-          console.error("Error creating initial profile:", profileError);
-        } else {
-          console.log("Initial profile created successfully");
-        }
-      } catch (profileErr) {
-        console.error("Exception creating initial profile:", profileErr);
-      }
+      supabase
+        .from('profiles')
+        .upsert({
+          id: data.user.id,
+          name: name,
+          email: email,
+          role: safeRole,
+          created_at: new Date().toISOString()
+        })
+        .then(({ error }) => {
+          if (error) {
+            console.error("Error creating initial profile:", error);
+          } else {
+            console.log("Initial profile created successfully");
+          }
+        })
+        .catch(error => {
+          console.error("Exception creating initial profile:", error);
+        });
       
       toast({
         title: "Registration Successful",

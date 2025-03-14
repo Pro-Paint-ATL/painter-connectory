@@ -32,51 +32,49 @@ const RegisterDialog = ({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("customer");
-  const [localLoading, setLocalLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
-  // Reset form when dialog opens/closes
+  // Reset form when dialog opens
   useEffect(() => {
-    if (!isOpen) {
-      // Wait a bit before resetting the form to avoid flickering
+    if (isOpen) {
+      setErrorMessage(null);
+    }
+  }, [isOpen]);
+  
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!isOpen && !isLoading) {
+      // Wait for transition to finish before resetting form
       const timeout = setTimeout(() => {
         setName("");
         setEmail("");
         setPassword("");
         setRole("customer");
-        setLocalLoading(false);
         setErrorMessage(null);
       }, 300);
       return () => clearTimeout(timeout);
     }
-  }, [isOpen]);
+  }, [isOpen, isLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (localLoading || isLoading) return; // Prevent multiple submissions
+    if (isLoading) return; // Prevent multiple submissions
     
     setErrorMessage(null);
-    setLocalLoading(true);
     
     try {
       await onRegister(name, email, password, role);
-      // Don't close the dialog here - parent component will handle it
     } catch (error: any) {
       console.error("Registration error in dialog:", error);
       setErrorMessage(error?.message || "An unexpected error occurred. Please try again.");
-    } finally {
-      setLocalLoading(false);
     }
   };
-
-  // Determine if button should be in loading state
-  const isButtonLoading = isLoading || localLoading;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
       // Prevent dialog from closing during loading state
-      if (!open && isButtonLoading) {
+      if (!open && isLoading) {
         return;
       }
       onOpenChange(open);
@@ -84,12 +82,12 @@ const RegisterDialog = ({
       <DialogContent 
         className="sm:max-w-[425px]"
         onPointerDownOutside={e => {
-          if (isButtonLoading) {
+          if (isLoading) {
             e.preventDefault();
           }
         }}
         onEscapeKeyDown={e => {
-          if (isButtonLoading) {
+          if (isLoading) {
             e.preventDefault();
           }
         }}
@@ -114,7 +112,7 @@ const RegisterDialog = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              disabled={isButtonLoading}
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
@@ -126,7 +124,7 @@ const RegisterDialog = ({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              disabled={isButtonLoading}
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
@@ -137,7 +135,7 @@ const RegisterDialog = ({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={isButtonLoading}
+              disabled={isLoading}
               minLength={6}
             />
             <p className="text-xs text-muted-foreground">
@@ -152,7 +150,7 @@ const RegisterDialog = ({
                 variant={role === "customer" ? "default" : "outline"}
                 className="flex-1"
                 onClick={() => setRole("customer")}
-                disabled={isButtonLoading}
+                disabled={isLoading}
               >
                 Customer
               </Button>
@@ -161,14 +159,14 @@ const RegisterDialog = ({
                 variant={role === "painter" ? "default" : "outline"}
                 className="flex-1"
                 onClick={() => setRole("painter")}
-                disabled={isButtonLoading}
+                disabled={isLoading}
               >
                 Painter
               </Button>
             </div>
           </div>
-          <Button type="submit" className="w-full" disabled={isButtonLoading}>
-            {isButtonLoading ? (
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Creating account...
@@ -183,7 +181,7 @@ const RegisterDialog = ({
               type="button"
               className="text-primary hover:underline"
               onClick={onSwitchToLogin}
-              disabled={isButtonLoading}
+              disabled={isLoading}
             >
               Login
             </button>

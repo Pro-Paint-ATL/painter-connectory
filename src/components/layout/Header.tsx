@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -84,8 +83,6 @@ const Header = () => {
         setTimeout(() => {
           setIsRegisterOpen(false);
         }, 1500);
-      } else {
-        console.log("Registration failed");
       }
     } catch (error) {
       console.error("Registration failed:", error);
