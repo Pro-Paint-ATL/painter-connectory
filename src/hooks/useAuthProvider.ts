@@ -3,7 +3,7 @@ import { useAuthSession } from "./auth/useAuthSession";
 import { useAuthActions } from "./auth/useAuthActions";
 import { useAuthNavigation } from "./auth/useNavigation";
 import { supabase } from "@/lib/supabase";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { UserRole } from "@/types/auth";
 import { useToast } from "./use-toast";
 
@@ -17,8 +17,10 @@ export const useAuthProvider = () => {
 
   // Handle login with navigation
   const handleLogin = async (email: string, password: string) => {
+    if (isLoggingIn) return null; // Prevent multiple simultaneous logins
+    
+    setIsLoggingIn(true);
     try {
-      setIsLoggingIn(true);
       const loggedInUser = await login(email, password);
       if (loggedInUser) {
         console.log("User logged in successfully, navigating based on role");
@@ -34,22 +36,24 @@ export const useAuthProvider = () => {
       });
       return null;
     } finally {
-      setIsLoggingIn(false); // Always set loading to false
+      setIsLoggingIn(false);
     }
   };
 
   // Handle registration with navigation
   const handleRegister = async (name: string, email: string, password: string, role: UserRole) => {
+    if (isRegistering) return null; // Prevent multiple simultaneous registrations
+    
     console.log("Registering user with role:", role);
+    setIsRegistering(true);
     
     try {
-      setIsRegistering(true);
       const registeredUser = await register(name, email, password, role);
       
       if (registeredUser) {
         console.log("User registered successfully with role:", registeredUser.role);
         
-        // For painter roles, navigate to subscription page
+        // Navigate based on role
         if (registeredUser.role === "painter") {
           console.log("Painter registered, navigating to subscription page");
           navigate('/subscription');
@@ -66,7 +70,7 @@ export const useAuthProvider = () => {
         console.log("Registration did not return a user object");
         toast({
           title: "Registration Issue",
-          description: "Your account may have been created but we couldn't log you in automatically. Please try logging in.",
+          description: "There was a problem with your registration. Please try again.",
           variant: "destructive"
         });
         
@@ -82,7 +86,6 @@ export const useAuthProvider = () => {
       
       return null;
     } finally {
-      // Always reset the registration state regardless of outcome
       setIsRegistering(false);
     }
   };

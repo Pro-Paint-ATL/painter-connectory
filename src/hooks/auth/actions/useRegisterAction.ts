@@ -11,13 +11,16 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
   const { toast } = useToast();
 
   const register = async (name: string, email: string, password: string, role: UserRole) => {
+    if (isLoading) return null; // Prevent multiple calls while loading
+    
     setIsLoading(true);
+    console.log("Starting registration process with role:", role);
+    
     try {
+      // Use customer role if admin is attempted (for safety)
       const safeRole = role === "admin" ? "customer" : role;
       
-      console.log("Registering with role:", safeRole);
-      
-      // Check if user already exists to provide a better error message
+      // Check if user already exists
       const { data: existingUsers } = await supabase
         .from('profiles')
         .select('email')
@@ -34,6 +37,7 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
         return null;
       }
 
+      // Perform the signup
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -47,60 +51,41 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
       });
 
       if (error) {
+        console.error("Signup error:", error.message);
+        
         // Handle specific error cases
         if (error.message.includes("User already registered")) {
           toast({
-            title: "Registration Failed",
+            title: "Already Registered",
             description: "This email is already registered. Please log in instead.",
             variant: "destructive"
           });
-        } else if (error.message.includes("sending confirmation email")) {
-          // Create the user anyway but warn about email issues
-          toast({
-            title: "Registration Successful",
-            description: "Your account was created, but there was an issue sending the confirmation email. You can still log in."
-          });
-          
-          // If we reached here, the registration was technically successful
-          if (data.user) {
-            const formattedUser = await formatUser(data.user);
-            
-            // If user is a painter, set up trial subscription
-            if (safeRole === "painter" && formattedUser) {
-              try {
-                await createTrialSubscription(formattedUser.id);
-              } catch (subError) {
-                console.error("Error creating trial subscription:", subError);
-                // Don't block registration if subscription setup fails
-              }
-            }
-            
-            setUser(formattedUser);
-            setIsLoading(false);
-            return formattedUser;
-          }
         } else {
           toast({
-            title: "Registration Failed",
-            description: error.message,
+            title: "Registration Error",
+            description: error.message || "Failed to register",
             variant: "destructive"
           });
         }
+        
         setIsLoading(false);
         return null;
       }
 
+      // At this point registration succeeded
       if (data.user) {
-        console.log("User metadata after signup:", data.user.user_metadata);
+        console.log("User registered successfully, formatting user data");
+        let formattedUser = null;
         
         try {
-          const formattedUser = await formatUser(data.user);
+          formattedUser = await formatUser(data.user);
+          console.log("User formatted:", formattedUser);
           
-          // If user is a painter, set up trial subscription
+          // If this is a painter, try to create a trial subscription
           if (safeRole === "painter" && formattedUser) {
             try {
-              const subscriptionResult = await createTrialSubscription(formattedUser.id);
-              console.log("Trial subscription creation result:", subscriptionResult);
+              console.log("Creating trial subscription for painter");
+              await createTrialSubscription(formattedUser.id);
             } catch (subError) {
               console.error("Error creating trial subscription:", subError);
               // Don't block registration if subscription setup fails
@@ -111,16 +96,14 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
           
           toast({
             title: "Registration Successful",
-            description: `Your account has been created as a ${safeRole}.`
+            description: `Welcome! Your account has been created.`
           });
-
-          setIsLoading(false);
+          
           return formattedUser;
         } catch (formatError) {
-          console.error("Error formatting user:", formatError);
-          // Even if there's an error formatting the user, we still want to return something
-          // so the registration doesn't get stuck
+          console.error("Failed to format user:", formatError);
           
+          // Create a basic user object as fallback
           const basicUser: User = {
             id: data.user.id,
             name: name,
@@ -129,23 +112,29 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
           };
           
           setUser(basicUser);
-          setIsLoading(false);
           return basicUser;
         }
+      } else {
+        console.log("Registration succeeded but no user data returned");
+        toast({
+          title: "Registration Issue",
+          description: "Your account may have been created but we couldn't log you in automatically.",
+          variant: "destructive"
+        });
       }
       
-      console.log("No user data returned from signup");
-      setIsLoading(false);
       return null;
-    } catch (error) {
-      console.error("Registration error:", error);
+    } catch (err) {
+      console.error("Unexpected registration error:", err);
       toast({
         title: "Registration Error",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
-      setIsLoading(false);
       return null;
+    } finally {
+      // Always ensure loading is reset
+      setIsLoading(false);
     }
   };
 

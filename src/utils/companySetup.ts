@@ -36,15 +36,13 @@ export const createTrialSubscription = async (userId: string, isFeatured: boolea
 
     if (error) {
       console.error('Error creating trial subscription:', error);
-      // Return true despite error to allow registration to complete
-      return true;
+      return true; // Still return true so registration can proceed
     }
 
     return true;
   } catch (error) {
     console.error('Exception creating trial subscription:', error);
-    // Return true to allow registration to complete despite the error
-    return true;
+    return true; // Return true to allow registration to complete despite error
   }
 };
 
@@ -69,8 +67,7 @@ export const setupPainterCompany = async (
 
     if (error) {
       console.error('Error setting up company:', error);
-      // Return true despite error to allow setup to complete
-      return true;
+      return true; // Still return true so setup can proceed
     }
 
     // Only attempt to update subscription if there's no issue with the first update
@@ -95,14 +92,12 @@ export const setupPainterCompany = async (
         }
       } catch (subError) {
         console.error('Error updating featured status:', subError);
-        // Still return true to allow the process to continue
       }
     }
 
     return true;
   } catch (error) {
     console.error('Exception setting up company:', error);
-    // Return true to allow the process to continue despite errors
-    return true;
+    return true; // Return true despite errors
   }
 };
