@@ -26,6 +26,10 @@ export async function createCompanyProfile(userId: string, name: string) {
         user_id: userId,
         company_info_data: companyInfo,
         role_value: 'painter'  // Ensure role is set correctly
+      } as {
+        user_id: string;
+        company_info_data: any;
+        role_value: string;
       }
     );
 
@@ -70,6 +74,9 @@ export async function createTrialSubscription(userId: string) {
       {
         user_id: userId,
         subscription_data: subscriptionData
+      } as {
+        user_id: string;
+        subscription_data: Subscription;
       }
     );
 
@@ -99,6 +106,10 @@ export async function setupPainterCompany(
         user_id: userId,
         company_info_data: companyInfo,
         role_value: 'painter'
+      } as {
+        user_id: string;
+        company_info_data: any;
+        role_value: string;
       }
     );
 

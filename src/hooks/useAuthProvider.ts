@@ -5,7 +5,7 @@ import { useAuthNavigation } from "./auth/useNavigation";
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
 import { UserRole } from "@/types/auth";
-import { useToast } from "./use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export const useAuthProvider = () => {
   const { user, setUser, isLoading: sessionLoading, isInitialized } = useAuthSession();
