@@ -36,6 +36,7 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
         return null;
       }
 
+      // For simplicity, automatically sign in without email verification
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -49,45 +50,12 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
       });
 
       if (error) {
-        // Handle specific error cases
-        if (error.message.includes("User already registered")) {
-          toast({
-            title: "Registration Failed",
-            description: "This email is already registered. Please log in instead.",
-            variant: "destructive"
-          });
-        } else if (error.message.includes("sending confirmation email")) {
-          // Create the user anyway but warn about email issues
-          toast({
-            title: "Registration Successful",
-            description: "Your account was created, but there was an issue sending the confirmation email. You can still log in."
-          });
-          
-          // If we reached here, the registration was technically successful
-          if (data.user) {
-            const formattedUser = await formatUser(data.user);
-            
-            // If user is a painter, set up trial subscription
-            if (safeRole === "painter" && formattedUser) {
-              try {
-                console.log("Creating trial subscription for painter from error handler");
-                await createTrialSubscription(formattedUser.id);
-              } catch (subError) {
-                console.error("Error creating trial subscription from error handler:", subError);
-              }
-            }
-            
-            setUser(formattedUser);
-            setIsLoading(false);
-            return formattedUser;
-          }
-        } else {
-          toast({
-            title: "Registration Failed",
-            description: error.message,
-            variant: "destructive"
-          });
-        }
+        console.error("Registration error:", error);
+        toast({
+          title: "Registration Failed",
+          description: error.message,
+          variant: "destructive"
+        });
         setIsLoading(false);
         return null;
       }

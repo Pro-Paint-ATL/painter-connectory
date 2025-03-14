@@ -1,4 +1,3 @@
-
 import { useAuthSession } from "./auth/useAuthSession";
 import { useAuthActions } from "./auth/useAuthActions";
 import { useAuthNavigation } from "./auth/useNavigation";
@@ -50,20 +49,19 @@ export const useAuthProvider = () => {
       if (registeredUser) {
         console.log("User registered successfully with role:", registeredUser.role);
         
-        // Navigate based on role
-        setTimeout(() => {
-          // For painter roles, navigate to subscription page
-          if (registeredUser.role === "painter") {
-            console.log("Painter registered, navigating to subscription page");
-            navigate('/subscription');
-          } else if (registeredUser.role === "admin") {
-            console.log("Admin registered, navigating to admin dashboard");
-            navigate('/admin');
-          } else {
-            console.log("Customer registered, navigating to profile");
-            navigate('/profile');
-          }
-        }, 500); // Small delay to ensure state is updated before navigation
+        // Immediate navigation after registration
+        if (registeredUser.role === "painter") {
+          console.log("Painter registered, navigating to profile page");
+          navigate('/profile');
+        } else if (registeredUser.role === "admin") {
+          console.log("Admin registered, navigating to admin dashboard");
+          navigate('/admin');
+        } else {
+          console.log("Customer registered, navigating to profile");
+          navigate('/profile');
+        }
+        
+        return registeredUser;
       } else {
         console.log("Registration did not return a user object");
         toast({

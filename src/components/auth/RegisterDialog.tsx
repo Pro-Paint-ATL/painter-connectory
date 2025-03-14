@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -63,19 +62,21 @@ const RegisterDialog = ({
     
     try {
       await onRegister(name, email, password, role);
-      // Dialog will be closed by parent component upon successful registration
+      // The parent component should close the dialog on successful registration
+      onOpenChange(false);
     } catch (error) {
       console.error("Registration error in dialog:", error);
       setLocalLoading(false); // Make sure to reset loading on error
     }
     
-    // Add a safety timeout to ensure loading state is reset after a while
+    // Force reset loading state after 3 seconds to prevent UI getting stuck
     setTimeout(() => {
       if (localLoading) {
         console.log("Safety timeout triggered - forcing loading state to reset");
         setLocalLoading(false);
+        onOpenChange(false); // Force close dialog if still open
       }
-    }, 5000);
+    }, 3000);
   };
 
   // Handle dialog close - force it closed if we really need to
