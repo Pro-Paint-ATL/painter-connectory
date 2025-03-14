@@ -11,8 +11,6 @@ export const useAuthProvider = () => {
   const { user, setUser, isLoading: sessionLoading, isInitialized } = useAuthSession();
   const { login, register, logout, updateUserProfile, isLoading: actionLoading } = useAuthActions(user, setUser);
   const { navigateBasedOnRole, navigate } = useAuthNavigation(user);
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
 
   // Register event listener for painter registration
@@ -41,30 +39,9 @@ export const useAuthProvider = () => {
     };
   }, []);
 
-  // Add registration timeout to prevent UI from getting stuck
-  useEffect(() => {
-    if (isRegistering) {
-      const timeout = setTimeout(() => {
-        // If registration is taking too long, reset the state
-        if (isRegistering) {
-          console.log("Registration timeout reached, resetting state");
-          setIsRegistering(false);
-          toast({
-            title: "Registration taking longer than expected",
-            description: "Please try again. If the problem persists, try a different email address.",
-            variant: "destructive"
-          });
-        }
-      }, 10000); // 10 seconds timeout
-      
-      return () => clearTimeout(timeout);
-    }
-  }, [isRegistering, toast]);
-
   // Handle login with navigation
   const handleLogin = async (email: string, password: string) => {
     try {
-      setIsLoggingIn(true);
       const loggedInUser = await login(email, password);
       if (loggedInUser) {
         console.log("User logged in successfully, navigating based on role");
@@ -80,15 +57,12 @@ export const useAuthProvider = () => {
         variant: "destructive"
       });
       return null;
-    } finally {
-      setIsLoggingIn(false); // Always set loading to false
     }
   };
 
   // Handle registration with navigation
   const handleRegister = async (name: string, email: string, password: string, role: UserRole) => {
     console.log("Registering user with role:", role);
-    setIsRegistering(true);
     
     try {
       const registeredUser = await register(name, email, password, role);
@@ -130,9 +104,6 @@ export const useAuthProvider = () => {
         variant: "destructive"
       });
       return null;
-    } finally {
-      console.log("Registration process complete, resetting isRegistering state");
-      setIsRegistering(false); // Always set loading to false in finally block
     }
   };
 
@@ -154,7 +125,7 @@ export const useAuthProvider = () => {
 
   // Combined loading state from all sources
   // Don't consider sessionLoading if we're already initialized
-  const isLoading = (isInitialized ? false : sessionLoading) || actionLoading || isRegistering || isLoggingIn;
+  const isLoading = (isInitialized ? false : sessionLoading) || actionLoading;
 
   return {
     user,

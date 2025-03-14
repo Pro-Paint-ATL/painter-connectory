@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import LoginDialog from "./LoginDialog";
 import RegisterDialog from "./RegisterDialog";
@@ -24,17 +24,40 @@ const AuthButtons = ({
   handleRegister,
   isLoading,
 }: AuthButtonsProps) => {
+  // Track local loading state for debugging purposes
+  const [localLoading, setLocalLoading] = useState(false);
+  
+  console.log("AuthButtons isLoading state:", isLoading);
+  
+  const onRegister = async (name: string, email: string, password: string, role: UserRole) => {
+    setLocalLoading(true);
+    try {
+      await handleRegister(name, email, password, role);
+    } finally {
+      setLocalLoading(false);
+    }
+  };
+  
+  const onLogin = async (email: string, password: string) => {
+    setLocalLoading(true);
+    try {
+      await handleLogin(email, password);
+    } finally {
+      setLocalLoading(false);
+    }
+  };
+
   return (
     <div className="flex items-center gap-2">
       <LoginDialog
         isOpen={isLoginOpen}
         onOpenChange={setIsLoginOpen}
-        onLogin={handleLogin}
+        onLogin={onLogin}
         onSwitchToRegister={() => {
           setIsLoginOpen(false);
           setIsRegisterOpen(true);
         }}
-        isLoading={isLoading}
+        isLoading={isLoading || localLoading}
       />
       <Button 
         variant="ghost" 
@@ -47,12 +70,12 @@ const AuthButtons = ({
       <RegisterDialog
         isOpen={isRegisterOpen}
         onOpenChange={setIsRegisterOpen}
-        onRegister={handleRegister}
+        onRegister={onRegister}
         onSwitchToLogin={() => {
           setIsRegisterOpen(false);
           setIsLoginOpen(true);
         }}
-        isLoading={isLoading}
+        isLoading={isLoading || localLoading}
       />
       <Button 
         variant="default" 

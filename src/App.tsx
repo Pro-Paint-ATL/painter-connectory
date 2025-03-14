@@ -79,52 +79,31 @@ const App = () => {
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <AppRoutes />
+            <div className="flex min-h-screen flex-col">
+              <Header />
+              <main className="flex-1">
+                <Suspense fallback={<LoadingPage />}>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/calculator" element={<EstimateCalculator />} />
+                    <Route path="/find-painters" element={<FindPainters />} />
+                    <Route path="/painter/:id" element={<PainterProfile />} />
+                    <Route path="/profile" element={<CustomerProfile />} />
+                    <Route path="/painter-dashboard" element={<PainterDashboard />} />
+                    <Route path="/booking/:painterId" element={<Booking />} />
+                    <Route path="/subscription" element={<PainterSubscription />} />
+                    <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/admin/subscriptions" element={<SubscriptionManagement />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </main>
+              <Footer />
+            </div>
           </TooltipProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
-  );
-};
-
-// Separate component for routes, correctly wrapped in AuthProvider
-const AppRoutes = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  
-  // Simulate short initialization time to prevent flash
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
-  
-  if (isLoading) {
-    return <LoadingPage />;
-  }
-  
-  return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <main className="flex-1">
-        <Suspense fallback={<LoadingPage />}>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/calculator" element={<EstimateCalculator />} />
-            <Route path="/find-painters" element={<FindPainters />} />
-            <Route path="/painter/:id" element={<PainterProfile />} />
-            <Route path="/profile" element={<CustomerProfile />} />
-            <Route path="/painter-dashboard" element={<PainterDashboard />} />
-            <Route path="/booking/:painterId" element={<Booking />} />
-            <Route path="/subscription" element={<PainterSubscription />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/subscriptions" element={<SubscriptionManagement />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </main>
-      <Footer />
-    </div>
   );
 };
 

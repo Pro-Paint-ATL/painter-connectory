@@ -90,9 +90,9 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
       // Set the user immediately to avoid waiting for profile creation
       setUser(basicUser);
       
-      // Create the profile in the background - Fixed the Promise handling
+      // Create the profile in the background using async/await
       try {
-        await supabase
+        const { error: profileError } = await supabase
           .from('profiles')
           .upsert({
             id: data.user.id,
@@ -101,7 +101,12 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
             role: safeRole,
             created_at: new Date().toISOString()
           });
-        console.log("Initial profile created successfully");
+          
+        if (profileError) {
+          console.error("Error creating initial profile:", profileError);
+        } else {
+          console.log("Initial profile created successfully");
+        }
       } catch (profileError) {
         console.error("Exception creating initial profile:", profileError);
       }
