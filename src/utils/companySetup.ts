@@ -22,9 +22,9 @@ export async function createCompanyProfile(userId: string, name: string) {
     // Update profile with company info using RPC function to bypass RLS
     const { error } = await supabase.rpc(
       'update_user_profile',
-      { 
-        user_id: userId as unknown as Json, // Cast to correct type for RPC
-        company_info_data: companyInfo as unknown as Json, 
+      {
+        user_id: userId,
+        company_info_data: companyInfo as unknown as Json,
         role_value: 'painter'  // Ensure role is set correctly
       }
     );
@@ -67,8 +67,8 @@ export async function createTrialSubscription(userId: string) {
     // Update profile with subscription data using RPC function
     const { error } = await supabase.rpc(
       'update_user_subscription',
-      { 
-        user_id: userId as unknown as Json, // Cast to correct type for RPC
+      {
+        user_id: userId,
         subscription_data: subscriptionData as unknown as Json
       }
     );
@@ -95,9 +95,9 @@ export async function setupPainterCompany(
     // Update profile with company info using RPC function to bypass RLS
     const { error } = await supabase.rpc(
       'update_user_profile',
-      { 
-        user_id: userId as unknown as Json, // Cast to correct type for RPC
-        company_info_data: companyInfo as unknown as Json, 
+      {
+        user_id: userId,
+        company_info_data: companyInfo as unknown as Json,
         role_value: 'painter'
       }
     );
