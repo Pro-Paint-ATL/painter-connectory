@@ -78,11 +78,29 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
         let formattedUser = null;
         
         try {
+          // Create a basic user object first as fallback
+          const basicUser: User = {
+            id: data.user.id,
+            name: name,
+            email: email,
+            role: safeRole
+          };
+          
+          // Set the user immediately to prevent loading state issues
+          setUser(basicUser);
+          
+          // Try to format the user for more complete data
           formattedUser = await formatUser(data.user);
-          console.log("User formatted:", formattedUser);
+          
+          if (formattedUser) {
+            console.log("User formatted:", formattedUser);
+            setUser(formattedUser);
+          } else {
+            formattedUser = basicUser;
+          }
           
           // If this is a painter, try to create a trial subscription
-          if (safeRole === "painter" && formattedUser) {
+          if (safeRole === "painter") {
             try {
               console.log("Creating trial subscription for painter");
               await createTrialSubscription(formattedUser.id);
@@ -91,8 +109,6 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
               // Don't block registration if subscription setup fails
             }
           }
-          
-          setUser(formattedUser);
           
           toast({
             title: "Registration Successful",
@@ -103,16 +119,13 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
         } catch (formatError) {
           console.error("Failed to format user:", formatError);
           
-          // Create a basic user object as fallback
-          const basicUser: User = {
+          // Already set a basic user above, so just return it
+          return {
             id: data.user.id,
             name: name,
             email: email,
             role: safeRole
           };
-          
-          setUser(basicUser);
-          return basicUser;
         }
       } else {
         console.log("Registration succeeded but no user data returned");
@@ -121,9 +134,9 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
           description: "Your account may have been created but we couldn't log you in automatically.",
           variant: "destructive"
         });
+        setIsLoading(false);
+        return null;
       }
-      
-      return null;
     } catch (err) {
       console.error("Unexpected registration error:", err);
       toast({
@@ -131,10 +144,13 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
+      setIsLoading(false);
       return null;
     } finally {
-      // Always ensure loading is reset
-      setIsLoading(false);
+      // Ensure loading is reset with a slight delay to allow state updates to propagate
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 100);
     }
   };
 

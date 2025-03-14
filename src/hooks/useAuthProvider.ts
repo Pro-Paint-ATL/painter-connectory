@@ -3,7 +3,7 @@ import { useAuthSession } from "./auth/useAuthSession";
 import { useAuthActions } from "./auth/useAuthActions";
 import { useAuthNavigation } from "./auth/useNavigation";
 import { supabase } from "@/lib/supabase";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UserRole } from "@/types/auth";
 import { useToast } from "./use-toast";
 
@@ -14,6 +14,28 @@ export const useAuthProvider = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
+
+  // Make sure to initialize the RPC functions
+  useEffect(() => {
+    const initRpcFunctions = async () => {
+      try {
+        console.log("Initializing RPC functions...");
+        const { data, error } = await supabase.functions.invoke('create-rpc-functions', {
+          body: { action: 'create_rpc_functions' }
+        });
+        
+        if (error) {
+          console.error("Error initializing RPC functions:", error);
+        } else {
+          console.log("RPC functions initialized:", data);
+        }
+      } catch (e) {
+        console.error("Failed to initialize RPC functions:", e);
+      }
+    };
+    
+    initRpcFunctions();
+  }, []);
 
   // Handle login with navigation
   const handleLogin = async (email: string, password: string) => {
@@ -36,7 +58,10 @@ export const useAuthProvider = () => {
       });
       return null;
     } finally {
-      setIsLoggingIn(false);
+      // Use setTimeout to ensure state updates don't conflict
+      setTimeout(() => {
+        setIsLoggingIn(false);
+      }, 100);
     }
   };
 
@@ -86,7 +111,10 @@ export const useAuthProvider = () => {
       
       return null;
     } finally {
-      setIsRegistering(false);
+      // Use setTimeout to ensure state updates don't conflict
+      setTimeout(() => {
+        setIsRegistering(false);
+      }, 100);
     }
   };
 
@@ -106,9 +134,9 @@ export const useAuthProvider = () => {
     }
   };
 
-  // Combined loading state from all sources
-  // Don't consider sessionLoading if we're already initialized
-  const isLoading = (isInitialized ? false : sessionLoading) || actionLoading || isRegistering || isLoggingIn;
+  // Combined loading state with a more reliable approach
+  // Give more weight to the registering and logging in states which are directly user-triggered
+  const isLoading = isRegistering || isLoggingIn || ((!isInitialized) && sessionLoading) || actionLoading;
 
   return {
     user,

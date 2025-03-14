@@ -33,16 +33,21 @@ const RegisterDialog = ({
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("customer");
   const [localLoading, setLocalLoading] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(isOpen);
   
   // Reset form when dialog opens/closes
   useEffect(() => {
+    setDialogOpen(isOpen);
+    
     if (!isOpen) {
       // Reset form state when dialog closes
-      setName("");
-      setEmail("");
-      setPassword("");
-      setRole("customer");
-      setLocalLoading(false);
+      setTimeout(() => {
+        setName("");
+        setEmail("");
+        setPassword("");
+        setRole("customer");
+        setLocalLoading(false);
+      }, 300); // Delay to allow dialog animation to complete
     }
   }, [isOpen]);
 
@@ -52,6 +57,23 @@ const RegisterDialog = ({
       setLocalLoading(false);
     }
   }, [isLoading, localLoading]);
+
+  // Force dialog closed if registration completes successfully
+  useEffect(() => {
+    if (dialogOpen && !isLoading && localLoading) {
+      // This suggests registration completed successfully or failed
+      setLocalLoading(false);
+      
+      // If we're not loading anymore, and we were previously loading, close the dialog
+      // as it likely means registration was successful
+      setTimeout(() => {
+        if (!isLoading) {
+          setDialogOpen(false);
+          onOpenChange(false);
+        }
+      }, 500);
+    }
+  }, [isLoading, localLoading, dialogOpen, onOpenChange]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,20 +93,20 @@ const RegisterDialog = ({
 
   // Handle dialog close - force it closed if we really need to
   const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      // If closing, always reset states to ensure we don't get stuck
-      setLocalLoading(false);
-      onOpenChange(false);
-    } else {
-      onOpenChange(open);
+    // If we're trying to close during loading, prevent it
+    if (!open && (isLoading || localLoading)) {
+      return;
     }
+    
+    setDialogOpen(open);
+    onOpenChange(open);
   };
 
   // Determine if button should be in loading state
   const isButtonLoading = isLoading || localLoading;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create an account</DialogTitle>
