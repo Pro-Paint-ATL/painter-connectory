@@ -15,6 +15,14 @@ export const useAuthProvider = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
 
+  // Navigate when authentication state changes
+  useEffect(() => {
+    if (user && isInitialized && !sessionLoading && !actionLoading && !isRegistering && !isLoggingIn) {
+      console.log("Auth state stable with user, navigating based on role");
+      setTimeout(() => navigateBasedOnRole(), 100);
+    }
+  }, [user, isInitialized, sessionLoading, actionLoading, isRegistering, isLoggingIn]);
+
   // Handle login with navigation
   const handleLogin = async (email: string, password: string) => {
     try {
@@ -24,16 +32,14 @@ export const useAuthProvider = () => {
       if (loggedInUser) {
         console.log("User logged in successfully with role:", loggedInUser.role);
         
-        // Navigate based on role after a short delay to allow state updates
-        setTimeout(() => {
-          if (loggedInUser.role === "admin") {
-            navigate('/admin');
-          } else if (loggedInUser.role === "painter") {
-            navigate('/painter-dashboard');
-          } else {
-            navigate('/profile');
-          }
-        }, 100);
+        // Immediate navigation based on role
+        if (loggedInUser.role === "admin") {
+          navigate('/admin', { replace: true });
+        } else if (loggedInUser.role === "painter") {
+          navigate('/painter-dashboard', { replace: true });
+        } else {
+          navigate('/profile', { replace: true });
+        }
         
         return loggedInUser;
       }
@@ -47,7 +53,8 @@ export const useAuthProvider = () => {
       });
       return null;
     } finally {
-      setIsLoggingIn(false);
+      // Short delay before turning off loading
+      setTimeout(() => setIsLoggingIn(false), 300);
     }
   };
 
@@ -63,26 +70,24 @@ export const useAuthProvider = () => {
         console.log("User registered successfully with role:", registeredUser.role);
         
         // Force immediate navigation after registration based on role
-        setTimeout(() => {
-          if (registeredUser.role === "admin") {
-            console.log("Admin registered, navigating to admin dashboard");
-            navigate('/admin');
-          } else if (registeredUser.role === "painter") {
-            console.log("Painter registered, navigating to painter dashboard");
-            navigate('/painter-dashboard');
-          } else {
-            console.log("Customer registered, navigating to profile");
-            navigate('/profile');
-          }
-        }, 100);
+        if (registeredUser.role === "admin") {
+          console.log("Admin registered, navigating to admin dashboard");
+          navigate('/admin', { replace: true });
+        } else if (registeredUser.role === "painter") {
+          console.log("Painter registered, navigating to painter dashboard");
+          navigate('/painter-dashboard', { replace: true });
+        } else {
+          console.log("Customer registered, navigating to profile");
+          navigate('/profile', { replace: true });
+        }
         
         return registeredUser;
       } else {
         console.log("Registration did not return a user object");
+        // Email confirmation might be required
         toast({
-          title: "Registration Issue",
-          description: "Your account may have been created but we couldn't log you in automatically. Please try logging in.",
-          variant: "destructive"
+          title: "Registration Complete",
+          description: "If email confirmation is required, please check your email before logging in.",
         });
       }
       
@@ -96,7 +101,8 @@ export const useAuthProvider = () => {
       });
       return null;
     } finally {
-      setIsRegistering(false);
+      // Short delay before turning off loading
+      setTimeout(() => setIsRegistering(false), 300);
     }
   };
 
@@ -105,7 +111,7 @@ export const useAuthProvider = () => {
     try {
       await logout();
       console.log("User logged out, navigating to home page");
-      navigate('/');
+      navigate('/', { replace: true });
     } catch (error) {
       console.error("Logout handler error:", error);
       toast({
@@ -117,7 +123,6 @@ export const useAuthProvider = () => {
   };
 
   // Combined loading state from all sources
-  // Don't consider sessionLoading if we're already initialized
   const isLoading = (isInitialized ? false : sessionLoading) || actionLoading || isRegistering || isLoggingIn;
 
   return {

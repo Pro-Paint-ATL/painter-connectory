@@ -15,11 +15,12 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
     setIsLoading(true);
     
     try {
+      // Safety check - don't allow 'admin' role from regular signup
       const safeRole = role === "admin" ? "customer" : role;
       
       console.log("Registering with role:", safeRole);
       
-      // Check if user already exists to provide a better error message
+      // Check if user already exists
       const { data: existingUsers } = await supabase
         .from('profiles')
         .select('email')
@@ -36,7 +37,7 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
         return null;
       }
 
-      // Sign up the user
+      // Sign up the user with Supabase
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -44,7 +45,8 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
           data: {
             name,
             role: safeRole
-          }
+          },
+          emailRedirectTo: window.location.origin
         }
       });
 
@@ -60,35 +62,49 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
       }
 
       if (data.user) {
-        console.log("User registered successfully, formatting user data");
+        console.log("User registered successfully, creating formatted user");
         
+        // Format user data for our app
         const formattedUser = await formatUser(data.user);
         console.log("Formatted user data:", formattedUser);
         
-        // If user is a painter, set up trial subscription
+        // Handle painter-specific setup
         if (safeRole === "painter" && formattedUser) {
+          console.log("Creating trial subscription for painter");
           try {
-            console.log("Creating trial subscription for painter");
             await createTrialSubscription(formattedUser.id);
             console.log("Trial subscription setup completed");
           } catch (subError) {
             console.error("Error creating trial subscription:", subError);
+            // Continue despite subscription error
           }
         }
         
+        // Update user in context
         setUser(formattedUser);
         
         toast({
           title: "Registration Successful",
-          description: `Your account has been created as a ${safeRole}.`
+          description: data.session 
+            ? "Your account has been created and you're now logged in." 
+            : "Your account has been created. Please check your email to confirm your account."
         });
 
-        console.log("Registration completed successfully, returning user data");
+        // Return the user data
+        console.log("Registration completed successfully");
         setIsLoading(false);
         return formattedUser;
       }
       
-      console.log("No user returned from registration");
+      // Handle case where user was created but not immediately available
+      if (data.session === null) {
+        toast({
+          title: "Email Confirmation Required",
+          description: "Please check your email to confirm your account before logging in.",
+        });
+      }
+      
+      console.log("Registration process completed");
       setIsLoading(false);
       return null;
     } catch (error) {

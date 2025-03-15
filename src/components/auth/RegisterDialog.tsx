@@ -46,10 +46,14 @@ const RegisterDialog = ({
     }
   }, [isOpen]);
 
-  // When parent isLoading changes to false, also reset local loading
+  // When external loading state changes to false, also reset local loading
   useEffect(() => {
     if (!isLoading && localLoading) {
-      setLocalLoading(false);
+      // Add a short delay to avoid flicker
+      const timer = setTimeout(() => {
+        setLocalLoading(false);
+      }, 300);
+      return () => clearTimeout(timer);
     }
   }, [isLoading, localLoading]);
 
@@ -65,8 +69,11 @@ const RegisterDialog = ({
     setLocalLoading(true);
     
     try {
-      // After successful registration, dialog will be closed by parent component
       await onRegister(name, email, password, role);
+      // Close dialog after slight delay to allow state updates
+      setTimeout(() => {
+        if (isOpen) onOpenChange(false);
+      }, 500);
     } catch (error) {
       console.error("Registration error in dialog:", error);
       setLocalLoading(false);
@@ -74,7 +81,14 @@ const RegisterDialog = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      // If closing and still loading, delay the close
+      if (!open && isButtonLoading) {
+        setTimeout(() => onOpenChange(false), 300);
+      } else {
+        onOpenChange(open);
+      }
+    }}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create an account</DialogTitle>
