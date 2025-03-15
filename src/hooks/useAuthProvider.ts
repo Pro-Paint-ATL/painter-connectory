@@ -15,15 +15,15 @@ export const useAuthProvider = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
 
-  // Navigate when authentication state changes
+  // Navigate when authentication state changes - simplified to reduce race conditions
   useEffect(() => {
-    if (user && isInitialized && !sessionLoading && !actionLoading && !isRegistering && !isLoggingIn) {
+    if (user && isInitialized && !sessionLoading && !actionLoading) {
       console.log("Auth state stable with user, navigating based on role");
-      setTimeout(() => navigateBasedOnRole(), 100);
+      navigateBasedOnRole();
     }
-  }, [user, isInitialized, sessionLoading, actionLoading, isRegistering, isLoggingIn]);
+  }, [user, isInitialized, sessionLoading, actionLoading]);
 
-  // Handle login with navigation
+  // Simplified login handler
   const handleLogin = async (email: string, password: string) => {
     try {
       setIsLoggingIn(true);
@@ -32,15 +32,7 @@ export const useAuthProvider = () => {
       if (loggedInUser) {
         console.log("User logged in successfully with role:", loggedInUser.role);
         
-        // Immediate navigation based on role
-        if (loggedInUser.role === "admin") {
-          navigate('/admin', { replace: true });
-        } else if (loggedInUser.role === "painter") {
-          navigate('/painter-dashboard', { replace: true });
-        } else {
-          navigate('/profile', { replace: true });
-        }
-        
+        // Navigation will be handled by the effect above
         return loggedInUser;
       }
       return null;
@@ -53,12 +45,12 @@ export const useAuthProvider = () => {
       });
       return null;
     } finally {
-      // Short delay before turning off loading
-      setTimeout(() => setIsLoggingIn(false), 300);
+      // Immediate state update to avoid race conditions
+      setIsLoggingIn(false);
     }
   };
 
-  // Handle registration with navigation
+  // Simplified registration handler
   const handleRegister = async (name: string, email: string, password: string, role: UserRole) => {
     console.log("Registering user with role:", role);
     setIsRegistering(true);
@@ -68,30 +60,12 @@ export const useAuthProvider = () => {
       
       if (registeredUser) {
         console.log("User registered successfully with role:", registeredUser.role);
-        
-        // Force immediate navigation after registration based on role
-        if (registeredUser.role === "admin") {
-          console.log("Admin registered, navigating to admin dashboard");
-          navigate('/admin', { replace: true });
-        } else if (registeredUser.role === "painter") {
-          console.log("Painter registered, navigating to painter dashboard");
-          navigate('/painter-dashboard', { replace: true });
-        } else {
-          console.log("Customer registered, navigating to profile");
-          navigate('/profile', { replace: true });
-        }
-        
+        // Navigation will be handled by the effect above
         return registeredUser;
-      } else {
-        console.log("Registration did not return a user object");
-        // Email confirmation might be required
-        toast({
-          title: "Registration Complete",
-          description: "If email confirmation is required, please check your email before logging in.",
-        });
       }
       
-      return registeredUser;
+      console.log("Registration did not return a user object");
+      return null;
     } catch (error) {
       console.error("Registration handler error:", error);
       toast({
@@ -101,12 +75,12 @@ export const useAuthProvider = () => {
       });
       return null;
     } finally {
-      // Short delay before turning off loading
-      setTimeout(() => setIsRegistering(false), 300);
+      // Immediate state update to avoid race conditions
+      setIsRegistering(false);
     }
   };
 
-  // Handle logout with navigation
+  // Simplified logout handler
   const handleLogout = async () => {
     try {
       await logout();
@@ -123,7 +97,7 @@ export const useAuthProvider = () => {
   };
 
   // Combined loading state from all sources
-  const isLoading = (isInitialized ? false : sessionLoading) || actionLoading || isRegistering || isLoggingIn;
+  const isLoading = (!isInitialized && sessionLoading) || actionLoading || isRegistering || isLoggingIn;
 
   return {
     user,

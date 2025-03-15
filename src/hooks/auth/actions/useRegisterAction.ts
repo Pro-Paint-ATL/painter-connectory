@@ -45,8 +45,7 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
           data: {
             name,
             role: safeRole
-          },
-          emailRedirectTo: window.location.origin
+          }
         }
       });
 
@@ -61,7 +60,17 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
         return null;
       }
 
-      if (data.user) {
+      // Check if email confirmation is required
+      if (data.user && !data.session) {
+        toast({
+          title: "Email Confirmation Required",
+          description: "Please check your email to confirm your account before logging in.",
+        });
+        setIsLoading(false);
+        return null;
+      }
+
+      if (data.user && data.session) {
         console.log("User registered successfully, creating formatted user");
         
         // Format user data for our app
@@ -85,26 +94,21 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
         
         toast({
           title: "Registration Successful",
-          description: data.session 
-            ? "Your account has been created and you're now logged in." 
-            : "Your account has been created. Please check your email to confirm your account."
+          description: "Your account has been created and you're now logged in."
         });
 
-        // Return the user data
         console.log("Registration completed successfully");
         setIsLoading(false);
         return formattedUser;
       }
       
-      // Handle case where user was created but not immediately available
-      if (data.session === null) {
-        toast({
-          title: "Email Confirmation Required",
-          description: "Please check your email to confirm your account before logging in.",
-        });
-      }
+      // Handle unexpected case
+      toast({
+        title: "Registration Status Unknown",
+        description: "Your account may have been created. Please try logging in.",
+      });
       
-      console.log("Registration process completed");
+      console.log("Registration process completed with unclear result");
       setIsLoading(false);
       return null;
     } catch (error) {

@@ -5,24 +5,24 @@ import { User } from "@/types/auth";
 export const useAuthNavigation = (user: User | null) => {
   const navigate = useNavigate();
 
+  // Simplified navigation function that directly navigates based on role
   const navigateBasedOnRole = () => {
     if (!user) {
-      console.log("No user found, staying on current page");
+      console.log("No user found, no navigation needed");
       return;
     }
     
     console.log("Navigating based on role:", user.role);
     
-    // Simple and direct navigation based on role - no complications
     if (user.role === "admin") {
       console.log("Admin user, navigating to admin dashboard");
-      navigate("/admin", { replace: true });
+      navigate("/admin");
     } else if (user.role === "painter") {
       console.log("Painter user, navigating to painter dashboard");
-      navigate("/painter-dashboard", { replace: true });
+      navigate("/painter-dashboard");
     } else {
       console.log("Customer user, navigating to profile");
-      navigate("/profile", { replace: true });
+      navigate("/profile");
     }
   };
 
