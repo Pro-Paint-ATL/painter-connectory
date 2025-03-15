@@ -64,7 +64,7 @@ export const useAuthProvider = () => {
     }
   };
 
-  // Simplified registration handler
+  // Simplified registration handler with better error handling
   const handleRegister = async (name: string, email: string, password: string, role: UserRole) => {
     console.log("Registering user with role:", role);
     setIsRegistering(true);
@@ -82,15 +82,27 @@ export const useAuthProvider = () => {
       return null;
     } catch (error) {
       console.error("Registration handler error:", error);
-      toast({
-        title: "Registration Error",
-        description: error instanceof Error ? error.message : "There was a problem creating your account. Please try again.",
-        variant: "destructive"
-      });
+      
+      // Specific handling for email confirmation errors
+      if (error instanceof Error && 
+          (error.message.includes("confirmation email") || 
+           error.message.includes("unexpected_failure"))) {
+        toast({
+          title: "Registration Issue",
+          description: "Your account was created but there was an issue with email confirmation. You may still be able to log in.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Registration Error",
+          description: error instanceof Error ? error.message : "There was a problem creating your account. Please try again.",
+          variant: "destructive"
+        });
+      }
+      
       return null;
     } finally {
       // Set a timeout to reset the loading state after a short delay
-      // This gives time for the toast to be visible
       setTimeout(() => {
         setIsRegistering(false);
       }, 300);

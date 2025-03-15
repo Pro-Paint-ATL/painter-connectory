@@ -36,6 +36,7 @@ const RegisterDialog = ({
   const [role, setRole] = useState<UserRole>("customer");
   const [localLoading, setLocalLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showEmailDisabledWarning, setShowEmailDisabledWarning] = useState(true);
   
   // Reset form when dialog opens/closes
   useEffect(() => {
@@ -75,7 +76,7 @@ const RegisterDialog = ({
       // If we're still loading after 5 seconds, show a timeout message
       const timeoutId = setTimeout(() => {
         if (localLoading) {
-          setErrorMessage("Registration is taking longer than expected. Email signups may be disabled in the system.");
+          setErrorMessage("Registration is taking longer than expected. Please check if email confirmation is required in the system settings.");
           setLocalLoading(false);
         }
       }, 5000);
@@ -84,7 +85,13 @@ const RegisterDialog = ({
       return () => clearTimeout(timeoutId);
     } catch (error) {
       console.error("Registration error in dialog:", error);
-      setErrorMessage(error instanceof Error ? error.message : "Registration failed");
+      if (error instanceof Error && error.message.includes("Email signups are disabled")) {
+        setErrorMessage("Email signups are currently disabled in Supabase. Please enable them in the Supabase dashboard.");
+      } else if (error instanceof Error && error.message.includes("confirmation email")) {
+        setErrorMessage("Your account was created but there was an issue sending the confirmation email. You may still be able to log in.");
+      } else {
+        setErrorMessage(error instanceof Error ? error.message : "Registration failed");
+      }
       setLocalLoading(false);
     }
   };
@@ -109,6 +116,22 @@ const RegisterDialog = ({
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
+        
+        {showEmailDisabledWarning && (
+          <Alert className="bg-amber-50 border-amber-200">
+            <AlertCircle className="h-4 w-4 text-amber-500" />
+            <AlertDescription className="text-amber-700">
+              If you're testing, you may need to enable email signups in the Supabase dashboard.
+              <Button 
+                variant="link" 
+                className="text-amber-700 p-0 h-auto font-normal underline ml-1"
+                onClick={() => setShowEmailDisabledWarning(false)}
+              >
+                Dismiss
+              </Button>
+            </AlertDescription>
           </Alert>
         )}
         
@@ -198,7 +221,7 @@ const RegisterDialog = ({
         </form>
         
         <DialogFooter className="text-center justify-center text-xs text-muted-foreground mt-4">
-          Note: Email signups may be disabled in the system settings
+          Need to set up email auth? Visit Supabase Authentication settings
         </DialogFooter>
       </DialogContent>
     </Dialog>

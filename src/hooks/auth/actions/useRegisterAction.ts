@@ -45,7 +45,8 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
           data: {
             name,
             role: safeRole
-          }
+          },
+          emailRedirectTo: window.location.origin
         }
       });
 
@@ -59,7 +60,22 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
             description: "Email signups are currently disabled. Please contact the administrator to enable signups.",
             variant: "destructive"
           });
-        } else {
+        } 
+        // Handle email sending errors
+        else if (error.message === "Error sending confirmation email" || error.code === "unexpected_failure") {
+          toast({
+            title: "Registration Issue",
+            description: "Your account was created but there was an issue sending the confirmation email. Please try logging in.",
+            variant: "destructive"
+          });
+          
+          // Try to return the user anyway so they can try logging in
+          if (data?.user) {
+            const formattedUser = await formatUser(data.user);
+            return formattedUser;
+          }
+        } 
+        else {
           toast({
             title: "Registration Failed",
             description: error.message,
@@ -74,8 +90,8 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
       // Check if email confirmation is required
       if (data.user && !data.session) {
         toast({
-          title: "Email Confirmation Required",
-          description: "Please check your email to confirm your account before logging in.",
+          title: "Registration Successful",
+          description: "Your account was created. You may need to verify your email before logging in.",
         });
         setIsLoading(false);
         return null;
