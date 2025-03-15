@@ -70,8 +70,8 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
         if (safeRole === "painter" && formattedUser) {
           try {
             console.log("Creating trial subscription for painter");
-            const success = await createTrialSubscription(formattedUser.id);
-            console.log("Trial subscription setup result:", success);
+            await createTrialSubscription(formattedUser.id);
+            console.log("Trial subscription setup completed");
           } catch (subError) {
             console.error("Error creating trial subscription:", subError);
           }
@@ -84,7 +84,7 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
           description: `Your account has been created as a ${safeRole}.`
         });
 
-        console.log("Registration completed, returning user data");
+        console.log("Registration completed successfully, returning user data");
         setIsLoading(false);
         return formattedUser;
       }

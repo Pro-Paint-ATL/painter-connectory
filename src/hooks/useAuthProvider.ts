@@ -1,3 +1,4 @@
+
 import { useAuthSession } from "./auth/useAuthSession";
 import { useAuthActions } from "./auth/useAuthActions";
 import { useAuthNavigation } from "./auth/useNavigation";
@@ -19,9 +20,17 @@ export const useAuthProvider = () => {
     try {
       setIsLoggingIn(true);
       const loggedInUser = await login(email, password);
+      
       if (loggedInUser) {
-        console.log("User logged in successfully, navigating based on role");
-        navigateBasedOnRole();
+        console.log("User logged in successfully with role:", loggedInUser.role);
+        // Force immediate navigation after login
+        if (loggedInUser.role === "admin") {
+          navigate('/admin');
+        } else if (loggedInUser.role === "painter") {
+          navigate('/painter-dashboard');
+        } else {
+          navigate('/profile');
+        }
         return loggedInUser;
       }
       return null;
@@ -34,7 +43,7 @@ export const useAuthProvider = () => {
       });
       return null;
     } finally {
-      setIsLoggingIn(false); // Always set loading to false
+      setIsLoggingIn(false);
     }
   };
 
@@ -49,13 +58,13 @@ export const useAuthProvider = () => {
       if (registeredUser) {
         console.log("User registered successfully with role:", registeredUser.role);
         
-        // Immediate navigation after registration
-        if (registeredUser.role === "painter") {
-          console.log("Painter registered, navigating to profile page");
-          navigate('/profile');
-        } else if (registeredUser.role === "admin") {
+        // Force immediate navigation after registration based on role
+        if (registeredUser.role === "admin") {
           console.log("Admin registered, navigating to admin dashboard");
           navigate('/admin');
+        } else if (registeredUser.role === "painter") {
+          console.log("Painter registered, navigating to painter dashboard");
+          navigate('/painter-dashboard');
         } else {
           console.log("Customer registered, navigating to profile");
           navigate('/profile');
@@ -81,7 +90,7 @@ export const useAuthProvider = () => {
       });
       return null;
     } finally {
-      setIsRegistering(false); // Always set isRegistering to false regardless of outcome
+      setIsRegistering(false);
     }
   };
 
