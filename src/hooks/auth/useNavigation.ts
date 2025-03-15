@@ -7,14 +7,13 @@ export const useAuthNavigation = (user: User | null) => {
 
   const navigateBasedOnRole = () => {
     if (!user) {
-      console.log("No user found, navigating to home page");
-      navigate("/");
+      console.log("No user found, staying on current page");
       return;
     }
     
     console.log("Navigating based on role:", user.role);
     
-    // Simplified navigation for all user types
+    // Simplified and direct navigation based on role
     if (user.role === "admin") {
       console.log("Admin user, navigating to admin dashboard");
       navigate("/admin");

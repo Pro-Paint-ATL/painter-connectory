@@ -23,14 +23,18 @@ export const useAuthProvider = () => {
       
       if (loggedInUser) {
         console.log("User logged in successfully with role:", loggedInUser.role);
-        // Force immediate navigation after login
-        if (loggedInUser.role === "admin") {
-          navigate('/admin');
-        } else if (loggedInUser.role === "painter") {
-          navigate('/painter-dashboard');
-        } else {
-          navigate('/profile');
-        }
+        
+        // Navigate based on role after a short delay to allow state updates
+        setTimeout(() => {
+          if (loggedInUser.role === "admin") {
+            navigate('/admin');
+          } else if (loggedInUser.role === "painter") {
+            navigate('/painter-dashboard');
+          } else {
+            navigate('/profile');
+          }
+        }, 100);
+        
         return loggedInUser;
       }
       return null;
@@ -59,16 +63,18 @@ export const useAuthProvider = () => {
         console.log("User registered successfully with role:", registeredUser.role);
         
         // Force immediate navigation after registration based on role
-        if (registeredUser.role === "admin") {
-          console.log("Admin registered, navigating to admin dashboard");
-          navigate('/admin');
-        } else if (registeredUser.role === "painter") {
-          console.log("Painter registered, navigating to painter dashboard");
-          navigate('/painter-dashboard');
-        } else {
-          console.log("Customer registered, navigating to profile");
-          navigate('/profile');
-        }
+        setTimeout(() => {
+          if (registeredUser.role === "admin") {
+            console.log("Admin registered, navigating to admin dashboard");
+            navigate('/admin');
+          } else if (registeredUser.role === "painter") {
+            console.log("Painter registered, navigating to painter dashboard");
+            navigate('/painter-dashboard');
+          } else {
+            console.log("Customer registered, navigating to profile");
+            navigate('/profile');
+          }
+        }, 100);
         
         return registeredUser;
       } else {

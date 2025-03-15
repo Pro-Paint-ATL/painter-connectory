@@ -36,7 +36,7 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
         return null;
       }
 
-      // For simplicity, automatically sign in without email verification
+      // Sign up the user
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -44,8 +44,7 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
           data: {
             name,
             role: safeRole
-          },
-          emailRedirectTo: window.location.origin
+          }
         }
       });
 
