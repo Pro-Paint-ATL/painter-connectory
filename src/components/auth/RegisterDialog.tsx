@@ -6,12 +6,14 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { UserRole } from "@/types/auth";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface RegisterDialogProps {
   isOpen: boolean;
@@ -33,6 +35,7 @@ const RegisterDialog = ({
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("customer");
   const [localLoading, setLocalLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   // Reset form when dialog opens/closes
   useEffect(() => {
@@ -43,6 +46,7 @@ const RegisterDialog = ({
       setPassword("");
       setRole("customer");
       setLocalLoading(false);
+      setErrorMessage(null);
     }
   }, [isOpen]);
 
@@ -61,18 +65,26 @@ const RegisterDialog = ({
     
     if (localLoading || isLoading) return; // Prevent multiple submissions
     
+    setErrorMessage(null);
     console.log("Form submitted with role:", role);
     setLocalLoading(true);
     
     try {
       await onRegister(name, email, password, role);
       
-      // Close dialog after successful registration
-      if (!isLoading && !localLoading) {
-        onOpenChange(false);
-      }
+      // If we're still loading after 5 seconds, show a timeout message
+      const timeoutId = setTimeout(() => {
+        if (localLoading) {
+          setErrorMessage("Registration is taking longer than expected. Email signups may be disabled in the system.");
+          setLocalLoading(false);
+        }
+      }, 5000);
+      
+      // Clear the timeout if component unmounts or registration completes
+      return () => clearTimeout(timeoutId);
     } catch (error) {
       console.error("Registration error in dialog:", error);
+      setErrorMessage(error instanceof Error ? error.message : "Registration failed");
       setLocalLoading(false);
     }
   };
@@ -92,6 +104,14 @@ const RegisterDialog = ({
             Enter your information to create an account
           </DialogDescription>
         </DialogHeader>
+        
+        {errorMessage && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
@@ -176,6 +196,10 @@ const RegisterDialog = ({
             </button>
           </div>
         </form>
+        
+        <DialogFooter className="text-center justify-center text-xs text-muted-foreground mt-4">
+          Note: Email signups may be disabled in the system settings
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

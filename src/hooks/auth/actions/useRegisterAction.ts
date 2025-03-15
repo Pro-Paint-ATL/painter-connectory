@@ -51,11 +51,22 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
 
       if (error) {
         console.error("Registration error:", error);
-        toast({
-          title: "Registration Failed",
-          description: error.message,
-          variant: "destructive"
-        });
+        
+        // Handle specific error for disabled email signups
+        if (error.message === "Email signups are disabled") {
+          toast({
+            title: "Registration Disabled",
+            description: "Email signups are currently disabled. Please contact the administrator to enable signups.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Registration Failed",
+            description: error.message,
+            variant: "destructive"
+          });
+        }
+        
         setIsLoading(false);
         return null;
       }

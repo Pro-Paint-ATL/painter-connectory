@@ -15,13 +15,28 @@ export const useAuthProvider = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
 
-  // Navigate when authentication state changes - simplified to reduce race conditions
+  // Navigate when authentication state changes - with a safety timeout
   useEffect(() => {
-    if (user && isInitialized && !sessionLoading && !actionLoading) {
+    let timeoutId: number | undefined;
+    
+    if (user && isInitialized && !sessionLoading) {
       console.log("Auth state stable with user, navigating based on role");
       navigateBasedOnRole();
     }
-  }, [user, isInitialized, sessionLoading, actionLoading]);
+    
+    // Safety timeout to prevent users from getting stuck in loading state
+    if ((isRegistering || isLoggingIn) && !user) {
+      timeoutId = window.setTimeout(() => {
+        setIsRegistering(false);
+        setIsLoggingIn(false);
+        console.log("Safety timeout triggered - resetting loading states");
+      }, 8000); // 8 seconds timeout
+    }
+    
+    return () => {
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [user, isInitialized, sessionLoading, isRegistering, isLoggingIn]);
 
   // Simplified login handler
   const handleLogin = async (email: string, password: string) => {
@@ -31,7 +46,6 @@ export const useAuthProvider = () => {
       
       if (loggedInUser) {
         console.log("User logged in successfully with role:", loggedInUser.role);
-        
         // Navigation will be handled by the effect above
         return loggedInUser;
       }
@@ -70,13 +84,16 @@ export const useAuthProvider = () => {
       console.error("Registration handler error:", error);
       toast({
         title: "Registration Error",
-        description: "There was a problem creating your account. Please try again.",
+        description: error instanceof Error ? error.message : "There was a problem creating your account. Please try again.",
         variant: "destructive"
       });
       return null;
     } finally {
-      // Immediate state update to avoid race conditions
-      setIsRegistering(false);
+      // Set a timeout to reset the loading state after a short delay
+      // This gives time for the toast to be visible
+      setTimeout(() => {
+        setIsRegistering(false);
+      }, 300);
     }
   };
 
