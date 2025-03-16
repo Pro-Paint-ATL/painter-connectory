@@ -1,4 +1,3 @@
-
 import { Json } from "@/integrations/supabase/types";
 
 export type UserRole = "customer" | "painter" | "admin" | null;
@@ -69,7 +68,6 @@ export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  isInitialized: boolean; // Added the missing property
   login: (email: string, password: string) => Promise<User | null>;
   register: (name: string, email: string, password: string, role: UserRole) => Promise<User | null>;
   logout: () => Promise<void>;

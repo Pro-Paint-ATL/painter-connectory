@@ -5,57 +5,28 @@ import { useAuthProvider } from "@/hooks/useAuthProvider";
 import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
 
-// Create context with default values
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  isAuthenticated: false,
-  isLoading: true,
-  isInitialized: false,
-  login: async () => null,
-  register: async () => null,
-  logout: async () => {},
-  updateUserProfile: async () => null,
-  supabase
-});
+// Create the context with a more explicit undefined check
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const auth = useAuthProvider();
   const [showLoader, setShowLoader] = useState(false);
   
   useEffect(() => {
-    // If we've been loading for more than 250ms, show the loader
-    let loaderTimer: number;
-    
     if (auth.isLoading) {
-      loaderTimer = window.setTimeout(() => {
+      // Only show loader after a very short delay to prevent flashing
+      const timer = setTimeout(() => {
         setShowLoader(true);
-      }, 250);
+      }, 100);
+      
+      return () => clearTimeout(timer);
     } else {
+      // Clear the loader immediately when loading stops
       setShowLoader(false);
     }
-    
-    return () => {
-      if (loaderTimer) {
-        window.clearTimeout(loaderTimer);
-      }
-    };
   }, [auth.isLoading]);
 
-  // Force auth check to complete after 8 seconds max (increased from 3)
-  useEffect(() => {
-    const forceInitTimer = window.setTimeout(() => {
-      if (!auth.isInitialized) {
-        console.log("Forcing auth initialization after timeout");
-        // Force the app to continue even if auth is stuck
-        auth.isLoading = false;
-      }
-    }, 8000);
-    
-    return () => clearTimeout(forceInitTimer);
-  }, []);
-
   // Only show the loader when we're still loading and not yet initialized
-  // AND we've been loading for more than the timer duration
   if (!auth.isInitialized && auth.isLoading && showLoader) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -65,6 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   }
 
+  // Always provide the context values, even if we're still initializing
   return (
     <AuthContext.Provider value={auth}>
       {children}
@@ -74,5 +46,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
   return context;
 };

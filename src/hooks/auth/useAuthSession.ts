@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { User } from "@/types/auth";
 import { formatUser } from "@/utils/authUtils";
@@ -8,82 +8,75 @@ export const useAuthSession = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
-  const authCheckCompleted = useRef(false);
-  const timeoutRef = useRef<number | null>(null);
-  const maxAuthWaitTime = 8000; // Increased from 5 seconds to 8 seconds
 
   const handleUserSession = async (session: any) => {
-    if (!session) {
-      console.log("No session found, user is null");
-      setUser(null);
-      return null;
-    }
-    
-    try {
-      console.log("Formatting user from session:", session.user.id);
-      const formattedUser = await formatUser(session.user);
-      if (formattedUser) {
-        console.log("User session loaded with role:", formattedUser.role);
-        setUser(formattedUser);
-        return formattedUser;
-      } else {
-        console.error("Could not format user from session");
+    if (session) {
+      try {
+        console.log("Formatting user from session:", session.user.id);
+        const formattedUser = await formatUser(session.user);
+        if (formattedUser) {
+          console.log("User session loaded with role:", formattedUser.role);
+          setUser(formattedUser);
+          return formattedUser;
+        } else {
+          console.error("Could not format user from session");
+          setUser(null);
+          return null;
+        }
+      } catch (error) {
+        console.error("Error formatting user:", error);
         setUser(null);
         return null;
       }
-    } catch (error) {
-      console.error("Error formatting user:", error);
+    } else {
+      console.log("No session found, user is null");
       setUser(null);
       return null;
     }
   };
 
   useEffect(() => {
-    // Set up a safety timeout to prevent getting stuck in loading state
-    timeoutRef.current = window.setTimeout(() => {
+    // Very short safety timeout to avoid stuck states - 1 second max
+    const safetyTimeout = setTimeout(() => {
       if (isLoading && !isInitialized) {
         console.log("Safety timeout triggered - forcing auth state to be initialized");
         setIsLoading(false);
         setIsInitialized(true);
-        authCheckCompleted.current = true;
       }
-    }, maxAuthWaitTime);
+    }, 1000); // 1 second safety timeout (reduced from 1.5)
 
     const checkAuth = async () => {
       try {
-        if (authCheckCompleted.current) return;
-        
         setIsLoading(true);
         console.log("Checking auth state...");
         
-        // Use a timeout for the getSession call to prevent hanging
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Auth session check timed out")), 7000) // Increased from 3 seconds to 7 seconds
-        );
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        try {
-          const { data: { session } } = await Promise.race([
-            sessionPromise,
-            timeoutPromise
-          ]) as any;
-          
+        if (sessionError) {
+          console.error("Error getting session:", sessionError);
+          setUser(null);
+          setIsLoading(false);
+          setIsInitialized(true);
+          return;
+        }
+        
+        if (session) {
+          console.log("Found existing session for user:", session.user.id);
           await handleUserSession(session);
-        } catch (sessionError) {
-          console.error("Error or timeout getting session:", sessionError);
+        } else {
+          console.log("No existing session found");
           setUser(null);
         }
         
-        // Mark auth as initialized and stop loading
+        // Mark auth as initialized and stop loading regardless of the result
         setIsInitialized(true);
         setIsLoading(false);
-        authCheckCompleted.current = true;
       } catch (error) {
         console.error("Error checking auth:", error);
         setUser(null);
+        // Ensure we're not stuck in loading state even if there's an error
         setIsInitialized(true);
         setIsLoading(false);
-        authCheckCompleted.current = true;
       }
     };
     
@@ -93,10 +86,8 @@ export const useAuthSession = () => {
       async (event, session) => {
         console.log("Auth state changed:", event);
         
-        // Update initialized state immediately
-        if (!isInitialized) {
-          setIsInitialized(true);
-        }
+        // Immediately update our initialized state for any auth event
+        setIsInitialized(true);
         
         if (event === 'SIGNED_IN' && session) {
           console.log("User signed in:", session.user.id);
@@ -115,7 +106,7 @@ export const useAuthSession = () => {
           await handleUserSession(session);
           setIsLoading(false);
         } else {
-          // For any other event, ensure we're not stuck in loading
+          // For any other event, make sure we're not stuck in loading
           setIsLoading(false);
         }
       }
@@ -124,9 +115,7 @@ export const useAuthSession = () => {
     return () => {
       console.log("Cleaning up auth subscription");
       subscription?.unsubscribe();
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      clearTimeout(safetyTimeout);
     };
   }, []);
 
