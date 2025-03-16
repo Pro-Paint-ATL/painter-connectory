@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 // Create the context with a more explicit undefined check
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const auth = useAuthProvider();
   const [showLoader, setShowLoader] = useState(false);
   
