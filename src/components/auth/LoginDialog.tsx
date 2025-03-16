@@ -45,7 +45,7 @@ const LoginDialog = ({
     }
   }, [isLoading, localLoading]);
 
-  // Safety timeout to prevent indefinite loading
+  // Safety timeout to prevent indefinite loading - increased to 15 seconds
   useEffect(() => {
     let timeoutId: number | undefined;
     
@@ -53,7 +53,7 @@ const LoginDialog = ({
       timeoutId = window.setTimeout(() => {
         setLocalLoading(false);
         setError("Login attempt timed out. Please try again.");
-      }, 12000); // 12 second safety timeout
+      }, 15000); // 15 second safety timeout
     }
     
     return () => {

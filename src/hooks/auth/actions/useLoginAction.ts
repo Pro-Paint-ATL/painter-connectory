@@ -14,7 +14,7 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
     try {
       console.log("Starting login process for:", email);
       
-      // Create a login promise with timeout
+      // Create a login promise with timeout - increased to 15 seconds
       const loginPromise = supabase.auth.signInWithPassword({
         email,
         password
@@ -22,7 +22,7 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
       
       // Set up timeout to avoid hanging forever
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Login request timed out")), 10000);
+        setTimeout(() => reject(new Error("Login request timed out")), 15000);
       });
       
       // Race the login against the timeout

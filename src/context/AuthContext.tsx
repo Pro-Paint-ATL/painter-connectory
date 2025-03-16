@@ -14,7 +14,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   useEffect(() => {
     if (auth.isLoading) {
-      // Only show loader after a very short delay to prevent flashing
+      // Only show loader after a short delay to prevent flashing
       const timer = setTimeout(() => {
         setShowLoader(true);
       }, 200);
@@ -26,17 +26,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [auth.isLoading]);
 
-  // Enforce a maximum loading time of 8 seconds to prevent infinite loading
+  // Enforce a maximum loading time of 12 seconds to prevent infinite loading
   useEffect(() => {
     if (auth.isLoading && !auth.isInitialized) {
       const forceInitTimeout = setTimeout(() => {
         console.log("Forcing auth initialization after timeout");
-        // If we're still loading after 8 seconds, force it to complete
+        // If we're still loading after 12 seconds, force it to complete
         if (!auth.isInitialized) {
           // The auth object will be updated by its own timeout
           // This is just a safety measure
         }
-      }, 8000); // 8 second max loading time
+      }, 12000); // 12 second max loading time
       
       return () => clearTimeout(forceInitTimeout);
     }
