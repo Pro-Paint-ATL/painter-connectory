@@ -13,10 +13,23 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
     startLoading();
     try {
       console.log("Starting login process for:", email);
-      const { data, error } = await supabase.auth.signInWithPassword({
+      
+      // Create a login promise with timeout
+      const loginPromise = supabase.auth.signInWithPassword({
         email,
         password
       });
+      
+      // Set up timeout to avoid hanging forever
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Login request timed out")), 10000);
+      });
+      
+      // Race the login against the timeout
+      const { data, error } = await Promise.race([
+        loginPromise,
+        timeoutPromise
+      ]) as any;
 
       if (error) {
         toast({
@@ -47,13 +60,20 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
       console.log("No user data returned from authentication");
       stopLoading();
       return null;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
+      
+      // Better handling of timeout errors
+      const errorMessage = error.message.includes("timed out") 
+        ? "Login request timed out. Please check your internet connection and try again."
+        : "An unexpected error occurred. Please try again.";
+      
       toast({
         title: "Login Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
+      
       stopLoading();
       return null;
     }
