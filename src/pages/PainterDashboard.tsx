@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -72,25 +73,39 @@ const PainterDashboard = () => {
     
     setIsLoading(true);
     try {
+      // Update the query to fetch bookings without joining payments table
       const { data, error } = await supabase
         .from("bookings")
-        .select("*, payments(*)")
+        .select("*")
         .eq("painter_id", user.id)
         .order("date", { ascending: false });
       
       if (error) throw error;
       
+      // Fetch payments separately and then combine them
       const bookingsWithCustomers = await Promise.all(
         data.map(async (booking) => {
+          // Get customer information
           const { data: customerData } = await supabase
             .from("profiles")
             .select("name")
             .eq("id", booking.customer_id)
             .single();
           
+          // Get payment information for this booking
+          const { data: paymentsData, error: paymentsError } = await supabase
+            .from("booking_payments")
+            .select("*")
+            .eq("booking_id", booking.id);
+            
+          if (paymentsError) {
+            console.error("Error fetching payments for booking:", booking.id, paymentsError);
+          }
+          
+          // Convert payment data to proper BookingPayment type
           let typedPayments: BookingPayment[] = [];
-          if (booking.payments && Array.isArray(booking.payments)) {
-            typedPayments = booking.payments as BookingPayment[];
+          if (paymentsData && Array.isArray(paymentsData)) {
+            typedPayments = paymentsData as BookingPayment[];
           }
           
           return {
