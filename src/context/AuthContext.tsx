@@ -13,20 +13,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [showLoader, setShowLoader] = useState(false);
   
   useEffect(() => {
+    // If we've been loading for more than 250ms, show the loader
+    let loaderTimer: number;
+    
     if (auth.isLoading) {
-      // Only show loader after a very short delay to prevent flashing
-      const timer = setTimeout(() => {
+      loaderTimer = window.setTimeout(() => {
         setShowLoader(true);
-      }, 100);
-      
-      return () => clearTimeout(timer);
+      }, 250);
     } else {
-      // Clear the loader immediately when loading stops
       setShowLoader(false);
     }
+    
+    return () => {
+      if (loaderTimer) {
+        window.clearTimeout(loaderTimer);
+      }
+    };
   }, [auth.isLoading]);
 
   // Only show the loader when we're still loading and not yet initialized
+  // AND we've been loading for more than the timer duration
   if (!auth.isInitialized && auth.isLoading && showLoader) {
     return (
       <div className="flex items-center justify-center min-h-screen">

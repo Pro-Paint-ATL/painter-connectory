@@ -20,8 +20,11 @@ export const useAuthProvider = () => {
     let timeoutId: number | undefined;
     
     if (user && isInitialized && !sessionLoading) {
-      console.log("Auth state stable with user, navigating based on role");
-      navigateBasedOnRole();
+      console.log("Auth state stable with user, navigating based on role:", user.role);
+      // Allow a very short delay for the UI to catch up
+      setTimeout(() => {
+        navigateBasedOnRole();
+      }, 50);
     }
     
     // Safety timeout to prevent users from getting stuck in loading state
@@ -30,7 +33,7 @@ export const useAuthProvider = () => {
         setIsRegistering(false);
         setIsLoggingIn(false);
         console.log("Safety timeout triggered - resetting loading states");
-      }, 8000); // 8 seconds timeout
+      }, 6000); // Reduced from 8 seconds to 6 seconds
     }
     
     return () => {
@@ -38,10 +41,11 @@ export const useAuthProvider = () => {
     };
   }, [user, isInitialized, sessionLoading, isRegistering, isLoggingIn]);
 
-  // Simplified login handler
+  // Simplified login handler with better progress tracking
   const handleLogin = async (email: string, password: string) => {
     try {
       setIsLoggingIn(true);
+      console.log("Starting login attempt for:", email);
       const loggedInUser = await login(email, password);
       
       if (loggedInUser) {
@@ -59,8 +63,11 @@ export const useAuthProvider = () => {
       });
       return null;
     } finally {
-      // Immediate state update to avoid race conditions
-      setIsLoggingIn(false);
+      // Set a short delay before resetting loading state
+      // This helps prevent flashing of UI elements
+      setTimeout(() => {
+        setIsLoggingIn(false);
+      }, 300);
     }
   };
 
@@ -125,8 +132,8 @@ export const useAuthProvider = () => {
     }
   };
 
-  // Combined loading state from all sources
-  const isLoading = (!isInitialized && sessionLoading) || actionLoading || isRegistering || isLoggingIn;
+  // Combined loading state - but make sure we don't get stuck
+  const isLoading = sessionLoading || actionLoading || isRegistering || isLoggingIn;
 
   return {
     user,

@@ -33,16 +33,31 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
         console.log("User authenticated, formatting user data");
         const formattedUser = await formatUser(data.user);
         console.log("Formatted user:", formattedUser);
-        setUser(formattedUser);
         
-        toast({
-          title: "Login Successful",
-          description: `Welcome back, ${formattedUser?.name}!`
-        });
-        
-        console.log("Logged in user with role:", formattedUser?.role);
-        stopLoading();
-        return formattedUser;
+        if (formattedUser) {
+          setUser(formattedUser);
+          
+          toast({
+            title: "Login Successful",
+            description: `Welcome back, ${formattedUser.name}!`
+          });
+          
+          console.log("Logged in user with role:", formattedUser.role);
+          // Short delay to ensure the user state is updated before navigation
+          setTimeout(() => {
+            stopLoading();
+          }, 100);
+          return formattedUser;
+        } else {
+          console.error("Could not format user after successful authentication");
+          toast({
+            title: "Login Error",
+            description: "User authenticated but profile could not be loaded",
+            variant: "destructive"
+          });
+          stopLoading();
+          return null;
+        }
       }
       console.log("No user data returned from authentication");
       stopLoading();
