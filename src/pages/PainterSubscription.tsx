@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, PaintBucket, Shield, Clock, Users, CreditCard, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { createTrialSubscription } from "@/utils/companySetup";
 
 // Direct Stripe checkout link
 const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/9AQeVl7aMbAbaHedQQ";
@@ -87,32 +86,7 @@ const PainterSubscription = () => {
     );
   }
 
-  // Start free trial process
-  const handleStartTrial = async () => {
-    if (!user) return;
-    
-    setIsProcessing(true);
-    const success = await createTrialSubscription(user.id);
-    
-    if (success) {
-      toast({
-        title: "Free Trial Started!",
-        description: "Your 21-day free trial has been activated. Enjoy all Pro features!",
-      });
-      
-      // Force refresh to update user subscription info
-      window.location.reload();
-    } else {
-      toast({
-        title: "Error Starting Trial",
-        description: "There was a problem activating your free trial. Please try again.",
-        variant: "destructive"
-      });
-    }
-    setIsProcessing(false);
-  };
-
-  // Handle external Stripe checkout
+  // Handle subscription button click - now we only have one button that redirects to Stripe
   const handleSubscribe = () => {
     setIsRedirectDialogOpen(true);
   };
@@ -233,24 +207,10 @@ const PainterSubscription = () => {
                 <Button 
                   className="w-full" 
                   size="lg"
-                  onClick={handleStartTrial}
-                  disabled={isProcessing}
-                >
-                  {isProcessing ? "Processing..." : "Start Your 21-Day Free Trial"}
-                </Button>
-                
-                <div className="flex justify-center">
-                  <p className="text-sm text-muted-foreground">- or -</p>
-                </div>
-                
-                <Button 
-                  className="w-full" 
-                  variant="outline"
-                  size="lg"
                   onClick={handleSubscribe}
                   disabled={isProcessing}
                 >
-                  Subscribe with Stripe
+                  {isProcessing ? "Processing..." : "Start Your 21-Day Free Trial"}
                 </Button>
                 
                 <div className="flex items-center justify-center text-xs text-muted-foreground gap-1">

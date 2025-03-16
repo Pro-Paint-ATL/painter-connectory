@@ -15,7 +15,7 @@ const PainterSubscriptionCard: React.FC<PainterSubscriptionCardProps> = ({ paint
   const { user } = useAuth();
   
   const isCurrentPainter = user?.role === "painter" && (!painterId || painterId === user.id);
-  const isSubscribed = user?.subscription?.status === "active";
+  const isSubscribed = user?.subscription?.status === "active" || user?.subscription?.status === "trial";
 
   if (!isCurrentPainter) {
     return null;
@@ -41,11 +41,19 @@ const PainterSubscriptionCard: React.FC<PainterSubscriptionCardProps> = ({ paint
             </div>
             <div className="flex justify-between items-center mb-1">
               <span className="font-medium">Status:</span>
-              <span className="text-emerald-600 font-medium">Active</span>
+              <span className="text-emerald-600 font-medium">
+                {user.subscription?.status === "trial" ? "Trial" : "Active"}
+              </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="font-medium">Next billing:</span>
-              <span>{new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleDateString()}</span>
+              <span className="font-medium">
+                {user.subscription?.status === "trial" ? "Trial ends:" : "Next billing:"}
+              </span>
+              <span>
+                {user.subscription?.endDate ? 
+                  new Date(user.subscription.endDate).toLocaleDateString() : 
+                  new Date(new Date().setMonth(new Date().getMonth() + 1)).toLocaleDateString()}
+              </span>
             </div>
           </div>
         </CardContent>
@@ -94,7 +102,7 @@ const PainterSubscriptionCard: React.FC<PainterSubscriptionCardProps> = ({ paint
       </CardContent>
       <CardFooter>
         <Button className="w-full" onClick={() => navigate("/subscription")}>
-          Subscribe Now
+          Start Your 21-Day Free Trial
         </Button>
       </CardFooter>
     </Card>
