@@ -11,8 +11,16 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
 
   const login = async (email: string, password: string) => {
     startLoading();
+    
     try {
       console.log("Starting login process for:", email);
+      
+      // Clear any existing login state
+      if (user) {
+        console.log("Clearing existing user state before login");
+        setUser(null);
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -43,10 +51,9 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
           });
           
           console.log("Logged in user with role:", formattedUser.role);
-          // Short delay to ensure the user state is updated before navigation
-          setTimeout(() => {
-            stopLoading();
-          }, 100);
+          
+          // Complete the login process
+          stopLoading();
           return formattedUser;
         } else {
           console.error("Could not format user after successful authentication");
@@ -59,6 +66,7 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
           return null;
         }
       }
+      
       console.log("No user data returned from authentication");
       stopLoading();
       return null;

@@ -3,7 +3,7 @@ import { useAuthSession } from "./auth/useAuthSession";
 import { useAuthActions } from "./auth/useAuthActions";
 import { useAuthNavigation } from "./auth/useNavigation";
 import { supabase } from "@/lib/supabase";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { UserRole } from "@/types/auth";
 import { useToast } from "./use-toast";
 
@@ -14,46 +14,53 @@ export const useAuthProvider = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
-
-  // Navigate when authentication state changes - with a safety timeout
+  
+  // Navigation when auth state changes - only if we're fully initialized and not loading
+  useEffect(() => {
+    // Only navigate if we have a user, are initialized, and not in a loading state
+    if (user && isInitialized && !sessionLoading && !actionLoading && !isLoggingIn && !isRegistering) {
+      console.log("Auth state stable with user, navigating based on role:", user.role);
+      // Small delay to allow state to settle
+      const navigationTimer = setTimeout(() => {
+        navigateBasedOnRole();
+      }, 50);
+      
+      return () => clearTimeout(navigationTimer);
+    }
+  }, [user, isInitialized, sessionLoading, actionLoading, isLoggingIn, isRegistering]);
+  
+  // Safety cleanup for loading states
   useEffect(() => {
     let timeoutId: number | undefined;
     
-    if (user && isInitialized && !sessionLoading) {
-      console.log("Auth state stable with user, navigating based on role:", user.role);
-      // Allow a very short delay for the UI to catch up
-      setTimeout(() => {
-        navigateBasedOnRole();
-      }, 50);
-    }
-    
-    // Safety timeout to prevent users from getting stuck in loading state
-    if ((isRegistering || isLoggingIn) && !user) {
+    // Safety timeouts to prevent getting stuck in loading states
+    if ((isRegistering || isLoggingIn) && !actionLoading) {
       timeoutId = window.setTimeout(() => {
+        console.log("Safety timeout triggered - resetting loading states");
         setIsRegistering(false);
         setIsLoggingIn(false);
-        console.log("Safety timeout triggered - resetting loading states");
-      }, 6000); // Reduced from 8 seconds to 6 seconds
+      }, 5000); // 5 second timeout
     }
     
     return () => {
       if (timeoutId) window.clearTimeout(timeoutId);
     };
-  }, [user, isInitialized, sessionLoading, isRegistering, isLoggingIn]);
+  }, [isRegistering, isLoggingIn, actionLoading]);
 
-  // Simplified login handler with better progress tracking
-  const handleLogin = async (email: string, password: string) => {
+  // Login handler with improved state management
+  const handleLogin = useCallback(async (email: string, password: string) => {
     try {
       setIsLoggingIn(true);
       console.log("Starting login attempt for:", email);
+      
       const loggedInUser = await login(email, password);
       
-      if (loggedInUser) {
-        console.log("User logged in successfully with role:", loggedInUser.role);
-        // Navigation will be handled by the effect above
-        return loggedInUser;
-      }
-      return null;
+      // Set a timeout to ensure loading state is reset even if navigation doesn't happen
+      setTimeout(() => {
+        setIsLoggingIn(false);
+      }, 1000);
+      
+      return loggedInUser;
     } catch (error) {
       console.error("Login handler error:", error);
       toast({
@@ -61,63 +68,49 @@ export const useAuthProvider = () => {
         description: "Failed to log in. Please try again.",
         variant: "destructive"
       });
+      setIsLoggingIn(false);
       return null;
-    } finally {
-      // Set a short delay before resetting loading state
-      // This helps prevent flashing of UI elements
-      setTimeout(() => {
-        setIsLoggingIn(false);
-      }, 300);
     }
-  };
+  }, [login, toast]);
 
-  // Simplified registration handler with better error handling
-  const handleRegister = async (name: string, email: string, password: string, role: UserRole) => {
+  // Registration handler with better error handling
+  const handleRegister = useCallback(async (name: string, email: string, password: string, role: UserRole) => {
     console.log("Registering user with role:", role);
     setIsRegistering(true);
     
     try {
       const registeredUser = await register(name, email, password, role);
       
-      if (registeredUser) {
-        console.log("User registered successfully with role:", registeredUser.role);
-        // Navigation will be handled by the effect above
-        return registeredUser;
-      }
+      // Set a timeout to ensure loading state is reset even if navigation doesn't happen
+      setTimeout(() => {
+        setIsRegistering(false);
+      }, 1000);
       
-      console.log("Registration did not return a user object");
-      return null;
+      return registeredUser;
     } catch (error) {
       console.error("Registration handler error:", error);
       
-      // Specific handling for email confirmation errors
-      if (error instanceof Error && 
-          (error.message.includes("confirmation email") || 
-           error.message.includes("unexpected_failure"))) {
+      if (error instanceof Error) {
         toast({
-          title: "Registration Issue",
-          description: "Your account was created but there was an issue with email confirmation. You may still be able to log in.",
+          title: "Registration Error",
+          description: error.message,
           variant: "destructive"
         });
       } else {
         toast({
           title: "Registration Error",
-          description: error instanceof Error ? error.message : "There was a problem creating your account. Please try again.",
+          description: "There was a problem creating your account. Please try again.",
           variant: "destructive"
         });
       }
       
+      setIsRegistering(false);
       return null;
-    } finally {
-      // Set a timeout to reset the loading state after a short delay
-      setTimeout(() => {
-        setIsRegistering(false);
-      }, 300);
     }
-  };
+  }, [register, toast]);
 
-  // Simplified logout handler
-  const handleLogout = async () => {
+  // Logout handler
+  const handleLogout = useCallback(async () => {
     try {
       await logout();
       console.log("User logged out, navigating to home page");
@@ -130,9 +123,9 @@ export const useAuthProvider = () => {
         variant: "destructive"
       });
     }
-  };
+  }, [logout, navigate, toast]);
 
-  // Combined loading state - but make sure we don't get stuck
+  // Combined loading state
   const isLoading = sessionLoading || actionLoading || isRegistering || isLoggingIn;
 
   return {

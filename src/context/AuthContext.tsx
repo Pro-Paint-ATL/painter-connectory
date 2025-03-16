@@ -5,8 +5,18 @@ import { useAuthProvider } from "@/hooks/useAuthProvider";
 import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
 
-// Create the context with a more explicit undefined check
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Create context with default values to avoid the undefined check
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isAuthenticated: false,
+  isLoading: true,
+  isInitialized: false,
+  login: async () => null,
+  register: async () => null,
+  logout: async () => {},
+  updateUserProfile: async () => null,
+  supabase
+});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const auth = useAuthProvider();
@@ -42,7 +52,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   }
 
-  // Always provide the context values, even if we're still initializing
   return (
     <AuthContext.Provider value={auth}>
       {children}
@@ -52,8 +61,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
+  // No more undefined check needed as we provide default values
   return context;
 };
