@@ -4,16 +4,29 @@ import { supabase } from "@/lib/supabase";
 import { User } from "@/types/auth";
 import { formatUser } from "@/utils/authUtils";
 import { useAuthCore } from "./useAuthCore";
+import { useState } from "react";
 
 export const useLoginAction = (user: User | null, setUser: (user: User | null) => void) => {
   const { isLoading, setIsLoading, startLoading, stopLoading } = useAuthCore(user, setUser);
   const { toast } = useToast();
+  const [loginAttempted, setLoginAttempted] = useState(false);
 
   const login = async (email: string, password: string) => {
     startLoading();
+    setLoginAttempted(true);
     
     try {
       console.log("Starting login process for:", email);
+      
+      // Set a timeout to prevent hanging
+      const loginPromise = supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      const timeoutPromise = new Promise<{data: null, error: Error}>((_, reject) => 
+        setTimeout(() => reject(new Error("Login timed out after 5 seconds")), 5000)
+      );
       
       // Clear any existing login state
       if (user) {
@@ -21,10 +34,21 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
         setUser(null);
       }
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      let result;
+      try {
+        result = await Promise.race([loginPromise, timeoutPromise]);
+      } catch (timeoutError) {
+        console.error("Login process timed out:", timeoutError);
+        toast({
+          title: "Login Timeout",
+          description: "Login process took too long. Please try again.",
+          variant: "destructive"
+        });
+        stopLoading();
+        return null;
+      }
+      
+      const { data, error } = result;
 
       if (error) {
         toast({
@@ -37,7 +61,7 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
         return null;
       }
 
-      if (data.user) {
+      if (data?.user) {
         console.log("User authenticated, formatting user data");
         const formattedUser = await formatUser(data.user);
         console.log("Formatted user:", formattedUser);
@@ -79,11 +103,20 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
       });
       stopLoading();
       return null;
+    } finally {
+      // Ensure loading state is cleared after 6 seconds maximum
+      setTimeout(() => {
+        if (isLoading) {
+          console.log("Forcing login process to complete after timeout");
+          stopLoading();
+        }
+      }, 6000);
     }
   };
 
   return {
     login,
-    isLoading
+    isLoading,
+    loginAttempted
   };
 };

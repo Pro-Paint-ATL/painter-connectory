@@ -5,7 +5,7 @@ import { useAuthProvider } from "@/hooks/useAuthProvider";
 import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
 
-// Create context with default values to avoid the undefined check
+// Create context with default values
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isAuthenticated: false,
@@ -41,6 +41,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [auth.isLoading]);
 
+  // Force auth check to complete after 3 seconds max
+  useEffect(() => {
+    const forceInitTimer = window.setTimeout(() => {
+      if (!auth.isInitialized) {
+        console.log("Forcing auth initialization after timeout");
+        // Force the app to continue even if auth is stuck
+        auth.isLoading = false;
+      }
+    }, 3000);
+    
+    return () => clearTimeout(forceInitTimer);
+  }, []);
+
   // Only show the loader when we're still loading and not yet initialized
   // AND we've been loading for more than the timer duration
   if (!auth.isInitialized && auth.isLoading && showLoader) {
@@ -61,6 +74,5 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  // No more undefined check needed as we provide default values
   return context;
 };

@@ -10,6 +10,7 @@ export const useAuthSession = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const authCheckCompleted = useRef(false);
   const timeoutRef = useRef<number | null>(null);
+  const maxAuthWaitTime = 5000; // Maximum time to wait for auth in milliseconds
 
   const handleUserSession = async (session: any) => {
     if (!session) {
@@ -44,8 +45,9 @@ export const useAuthSession = () => {
         console.log("Safety timeout triggered - forcing auth state to be initialized");
         setIsLoading(false);
         setIsInitialized(true);
+        authCheckCompleted.current = true;
       }
-    }, 750);
+    }, maxAuthWaitTime);
 
     const checkAuth = async () => {
       try {
@@ -54,18 +56,23 @@ export const useAuthSession = () => {
         setIsLoading(true);
         console.log("Checking auth state...");
         
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // Use a timeout for the getSession call to prevent hanging
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Auth session check timed out")), 3000)
+        );
         
-        if (sessionError) {
-          console.error("Error getting session:", sessionError);
+        try {
+          const { data: { session } } = await Promise.race([
+            sessionPromise,
+            timeoutPromise
+          ]) as any;
+          
+          await handleUserSession(session);
+        } catch (sessionError) {
+          console.error("Error or timeout getting session:", sessionError);
           setUser(null);
-          setIsLoading(false);
-          setIsInitialized(true);
-          authCheckCompleted.current = true;
-          return;
         }
-        
-        await handleUserSession(session);
         
         // Mark auth as initialized and stop loading
         setIsInitialized(true);

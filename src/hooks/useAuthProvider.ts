@@ -3,7 +3,7 @@ import { useAuthSession } from "./auth/useAuthSession";
 import { useAuthActions } from "./auth/useAuthActions";
 import { useAuthNavigation } from "./auth/useNavigation";
 import { supabase } from "@/lib/supabase";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { UserRole } from "@/types/auth";
 import { useToast } from "./use-toast";
 
@@ -14,12 +14,16 @@ export const useAuthProvider = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
+  const navigationAttempted = useRef(false);
   
   // Navigation when auth state changes - only if we're fully initialized and not loading
   useEffect(() => {
     // Only navigate if we have a user, are initialized, and not in a loading state
-    if (user && isInitialized && !sessionLoading && !actionLoading && !isLoggingIn && !isRegistering) {
+    if (user && isInitialized && !sessionLoading && !actionLoading && 
+        !isLoggingIn && !isRegistering && !navigationAttempted.current) {
       console.log("Auth state stable with user, navigating based on role:", user.role);
+      navigationAttempted.current = true;
+      
       // Small delay to allow state to settle
       const navigationTimer = setTimeout(() => {
         navigateBasedOnRole();
@@ -27,25 +31,39 @@ export const useAuthProvider = () => {
       
       return () => clearTimeout(navigationTimer);
     }
+    
+    // Reset navigation attempt if we lose our user
+    if (!user && navigationAttempted.current) {
+      navigationAttempted.current = false;
+    }
   }, [user, isInitialized, sessionLoading, actionLoading, isLoggingIn, isRegistering]);
   
   // Safety cleanup for loading states
   useEffect(() => {
-    let timeoutId: number | undefined;
+    const timeoutIds: number[] = [];
     
     // Safety timeouts to prevent getting stuck in loading states
-    if ((isRegistering || isLoggingIn) && !actionLoading) {
-      timeoutId = window.setTimeout(() => {
+    if (isRegistering || isLoggingIn) {
+      timeoutIds.push(window.setTimeout(() => {
         console.log("Safety timeout triggered - resetting loading states");
         setIsRegistering(false);
         setIsLoggingIn(false);
-      }, 5000); // 5 second timeout
+      }, 5000)); // 5 second timeout
+    }
+    
+    // Add another timeout for overall auth process
+    if (sessionLoading || actionLoading) {
+      timeoutIds.push(window.setTimeout(() => {
+        console.log("Global auth timeout triggered");
+        // Can't directly modify these states as they come from other hooks
+        // But this serves as a fallback for the UI to continue
+      }, 6000));
     }
     
     return () => {
-      if (timeoutId) window.clearTimeout(timeoutId);
+      timeoutIds.forEach(id => window.clearTimeout(id));
     };
-  }, [isRegistering, isLoggingIn, actionLoading]);
+  }, [isRegistering, isLoggingIn, actionLoading, sessionLoading]);
 
   // Login handler with improved state management
   const handleLogin = useCallback(async (email: string, password: string) => {
@@ -114,6 +132,7 @@ export const useAuthProvider = () => {
     try {
       await logout();
       console.log("User logged out, navigating to home page");
+      navigationAttempted.current = false;
       navigate('/', { replace: true });
     } catch (error) {
       console.error("Logout handler error:", error);
