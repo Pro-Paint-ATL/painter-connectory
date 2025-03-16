@@ -10,7 +10,7 @@ export const useAuthSession = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const authCheckCompleted = useRef(false);
   const timeoutRef = useRef<number | null>(null);
-  const maxAuthWaitTime = 5000; // Maximum time to wait for auth in milliseconds
+  const maxAuthWaitTime = 8000; // Increased from 5 seconds to 8 seconds
 
   const handleUserSession = async (session: any) => {
     if (!session) {
@@ -59,7 +59,7 @@ export const useAuthSession = () => {
         // Use a timeout for the getSession call to prevent hanging
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Auth session check timed out")), 3000)
+          setTimeout(() => reject(new Error("Auth session check timed out")), 7000) // Increased from 3 seconds to 7 seconds
         );
         
         try {

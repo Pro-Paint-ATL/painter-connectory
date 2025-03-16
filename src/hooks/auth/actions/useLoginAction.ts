@@ -18,14 +18,14 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
     try {
       console.log("Starting login process for:", email);
       
-      // Set a timeout to prevent hanging
+      // Increased timeout to 15 seconds for login
       const loginPromise = supabase.auth.signInWithPassword({
         email,
         password
       });
       
       const timeoutPromise = new Promise<{data: null, error: Error}>((_, reject) => 
-        setTimeout(() => reject(new Error("Login timed out after 5 seconds")), 5000)
+        setTimeout(() => reject(new Error("Login timed out after 15 seconds")), 15000)
       );
       
       // Clear any existing login state
@@ -104,13 +104,13 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
       stopLoading();
       return null;
     } finally {
-      // Ensure loading state is cleared after 6 seconds maximum
+      // Ensure loading state is cleared after timeout
       setTimeout(() => {
         if (isLoading) {
           console.log("Forcing login process to complete after timeout");
           stopLoading();
         }
-      }, 6000);
+      }, 16000);
     }
   };
 

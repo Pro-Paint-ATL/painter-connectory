@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface LoginDialogProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ const LoginDialog = ({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [localLoading, setLocalLoading] = useState(false);
+  const loginTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     // If the external loading state changes to false, update the local loading state
@@ -44,17 +46,35 @@ const LoginDialog = ({
       setEmail("");
       setPassword("");
       setLocalLoading(false);
+
+      // Clear any pending timeout
+      if (loginTimeoutRef.current) {
+        window.clearTimeout(loginTimeoutRef.current);
+        loginTimeoutRef.current = null;
+      }
     }
   }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalLoading(true);
+    
+    // Set a safety timeout to ensure the loading state gets reset
+    loginTimeoutRef.current = window.setTimeout(() => {
+      setLocalLoading(false);
+    }, 15000); // 15 seconds max wait time for login
+    
     try {
       await onLogin(email, password);
     } catch (error) {
       console.error("Login error in dialog:", error);
       setLocalLoading(false);
+      
+      // Clear the timeout since we're handling the error
+      if (loginTimeoutRef.current) {
+        window.clearTimeout(loginTimeoutRef.current);
+        loginTimeoutRef.current = null;
+      }
     }
   };
 
@@ -90,7 +110,12 @@ const LoginDialog = ({
             />
           </div>
           <Button type="submit" className="w-full" disabled={isLoading || localLoading}>
-            {isLoading || localLoading ? "Logging in..." : "Login"}
+            {isLoading || localLoading ? (
+              <span className="flex items-center">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Logging in...
+              </span>
+            ) : "Login"}
           </Button>
           <div className="text-center text-sm">
             Don't have an account?{" "}

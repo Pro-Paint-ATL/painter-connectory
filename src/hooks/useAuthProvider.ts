@@ -1,4 +1,3 @@
-
 import { useAuthSession } from "./auth/useAuthSession";
 import { useAuthActions } from "./auth/useAuthActions";
 import { useAuthNavigation } from "./auth/useNavigation";
@@ -27,7 +26,7 @@ export const useAuthProvider = () => {
       // Small delay to allow state to settle
       const navigationTimer = setTimeout(() => {
         navigateBasedOnRole();
-      }, 50);
+      }, 100); // Increased from 50ms to 100ms for better state settling
       
       return () => clearTimeout(navigationTimer);
     }
@@ -48,7 +47,7 @@ export const useAuthProvider = () => {
         console.log("Safety timeout triggered - resetting loading states");
         setIsRegistering(false);
         setIsLoggingIn(false);
-      }, 5000)); // 5 second timeout
+      }, 15000)); // Increased from 5 seconds to 15 seconds
     }
     
     // Add another timeout for overall auth process
@@ -57,7 +56,7 @@ export const useAuthProvider = () => {
         console.log("Global auth timeout triggered");
         // Can't directly modify these states as they come from other hooks
         // But this serves as a fallback for the UI to continue
-      }, 6000));
+      }, 16000)); // Increased from 6 seconds to 16 seconds
     }
     
     return () => {
@@ -73,10 +72,23 @@ export const useAuthProvider = () => {
       
       const loggedInUser = await login(email, password);
       
-      // Set a timeout to ensure loading state is reset even if navigation doesn't happen
-      setTimeout(() => {
+      // If login was successful, keep the loading state until navigation
+      if (loggedInUser) {
+        console.log("Login successful, user will be redirected based on role");
+        // We'll let the navigation effect handle the loading state reset
+        
+        // But also set a backup timeout to ensure we don't get stuck
+        setTimeout(() => {
+          if (isLoggingIn) {
+            console.log("Login timeout safety - resetting loading state");
+            setIsLoggingIn(false);
+          }
+        }, 3000);
+      } else {
+        // If login failed, reset the loading state immediately
+        console.log("Login unsuccessful, resetting loading state");
         setIsLoggingIn(false);
-      }, 1000);
+      }
       
       return loggedInUser;
     } catch (error) {
@@ -99,10 +111,22 @@ export const useAuthProvider = () => {
     try {
       const registeredUser = await register(name, email, password, role);
       
-      // Set a timeout to ensure loading state is reset even if navigation doesn't happen
-      setTimeout(() => {
+      // If registration was successful, keep loading state until navigation
+      if (registeredUser) {
+        console.log("Registration successful, user will be redirected based on role");
+        
+        // Set a backup timeout to ensure we don't get stuck
+        setTimeout(() => {
+          if (isRegistering) {
+            console.log("Registration timeout safety - resetting loading state");
+            setIsRegistering(false);
+          }
+        }, 3000);
+      } else {
+        // If registration failed, reset the loading state immediately
+        console.log("Registration unsuccessful, resetting loading state");
         setIsRegistering(false);
-      }, 1000);
+      }
       
       return registeredUser;
     } catch (error) {

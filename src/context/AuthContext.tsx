@@ -41,7 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [auth.isLoading]);
 
-  // Force auth check to complete after 3 seconds max
+  // Force auth check to complete after 8 seconds max (increased from 3)
   useEffect(() => {
     const forceInitTimer = window.setTimeout(() => {
       if (!auth.isInitialized) {
@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Force the app to continue even if auth is stuck
         auth.isLoading = false;
       }
-    }, 3000);
+    }, 8000);
     
     return () => clearTimeout(forceInitTimer);
   }, []);
