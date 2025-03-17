@@ -105,12 +105,26 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </CardHeader>
           <CardContent>
             <div className="text-center mb-4">
-              <Avatar className="h-20 w-20 mx-auto mb-2">
-                <AvatarImage src={user.avatar} />
-                <AvatarFallback>
-                  {user.companyInfo?.companyName?.charAt(0) || user.name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
+              {user.companyInfo?.logoUrl ? (
+                <div className="w-20 h-20 rounded-md overflow-hidden mx-auto mb-2">
+                  <img 
+                    src={user.companyInfo.logoUrl} 
+                    alt={user.companyInfo.companyName}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = "";
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                </div>
+              ) : (
+                <Avatar className="h-20 w-20 mx-auto mb-2">
+                  <AvatarImage src={user.avatar} />
+                  <AvatarFallback>
+                    {user.companyInfo?.companyName?.charAt(0) || user.name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+              )}
               <h3 className="font-medium text-lg">
                 {user.companyInfo?.companyName || user.name}
               </h3>

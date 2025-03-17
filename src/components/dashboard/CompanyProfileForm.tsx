@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { 
   Card, 
   CardContent, 
@@ -16,6 +16,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@/types/auth";
+import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 interface CompanyProfileFormProps {
   user: User;
@@ -29,6 +31,12 @@ const CompanyProfileForm: React.FC<CompanyProfileFormProps> = ({ user }) => {
     user.companyInfo?.specialties || []
   );
   const [newSpecialty, setNewSpecialty] = useState("");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | undefined>(
+    user.companyInfo?.logoUrl
+  );
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,13 +53,21 @@ const CompanyProfileForm: React.FC<CompanyProfileFormProps> = ({ user }) => {
     setIsLoading(true);
     
     try {
+      // Upload logo if there's a new file
+      let logoUrl = user.companyInfo?.logoUrl;
+      
+      if (logoFile) {
+        logoUrl = await uploadLogo(logoFile);
+      }
+      
       const updatedCompanyInfo = {
         ...user.companyInfo,
         companyName,
         yearsInBusiness,
         businessDescription,
         isInsured,
-        specialties
+        specialties,
+        logoUrl
       };
       
       await updateUserProfile({
@@ -71,6 +87,84 @@ const CompanyProfileForm: React.FC<CompanyProfileFormProps> = ({ user }) => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const uploadLogo = async (file: File): Promise<string> => {
+    setIsUploading(true);
+    try {
+      // Create a unique file name using the user ID and timestamp
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}-logo-${Date.now()}.${fileExt}`;
+      const filePath = `company-logos/${fileName}`;
+      
+      // Upload file to Supabase Storage
+      const { error: uploadError, data } = await supabase.storage
+        .from('profile-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+        
+      if (uploadError) {
+        throw uploadError;
+      }
+      
+      // Get the public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-images')
+        .getPublicUrl(filePath);
+        
+      return publicUrl;
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      toast({
+        title: "Upload Failed",
+        description: "Could not upload company logo. Please try again.",
+        variant: "destructive"
+      });
+      throw error;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Check file type
+    if (!file.type.includes('image/jpeg') && !file.type.includes('image/png')) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload only JPEG or PNG files.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please upload images smaller than 5MB.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setLogoFile(file);
+    
+    // Create a preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setLogoPreview(previewUrl);
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoFile(null);
+    setLogoPreview(undefined);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -100,6 +194,56 @@ const CompanyProfileForm: React.FC<CompanyProfileFormProps> = ({ user }) => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSaveProfile} className="space-y-6">
+          <div className="space-y-4">
+            <Label>Company Logo</Label>
+            <div className="flex items-center gap-4">
+              {logoPreview ? (
+                <div className="relative w-32 h-32 rounded-md overflow-hidden border bg-secondary/20">
+                  <img 
+                    src={logoPreview} 
+                    alt="Company logo" 
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveLogo}
+                    className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1"
+                    title="Remove logo"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-32 h-32 rounded-md border border-dashed flex items-center justify-center bg-secondary/20">
+                  <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                </div>
+              )}
+              
+              <div className="space-y-2">
+                <Input
+                  ref={fileInputRef}
+                  type="file"
+                  id="logo"
+                  accept=".jpg,.jpeg,.png"
+                  className="hidden"
+                  onChange={handleLogoChange}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                >
+                  {isUploading ? "Uploading..." : "Upload Logo"}
+                  {!isUploading && <Upload className="ml-2 h-4 w-4" />}
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Accepted formats: JPEG, PNG. Max size: 5MB
+                </p>
+              </div>
+            </div>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="companyName">Company Name</Label>
@@ -166,7 +310,7 @@ const CompanyProfileForm: React.FC<CompanyProfileFormProps> = ({ user }) => {
             <Label htmlFor="isInsured">My business is insured</Label>
           </div>
           
-          <Button type="submit" disabled={isLoading}>
+          <Button type="submit" disabled={isLoading || isUploading}>
             {isLoading ? "Saving..." : "Save Profile"}
           </Button>
         </form>
