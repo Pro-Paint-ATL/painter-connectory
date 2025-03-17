@@ -2,6 +2,7 @@
 import { handleWebhookEvent } from '@/utils/stripe-server';
 import { supabase } from '@/lib/supabase';
 import { Subscription } from '@/types/auth';
+import { Json } from '@/integrations/supabase/types';
 
 // This is a placeholder for what would be a serverless function or API route
 // in a real production environment (e.g., Netlify function, Vercel API route, Express endpoint)
@@ -83,10 +84,11 @@ export const updateSubscriptionAfterCheckout = async (painterId: string) => {
     };
     
     // Update the profile with new subscription data
+    // Type cast the subscription data to Json before saving to Supabase
     const { error: updateError } = await supabase
       .from('profiles')
       .update({
-        subscription: subscriptionData
+        subscription: subscriptionData as unknown as Json
       })
       .eq('id', painterId);
       
