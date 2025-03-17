@@ -14,48 +14,59 @@ export const useAuthProvider = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
+  
+  // Refs to track navigation and authentication state
   const hasNavigated = useRef(false);
   const isAuthenticating = useRef(false);
 
-  // Navigate when authentication state changes
+  // Handle navigation when authentication state changes
   useEffect(() => {
-    // Only navigate if authenticated AND initialized AND not yet navigated
+    // Only navigate if we have a user, auth is initialized, and we haven't already navigated
     if (user && isInitialized && !hasNavigated.current && !isAuthenticating.current) {
       console.log("Auth state is initialized with user, navigating to profile");
       
-      // Set navigation flag before navigating to prevent loops
+      // Set navigation flag to prevent redundant navigation
       hasNavigated.current = true;
       
-      // Use setTimeout to ensure this happens after render
+      // Navigate to appropriate page based on user role
       setTimeout(() => {
-        // Navigate directly to profile for all users
-        navigate('/profile');
+        // Use role-based navigation for a more tailored experience
+        if (user.role === "painter") {
+          navigate('/painter-dashboard', { replace: true });
+        } else {
+          navigate('/profile', { replace: true });
+        }
       }, 0);
     }
     
-    // Reset navigation flag when user changes to null (logged out)
+    // Reset navigation flag when user logs out
     if (!user) {
       hasNavigated.current = false;
     }
   }, [user, isInitialized, navigate]);
 
-  // Simple login handler with direct navigation
+  // Handle login with explicit navigation
   const handleLogin = async (email: string, password: string) => {
     try {
       console.log("Login handler started for email:", email);
+      // Set loading state and authentication flag
       setIsLoggingIn(true);
       isAuthenticating.current = true;
       
       const loggedInUser = await login(email, password);
       
       if (loggedInUser) {
-        console.log("Login successful, user object returned:", loggedInUser.id);
+        console.log("Login successful, user:", loggedInUser.id);
         
-        // Set navigation flag to avoid loops
+        // Set navigation flag to prevent redundant navigation
         hasNavigated.current = true;
         
-        // Explicit navigation after successful login
-        navigate('/profile', { replace: true });
+        // Close login dialog and navigate to appropriate page
+        if (loggedInUser.role === "painter") {
+          navigate('/painter-dashboard', { replace: true });
+        } else {
+          navigate('/profile', { replace: true });
+        }
         
         return loggedInUser;
       }
@@ -71,17 +82,17 @@ export const useAuthProvider = () => {
         description: "Failed to complete the login process. Please try again.",
         variant: "destructive"
       });
-      return null;
+      throw error; // Re-throw to allow LoginDialog to handle the error
     } finally {
       setIsLoggingIn(false);
-      // Reset the authenticating flag after a delay
+      // Reset authentication flag after a short delay
       setTimeout(() => {
         isAuthenticating.current = false;
       }, 500);
     }
   };
 
-  // Basic registration handler
+  // Handle registration with explicit navigation
   const handleRegister = async (name: string, email: string, password: string, role: UserRole) => {
     console.log("Registering user with role:", role);
     setIsRegistering(true);
@@ -93,11 +104,15 @@ export const useAuthProvider = () => {
       if (registeredUser) {
         console.log("User registered successfully with role:", registeredUser.role);
         
-        // Set navigation flag to avoid loops
+        // Set navigation flag to prevent redundant navigation
         hasNavigated.current = true;
         
-        // Explicit navigation after successful registration
-        navigate('/profile', { replace: true });
+        // Navigate based on role
+        if (registeredUser.role === "painter") {
+          navigate('/painter-dashboard', { replace: true });
+        } else {
+          navigate('/profile', { replace: true });
+        }
         
         return registeredUser;
       }
@@ -113,17 +128,17 @@ export const useAuthProvider = () => {
         description: error instanceof Error ? error.message : "There was a problem creating your account.",
         variant: "destructive"
       });
-      return null;
+      throw error; // Re-throw to allow RegisterDialog to handle the error
     } finally {
       setIsRegistering(false);
-      // Reset the authenticating flag after a delay
+      // Reset authentication flag after a short delay
       setTimeout(() => {
         isAuthenticating.current = false;
       }, 500);
     }
   };
 
-  // Simple logout handler
+  // Handle logout with navigation
   const handleLogout = async () => {
     try {
       await logout();

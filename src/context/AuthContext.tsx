@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext } from "react";
 import { AuthContextType } from "@/types/auth";
 import { useAuthProvider } from "@/hooks/useAuthProvider";
 import { Loader2 } from "lucide-react";
@@ -10,7 +10,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const auth = useAuthProvider();
   
-  // Only show the loader when we're still loading and not yet initialized
+  // Only show the loading screen during initial authentication
   if (!auth.isInitialized && auth.isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">

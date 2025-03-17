@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 interface LoginDialogProps {
   isOpen: boolean;
@@ -32,13 +31,6 @@ const LoginDialog = ({
   const [password, setPassword] = useState("");
   const [localLoading, setLocalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasSubmitted, setHasSubmitted] = useState(false);
-  const navigate = useNavigate();
-
-  // Clear error when inputs change
-  useEffect(() => {
-    if (error) setError(null);
-  }, [email, password]);
 
   // Reset form when dialog closes
   useEffect(() => {
@@ -48,17 +40,8 @@ const LoginDialog = ({
       setPassword("");
       setLocalLoading(false);
       setError(null);
-      setHasSubmitted(false);
     }
   }, [isOpen]);
-
-  // Close dialog after successful login
-  useEffect(() => {
-    if (hasSubmitted && !isLoading && !localLoading && !error) {
-      // Login was successful, close the dialog
-      onOpenChange(false);
-    }
-  }, [hasSubmitted, isLoading, localLoading, error, onOpenChange]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,12 +52,12 @@ const LoginDialog = ({
     console.log("Login dialog: Form submitted");
     setError(null);
     setLocalLoading(true);
-    setHasSubmitted(true);
     
     try {
       console.log("Login dialog: Attempting login with email:", email);
       await onLogin(email, password);
       console.log("Login dialog: Login attempt completed");
+      // Let the parent component handle navigation
     } catch (error) {
       console.error("Login dialog: Error during login:", error);
       setError(error instanceof Error ? error.message : "Login failed. Please try again.");
