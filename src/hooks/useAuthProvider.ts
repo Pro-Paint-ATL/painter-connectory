@@ -31,11 +31,7 @@ export const useAuthProvider = () => {
       // Navigate to appropriate page based on user role
       setTimeout(() => {
         // Use role-based navigation for a more tailored experience
-        if (user.role === "painter") {
-          navigate('/painter-dashboard', { replace: true });
-        } else {
-          navigate('/profile', { replace: true });
-        }
+        navigateBasedOnRole();
       }, 0);
     }
     
@@ -43,7 +39,7 @@ export const useAuthProvider = () => {
     if (!user) {
       hasNavigated.current = false;
     }
-  }, [user, isInitialized, navigate]);
+  }, [user, isInitialized, navigateBasedOnRole]);
 
   // Handle login with explicit navigation
   const handleLogin = async (email: string, password: string) => {
@@ -61,7 +57,7 @@ export const useAuthProvider = () => {
         // Set navigation flag to prevent redundant navigation
         hasNavigated.current = true;
         
-        // Close login dialog and navigate to appropriate page
+        // Navigate to appropriate page based on user role
         if (loggedInUser.role === "painter") {
           navigate('/painter-dashboard', { replace: true });
         } else {
@@ -85,7 +81,7 @@ export const useAuthProvider = () => {
       throw error; // Re-throw to allow LoginDialog to handle the error
     } finally {
       setIsLoggingIn(false);
-      // Reset authentication flag after a short delay
+      // Reset authentication flag after a short delay to allow navigation to complete
       setTimeout(() => {
         isAuthenticating.current = false;
       }, 500);

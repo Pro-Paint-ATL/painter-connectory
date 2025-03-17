@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, ReactNode } from "react";
 import { AuthContextType } from "@/types/auth";
 import { useAuthProvider } from "@/hooks/useAuthProvider";
 import { Loader2 } from "lucide-react";
@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 // Create the context with a more explicit undefined check
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const auth = useAuthProvider();
   
   // Only show the loading screen during initial authentication

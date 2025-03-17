@@ -16,13 +16,13 @@ export const useAuthNavigation = (user: User | null) => {
     
     if (user.role === "admin") {
       console.log("Admin user, navigating to admin dashboard");
-      navigate("/admin");
+      navigate("/admin", { replace: true });
     } else if (user.role === "painter") {
       console.log("Painter user, navigating to painter dashboard");
-      navigate("/painter-dashboard");
+      navigate("/painter-dashboard", { replace: true });
     } else {
       console.log("Customer user, navigating to profile");
-      navigate("/profile");
+      navigate("/profile", { replace: true });
     }
   };
 

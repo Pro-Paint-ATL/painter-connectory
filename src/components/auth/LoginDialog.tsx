@@ -31,6 +31,7 @@ const LoginDialog = ({
   const [password, setPassword] = useState("");
   const [localLoading, setLocalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loginAttempted, setLoginAttempted] = useState(false);
 
   // Reset form when dialog closes
   useEffect(() => {
@@ -40,8 +41,18 @@ const LoginDialog = ({
       setPassword("");
       setLocalLoading(false);
       setError(null);
+      setLoginAttempted(false);
     }
   }, [isOpen]);
+
+  // Close dialog on successful login
+  useEffect(() => {
+    if (loginAttempted && !isLoading && !localLoading && !error) {
+      // Login was successful, close the dialog
+      onOpenChange(false);
+      setLoginAttempted(false);
+    }
+  }, [loginAttempted, isLoading, localLoading, error, onOpenChange]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,12 +63,12 @@ const LoginDialog = ({
     console.log("Login dialog: Form submitted");
     setError(null);
     setLocalLoading(true);
+    setLoginAttempted(true);
     
     try {
       console.log("Login dialog: Attempting login with email:", email);
       await onLogin(email, password);
       console.log("Login dialog: Login attempt completed");
-      // Let the parent component handle navigation
     } catch (error) {
       console.error("Login dialog: Error during login:", error);
       setError(error instanceof Error ? error.message : "Login failed. Please try again.");
