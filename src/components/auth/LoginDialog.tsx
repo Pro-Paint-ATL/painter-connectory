@@ -38,32 +38,39 @@ const LoginDialog = ({
     if (error) setError(null);
   }, [email, password]);
 
+  // Sync local loading state with prop
   useEffect(() => {
-    // If the external loading state changes to false, update the local loading state
     if (!isLoading && localLoading) {
+      console.log("Login dialog: External loading state changed to false, updating local state");
       setLocalLoading(false);
     }
   }, [isLoading, localLoading]);
 
-  // Safety timeout to prevent indefinite loading - increased to 15 seconds
+  // Extended safety timeout to prevent indefinite loading - increased to 25 seconds
   useEffect(() => {
     let timeoutId: number | undefined;
     
     if (localLoading) {
+      console.log("Login dialog: Setting safety timeout");
       timeoutId = window.setTimeout(() => {
+        console.log("Login dialog: Safety timeout triggered after 25 seconds");
         setLocalLoading(false);
-        setError("Login attempt timed out. Please try again.");
-      }, 15000); // 15 second safety timeout
+        setError("Login attempt timed out. Please try again or refresh the page if the issue persists.");
+      }, 25000); // 25 second safety timeout
     }
     
     return () => {
-      if (timeoutId) window.clearTimeout(timeoutId);
+      if (timeoutId) {
+        console.log("Login dialog: Clearing safety timeout");
+        window.clearTimeout(timeoutId);
+      }
     };
   }, [localLoading]);
 
   // Reset form when dialog closes
   useEffect(() => {
     if (!isOpen) {
+      console.log("Login dialog: Resetting form state");
       setEmail("");
       setPassword("");
       setLocalLoading(false);
@@ -73,14 +80,19 @@ const LoginDialog = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Login dialog: Form submitted");
     setError(null);
     setLocalLoading(true);
     
     try {
+      console.log("Login dialog: Attempting login with email:", email);
       await onLogin(email, password);
+      console.log("Login dialog: Login attempt completed");
     } catch (error) {
-      console.error("Login error in dialog:", error);
+      console.error("Login dialog: Error during login:", error);
       setError(error instanceof Error ? error.message : "Login failed. Please try again.");
+    } finally {
+      console.log("Login dialog: Setting localLoading to false");
       setLocalLoading(false);
     }
   };
