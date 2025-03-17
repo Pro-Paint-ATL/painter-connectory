@@ -54,12 +54,19 @@ const LoginDialog = ({
     setError(null);
     setLocalLoading(true);
     
+    // Force a timeout to prevent UI from hanging
+    const loginTimeout = setTimeout(() => {
+      setLocalLoading(false);
+    }, 5000);
+    
     try {
       console.log("Login dialog: Attempting login with email:", email);
       await onLogin(email, password);
+      clearTimeout(loginTimeout);
     } catch (error) {
       console.error("Login dialog: Error during login:", error);
       setError(error instanceof Error ? error.message : "Login failed. Please try again.");
+      clearTimeout(loginTimeout);
     } finally {
       setLocalLoading(false);
     }

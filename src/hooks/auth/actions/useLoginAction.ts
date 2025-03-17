@@ -12,8 +12,9 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
   const login = async (email: string, password: string) => {
     startLoading();
     try {
-      console.log("Starting simple login process for:", email);
+      console.log("Starting login process for:", email);
       
+      // Simple direct login without any complex timeout handling
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -34,6 +35,8 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
         console.log("User authenticated successfully:", data.user.id);
         const formattedUser = await formatUser(data.user);
         console.log("Formatted user data:", formattedUser);
+        
+        // Set the user in state
         setUser(formattedUser);
         
         toast({

@@ -1,8 +1,7 @@
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext } from "react";
 import { AuthContextType } from "@/types/auth";
 import { useAuthProvider } from "@/hooks/useAuthProvider";
-import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
 
 // Create the context with a more explicit undefined check
@@ -10,40 +9,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const auth = useAuthProvider();
-  const [showLoader, setShowLoader] = useState(false);
   
-  useEffect(() => {
-    if (auth.isLoading) {
-      // Only show loader after a short delay to prevent flashing
-      const timer = setTimeout(() => {
-        setShowLoader(true);
-      }, 200);
-      
-      return () => clearTimeout(timer);
-    } else {
-      // Clear the loader immediately when loading stops
-      setShowLoader(false);
-    }
-  }, [auth.isLoading]);
-
-  // Enforce a maximum loading time of 12 seconds to prevent infinite loading
-  useEffect(() => {
-    if (auth.isLoading && !auth.isInitialized) {
-      const forceInitTimeout = setTimeout(() => {
-        console.log("Forcing auth initialization after timeout");
-        // If we're still loading after 12 seconds, force it to complete
-        if (!auth.isInitialized) {
-          // The auth object will be updated by its own timeout
-          // This is just a safety measure
-        }
-      }, 12000); // 12 second max loading time
-      
-      return () => clearTimeout(forceInitTimeout);
-    }
-  }, [auth.isLoading, auth.isInitialized]);
-
   // Only show the loader when we're still loading and not yet initialized
-  if (!auth.isInitialized && auth.isLoading && showLoader) {
+  if (!auth.isInitialized && auth.isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />

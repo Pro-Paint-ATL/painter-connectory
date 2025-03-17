@@ -22,7 +22,7 @@ export const useAuthProvider = () => {
       // Navigate directly to profile for all users
       navigate('/profile');
     }
-  }, [user, isInitialized]);
+  }, [user, isInitialized, navigate]);
 
   // Simple login handler with direct navigation
   const handleLogin = async (email: string, password: string) => {
@@ -34,6 +34,7 @@ export const useAuthProvider = () => {
       
       if (loggedInUser) {
         console.log("Login successful, navigating to profile page");
+        // Force navigation to profile page
         navigate('/profile', { replace: true });
         return loggedInUser;
       }

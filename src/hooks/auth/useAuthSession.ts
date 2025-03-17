@@ -36,37 +36,31 @@ export const useAuthSession = () => {
   };
 
   useEffect(() => {
-    // Short safety timeout to avoid stuck states - increased to 5 seconds
+    // Safety timeout - 3 seconds is plenty
     const safetyTimeout = setTimeout(() => {
       if (isLoading && !isInitialized) {
         console.log("Safety timeout triggered - forcing auth state to be initialized");
         setIsLoading(false);
         setIsInitialized(true);
       }
-    }, 5000); // 5 second safety timeout
+    }, 3000);
 
     const checkAuth = async () => {
       try {
         setIsLoading(true);
         console.log("Checking auth state...");
         
-        // Use Promise.race to ensure we don't wait forever - increased timeout to 10 seconds
-        const sessionResult = await Promise.race([
-          supabase.auth.getSession(),
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Auth session check timed out")), 10000)
-          )
-        ]) as any;
+        const { data, error } = await supabase.auth.getSession();
         
-        if (sessionResult.error) {
-          console.error("Error getting session:", sessionResult.error);
+        if (error) {
+          console.error("Error getting session:", error);
           setUser(null);
           setIsLoading(false);
           setIsInitialized(true);
           return;
         }
         
-        const { data: { session } } = sessionResult;
+        const { session } = data;
         
         if (session) {
           console.log("Found existing session for user:", session.user.id);
@@ -80,7 +74,7 @@ export const useAuthSession = () => {
         setIsInitialized(true);
         setIsLoading(false);
       } catch (error) {
-        console.error("Error or timeout checking auth:", error);
+        console.error("Error checking auth:", error);
         setUser(null);
         // Ensure we're not stuck in loading state even if there's an error
         setIsInitialized(true);
