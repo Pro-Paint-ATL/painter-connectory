@@ -11,6 +11,7 @@ import SubscriptionBenefits from "@/components/subscription/SubscriptionBenefits
 import SubscriptionCard from "@/components/subscription/SubscriptionCard";
 import RedirectDialog from "@/components/subscription/RedirectDialog";
 import { updateSubscriptionAfterCheckout } from "@/api/webhooks";
+import { Subscription } from "@/types/auth";
 
 // Direct Stripe checkout link
 const STRIPE_PAYMENT_LINK = "https://buy.stripe.com/9AQeVl7aMbAbaHedQQ";
@@ -41,9 +42,12 @@ const PainterSubscription = () => {
           const result = await updateSubscriptionAfterCheckout(user.id);
           
           if (result.success) {
+            // Ensure the subscription data conforms to the Subscription type
+            const subscription = result.subscription as Subscription;
+            
             // Update local user state with new subscription data
             await updateUserProfile({
-              subscription: result.subscription
+              subscription
             });
             
             toast({

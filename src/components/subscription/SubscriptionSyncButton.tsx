@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { updateSubscriptionAfterCheckout } from '@/api/webhooks';
 import { RefreshCw } from 'lucide-react';
+import { Subscription } from '@/types/auth';
 
 interface SubscriptionSyncButtonProps {
   className?: string;
@@ -35,8 +36,11 @@ const SubscriptionSyncButton: React.FC<SubscriptionSyncButtonProps> = ({
       
       if (result.success) {
         // Update the local user state with the new subscription
+        // Type assertion to ensure it matches the Subscription type
+        const subscription = result.subscription as Subscription;
+        
         await updateUserProfile({
-          subscription: result.subscription
+          subscription
         });
         
         toast({

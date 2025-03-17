@@ -1,6 +1,7 @@
 
 import { handleWebhookEvent } from '@/utils/stripe-server';
 import { supabase } from '@/lib/supabase';
+import { Subscription } from '@/types/auth';
 
 // This is a placeholder for what would be a serverless function or API route
 // in a real production environment (e.g., Netlify function, Vercel API route, Express endpoint)
@@ -53,8 +54,22 @@ export const updateSubscriptionAfterCheckout = async (painterId: string) => {
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + 1);
     
-    // Create subscription data
-    const subscriptionData = {
+    // Extract existing stripe IDs from profile.subscription if available
+    let existingStripeCustomerId: string | undefined;
+    let existingStripeSubscriptionId: string | undefined;
+    
+    if (profile?.subscription) {
+      // Safely access the subscription object, handling both Json object and string format
+      const subscriptionData = typeof profile.subscription === 'string' 
+        ? JSON.parse(profile.subscription) 
+        : profile.subscription;
+      
+      existingStripeCustomerId = subscriptionData.stripeCustomerId;
+      existingStripeSubscriptionId = subscriptionData.stripeSubscriptionId;
+    }
+    
+    // Create subscription data with proper type casting
+    const subscriptionData: Subscription = {
       status: "active",
       plan: "pro",
       startDate: startDate.toISOString(),
@@ -63,8 +78,8 @@ export const updateSubscriptionAfterCheckout = async (painterId: string) => {
       currency: 'USD',
       interval: 'month',
       // Use existing stripe IDs if available
-      stripeCustomerId: profile.subscription?.stripeCustomerId || 'manually_updated',
-      stripeSubscriptionId: profile.subscription?.stripeSubscriptionId || 'manually_updated',
+      stripeCustomerId: existingStripeCustomerId || 'manually_updated',
+      stripeSubscriptionId: existingStripeSubscriptionId || 'manually_updated',
     };
     
     // Update the profile with new subscription data
