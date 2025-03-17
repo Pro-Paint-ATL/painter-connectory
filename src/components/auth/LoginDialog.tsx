@@ -6,7 +6,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,35 +37,6 @@ const LoginDialog = ({
     if (error) setError(null);
   }, [email, password]);
 
-  // Sync local loading state with prop
-  useEffect(() => {
-    if (!isLoading && localLoading) {
-      console.log("Login dialog: External loading state changed to false, updating local state");
-      setLocalLoading(false);
-    }
-  }, [isLoading, localLoading]);
-
-  // Extended safety timeout to prevent indefinite loading - increased to 25 seconds
-  useEffect(() => {
-    let timeoutId: number | undefined;
-    
-    if (localLoading) {
-      console.log("Login dialog: Setting safety timeout");
-      timeoutId = window.setTimeout(() => {
-        console.log("Login dialog: Safety timeout triggered after 25 seconds");
-        setLocalLoading(false);
-        setError("Login attempt timed out. Please try again or refresh the page if the issue persists.");
-      }, 25000); // 25 second safety timeout
-    }
-    
-    return () => {
-      if (timeoutId) {
-        console.log("Login dialog: Clearing safety timeout");
-        window.clearTimeout(timeoutId);
-      }
-    };
-  }, [localLoading]);
-
   // Reset form when dialog closes
   useEffect(() => {
     if (!isOpen) {
@@ -87,12 +57,10 @@ const LoginDialog = ({
     try {
       console.log("Login dialog: Attempting login with email:", email);
       await onLogin(email, password);
-      console.log("Login dialog: Login attempt completed");
     } catch (error) {
       console.error("Login dialog: Error during login:", error);
       setError(error instanceof Error ? error.message : "Login failed. Please try again.");
     } finally {
-      console.log("Login dialog: Setting localLoading to false");
       setLocalLoading(false);
     }
   };
