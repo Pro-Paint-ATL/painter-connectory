@@ -14,6 +14,7 @@ import { PaintBucket, Brush, Calendar, MapPin, Phone, AlertCircle, CheckCircle2 
 import { BookingWithPayments, User } from "@/types/auth";
 import { NavigateFunction } from "react-router-dom";
 import BookingItem from "./BookingItem";
+import SubscriptionSyncButton from "@/components/subscription/SubscriptionSyncButton";
 
 interface DashboardOverviewProps {
   bookings: BookingWithPayments[];
@@ -84,13 +85,22 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                     </p>
                   )}
                 </div>
-                <Button variant="outline" onClick={() => navigate("/subscription")}>Manage</Button>
+                <div className="space-x-2">
+                  <Button variant="outline" onClick={() => navigate("/subscription")}>Manage</Button>
+                  <SubscriptionSyncButton variant="ghost" className="px-2" />
+                </div>
               </div>
             ) : (
               <div className="text-center py-4">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                 <p className="mb-4">You don't have an active subscription</p>
-                <Button onClick={() => navigate("/subscription")}>Subscribe Now</Button>
+                <div className="flex flex-col sm:flex-row justify-center gap-2">
+                  <Button onClick={() => navigate("/subscription")}>Subscribe Now</Button>
+                  <SubscriptionSyncButton variant="secondary" />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Already subscribed through Stripe? Click "Sync Subscription"
+                </p>
               </div>
             )}
           </CardContent>

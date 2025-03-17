@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 import { User } from "@/types/auth";
 import { NavigateFunction } from "react-router-dom";
+import SubscriptionSyncButton from "@/components/subscription/SubscriptionSyncButton";
 
 interface SubscriptionPanelProps {
   user: User;
@@ -101,9 +102,12 @@ const SubscriptionPanel: React.FC<SubscriptionPanelProps> = ({ user, navigate })
               </div>
             </div>
             
-            <Button variant="outline" onClick={() => navigate("/subscription")}>
-              Manage Subscription
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button variant="outline" onClick={() => navigate("/subscription")}>
+                Manage Subscription
+              </Button>
+              <SubscriptionSyncButton />
+            </div>
           </div>
         ) : (
           <div className="text-center py-8">
@@ -112,9 +116,12 @@ const SubscriptionPanel: React.FC<SubscriptionPanelProps> = ({ user, navigate })
             <p className="text-muted-foreground mb-6">
               Subscribe to our Pro Painter plan to get more customers and grow your business.
             </p>
-            <Button onClick={() => navigate("/subscription")}>
-              View Subscription Plans
-            </Button>
+            <div className="flex flex-col sm:flex-row justify-center gap-3">
+              <Button onClick={() => navigate("/subscription")}>
+                View Subscription Plans
+              </Button>
+              <SubscriptionSyncButton variant="secondary" />
+            </div>
           </div>
         )}
       </CardContent>
