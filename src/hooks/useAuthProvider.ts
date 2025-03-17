@@ -18,19 +18,18 @@ export const useAuthProvider = () => {
   // Refs to track navigation and authentication state
   const hasNavigated = useRef(false);
   const isAuthenticating = useRef(false);
-  const loginCompleted = useRef(false);
 
   // Handle navigation when authentication state changes
   useEffect(() => {
-    // Skip navigation if we're in the middle of an authentication process
+    // Skip navigation during authentication process
     if (isAuthenticating.current) {
       console.log("Skipping navigation, authentication in progress");
       return;
     }
 
-    // Only navigate if we have a user, auth is initialized, and we haven't already navigated
+    // Navigate on successful authentication, but only once
     if (user && isInitialized && !hasNavigated.current) {
-      console.log("Auth state is initialized with user, navigating to profile");
+      console.log("Auth state is initialized with user, navigating to appropriate page");
       
       // Set navigation flag to prevent redundant navigation
       hasNavigated.current = true;
@@ -44,7 +43,6 @@ export const useAuthProvider = () => {
     // Reset navigation flag when user logs out
     if (!user) {
       hasNavigated.current = false;
-      loginCompleted.current = false;
     }
   }, [user, isInitialized, navigateBasedOnRole]);
 
@@ -56,7 +54,6 @@ export const useAuthProvider = () => {
       // Set loading state and authentication flag
       setIsLoggingIn(true);
       isAuthenticating.current = true;
-      loginCompleted.current = false;
       
       const loggedInUser = await loginAction(email, password);
       
@@ -65,7 +62,6 @@ export const useAuthProvider = () => {
         
         // Set navigation flag to prevent redundant navigation
         hasNavigated.current = true;
-        loginCompleted.current = true;
         
         // Navigate to appropriate page based on user role
         setTimeout(() => {
@@ -83,28 +79,19 @@ export const useAuthProvider = () => {
       
       console.log("Login did not return a valid user");
       isAuthenticating.current = false;
-      loginCompleted.current = false;
       setIsLoggingIn(false);
       return null;
     } catch (error) {
       console.error("Login handler error:", error);
       isAuthenticating.current = false;
-      loginCompleted.current = false;
       setIsLoggingIn(false);
-      toast({
-        title: "Login Error",
-        description: "Failed to complete the login process. Please try again.",
-        variant: "destructive"
-      });
       throw error; // Re-throw to allow LoginDialog to handle the error
     } finally {
-      // Reset authentication flag and loading state after a delay
+      // Ensure loading state is reset
       setTimeout(() => {
-        if (loginCompleted.current) {
-          setIsLoggingIn(false);
-        }
-        isAuthenticating.current = loginCompleted.current;
-      }, 800);
+        setIsLoggingIn(false);
+        isAuthenticating.current = false;
+      }, 500);
     }
   };
 
@@ -141,18 +128,13 @@ export const useAuthProvider = () => {
     } catch (error) {
       console.error("Registration error:", error);
       isAuthenticating.current = false;
-      toast({
-        title: "Registration Error",
-        description: error instanceof Error ? error.message : "There was a problem creating your account.",
-        variant: "destructive"
-      });
       throw error; // Re-throw to allow RegisterDialog to handle the error
     } finally {
       setIsRegistering(false);
       // Reset authentication flag after a delay
       setTimeout(() => {
         isAuthenticating.current = false;
-      }, 800);
+      }, 300);
     }
   };
 
@@ -164,7 +146,6 @@ export const useAuthProvider = () => {
       navigate('/', { replace: true });
       hasNavigated.current = false;
       isAuthenticating.current = false;
-      loginCompleted.current = false;
     } catch (error) {
       console.error("Logout error:", error);
       toast({

@@ -20,9 +20,30 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Track if the provider has been mounted
   const [isMounted, setIsMounted] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
   
   // Ensure we only create one instance of the auth provider
-  const auth = useAuthProvider();
+  let auth;
+  
+  try {
+    auth = useAuthProvider();
+  } catch (err) {
+    console.error("Error in useAuthProvider:", err);
+    setError(err instanceof Error ? err : new Error("Failed to initialize auth provider"));
+    
+    // Return fallback auth value to prevent blank screen
+    auth = {
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      isInitialized: true,
+      login: async () => null,
+      register: async () => null,
+      logout: async () => {},
+      updateUserProfile: async () => null,
+      supabase: null
+    };
+  }
   
   useEffect(() => {
     // Mark the provider as mounted
@@ -33,6 +54,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsMounted(false);
     }
   }, []);
+  
+  // Display error if authentication failed to initialize
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="text-destructive mb-4">Failed to initialize authentication</div>
+        <p className="text-sm text-muted-foreground">Please refresh the page and try again</p>
+      </div>
+    );
+  }
   
   // Only show the loading screen during initial authentication
   // and only after the provider has mounted to prevent flash

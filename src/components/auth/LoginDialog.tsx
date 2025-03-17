@@ -31,8 +31,7 @@ const LoginDialog = ({
   const [password, setPassword] = useState("");
   const [localLoading, setLocalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loginAttempted, setLoginAttempted] = useState(false);
-
+  
   // Reset form when dialog closes
   useEffect(() => {
     if (!isOpen) {
@@ -41,21 +40,15 @@ const LoginDialog = ({
       setPassword("");
       setLocalLoading(false);
       setError(null);
-      setLoginAttempted(false);
     }
   }, [isOpen]);
 
-  // Close dialog on successful login
+  // Ensure we're not stuck in loading state
   useEffect(() => {
-    if (loginAttempted && !isLoading && !localLoading && !error) {
-      // Login was successful, close the dialog
-      console.log("Login successful, closing dialog");
-      setTimeout(() => {
-        onOpenChange(false);
-        setLoginAttempted(false);
-      }, 300);
+    if (!isLoading && localLoading) {
+      setLocalLoading(false);
     }
-  }, [loginAttempted, isLoading, localLoading, error, onOpenChange]);
+  }, [isLoading, localLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +59,6 @@ const LoginDialog = ({
     console.log("Login dialog: Form submitted");
     setError(null);
     setLocalLoading(true);
-    setLoginAttempted(true);
     
     try {
       console.log("Login dialog: Attempting login with email:", email);
@@ -75,8 +67,11 @@ const LoginDialog = ({
     } catch (error) {
       console.error("Login dialog: Error during login:", error);
       setError(error instanceof Error ? error.message : "Login failed. Please try again.");
-      setLocalLoading(false); // Reset local loading state on error
-      setLoginAttempted(false); // Reset login attempt on error
+    } finally {
+      if (isOpen) {
+        // Only reset loading state if dialog is still open
+        setLocalLoading(false);
+      }
     }
   };
 

@@ -12,27 +12,22 @@ export const useAuthSession = () => {
   const handleUserSession = async (session: any) => {
     if (session) {
       try {
-        console.log("Formatting user from session:", session.user.id);
-        const formattedUser = await formatUser(session.user);
-        if (formattedUser) {
-          console.log("User session loaded with role:", formattedUser.role);
-          setUser(formattedUser);
-          return formattedUser;
-        } else {
-          console.error("Could not format user from session");
-          setUser(null);
-          return null;
-        }
+        console.log("Processing user from session:", session.user.id);
+        // Use the simplified formatUser that doesn't fetch profile
+        const formattedUser = formatUser(session.user);
+        console.log("User formatted with role:", formattedUser?.role);
+        setUser(formattedUser);
+        return formattedUser;
       } catch (error) {
-        console.error("Error formatting user:", error);
-        // Fallback to basic user information on error
+        console.error("Error processing user session:", error);
+        // Create a basic fallback user without profile data
         const fallbackUser = {
           id: session.user.id,
           name: session.user.email?.split('@')[0] || 'User',
           email: session.user.email || '',
           role: session.user.user_metadata?.role || "customer"
         };
-        console.log("Using fallback user data due to profile fetch error");
+        console.log("Using fallback user data");
         setUser(fallbackUser);
         return fallbackUser;
       }
