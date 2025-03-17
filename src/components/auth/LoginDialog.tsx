@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface LoginDialogProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ const LoginDialog = ({
   const [password, setPassword] = useState("");
   const [localLoading, setLocalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // Clear error when inputs change
   useEffect(() => {
@@ -54,19 +56,19 @@ const LoginDialog = ({
     setError(null);
     setLocalLoading(true);
     
-    // Force a timeout to prevent UI from hanging
-    const loginTimeout = setTimeout(() => {
-      setLocalLoading(false);
-    }, 5000);
-    
     try {
       console.log("Login dialog: Attempting login with email:", email);
       await onLogin(email, password);
-      clearTimeout(loginTimeout);
+      console.log("Login successful, redirecting to profile");
+      
+      // Close the dialog after successful login
+      onOpenChange(false);
+      
+      // Navigate to profile page
+      navigate("/profile");
     } catch (error) {
       console.error("Login dialog: Error during login:", error);
       setError(error instanceof Error ? error.message : "Login failed. Please try again.");
-      clearTimeout(loginTimeout);
     } finally {
       setLocalLoading(false);
     }

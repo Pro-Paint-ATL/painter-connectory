@@ -14,7 +14,6 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
     try {
       console.log("Starting login process for:", email);
       
-      // Simple direct login without any complex timeout handling
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
