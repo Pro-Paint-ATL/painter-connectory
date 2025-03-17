@@ -30,16 +30,21 @@ export const useAuthNavigation = (user: User | null) => {
     navigatingRef.current = true;
     console.log("Navigating based on role:", user.role);
     
+    // Execute navigation with a small delay to ensure state updates
     setTimeout(() => {
-      if (user.role === "admin") {
-        console.log("Admin user, navigating to admin dashboard");
-        navigate("/admin", { replace: true });
-      } else if (user.role === "painter") {
-        console.log("Painter user, navigating to painter dashboard");
-        navigate("/painter-dashboard", { replace: true });
-      } else {
-        console.log("Customer user, navigating to profile");
-        navigate("/profile", { replace: true });
+      try {
+        if (user.role === "admin") {
+          console.log("Admin user, navigating to admin dashboard");
+          navigate("/admin", { replace: true });
+        } else if (user.role === "painter") {
+          console.log("Painter user, navigating to painter dashboard");
+          navigate("/painter-dashboard", { replace: true });
+        } else {
+          console.log("Customer user, navigating to profile");
+          navigate("/profile", { replace: true });
+        }
+      } catch (error) {
+        console.error("Navigation error:", error);
       }
       
       // Reset navigation flag after navigation completes

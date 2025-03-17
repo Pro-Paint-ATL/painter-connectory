@@ -25,8 +25,16 @@ export const useAuthSession = () => {
         }
       } catch (error) {
         console.error("Error formatting user:", error);
-        setUser(null);
-        return null;
+        // Fallback to basic user information on error
+        const fallbackUser = {
+          id: session.user.id,
+          name: session.user.email?.split('@')[0] || 'User',
+          email: session.user.email || '',
+          role: session.user.user_metadata?.role || "customer"
+        };
+        console.log("Using fallback user data due to profile fetch error");
+        setUser(fallbackUser);
+        return fallbackUser;
       }
     } else {
       console.log("No session found, user is null");

@@ -32,7 +32,15 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
 
       if (data.user) {
         console.log("User authenticated successfully:", data.user.id);
-        const formattedUser = await formatUser(data.user);
+        
+        // Simple user formatting to prevent recursion
+        const formattedUser = {
+          id: data.user.id,
+          name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
+          email: data.user.email || '',
+          role: data.user.user_metadata?.role || "customer"
+        };
+        
         console.log("Formatted user data:", formattedUser);
         
         // Set the user in state
