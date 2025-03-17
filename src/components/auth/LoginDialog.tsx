@@ -43,7 +43,7 @@ const LoginDialog = ({
     }
   }, [isOpen]);
 
-  // Ensure we're not stuck in loading state
+  // Sync with external loading state
   useEffect(() => {
     if (!isLoading && localLoading) {
       setLocalLoading(false);
@@ -68,16 +68,16 @@ const LoginDialog = ({
       console.error("Login dialog: Error during login:", error);
       setError(error instanceof Error ? error.message : "Login failed. Please try again.");
     } finally {
-      if (isOpen) {
-        // Only reset loading state if dialog is still open
+      // Always reset loading state to prevent button being stuck
+      setTimeout(() => {
         setLocalLoading(false);
-      }
+      }, 500);
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
-      // Prevent closing dialog during login attempt
+      // Don't close dialog during login attempt
       if (localLoading || isLoading) return;
       onOpenChange(open);
     }}>

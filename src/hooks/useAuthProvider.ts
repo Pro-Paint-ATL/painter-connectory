@@ -64,15 +64,13 @@ export const useAuthProvider = () => {
         hasNavigated.current = true;
         
         // Navigate to appropriate page based on user role
-        setTimeout(() => {
-          if (loggedInUser.role === "painter") {
-            navigate('/painter-dashboard', { replace: true });
-          } else if (loggedInUser.role === "admin") {
-            navigate('/admin', { replace: true });
-          } else {
-            navigate('/profile', { replace: true });
-          }
-        }, 300);
+        if (loggedInUser.role === "painter") {
+          navigate('/painter-dashboard', { replace: true });
+        } else if (loggedInUser.role === "admin") {
+          navigate('/admin', { replace: true });
+        } else {
+          navigate('/profile', { replace: true });
+        }
         
         return loggedInUser;
       }
@@ -111,13 +109,11 @@ export const useAuthProvider = () => {
         hasNavigated.current = true;
         
         // Navigate based on role
-        setTimeout(() => {
-          if (registeredUser.role === "painter") {
-            navigate('/painter-dashboard', { replace: true });
-          } else {
-            navigate('/profile', { replace: true });
-          }
-        }, 300);
+        if (registeredUser.role === "painter") {
+          navigate('/painter-dashboard', { replace: true });
+        } else {
+          navigate('/profile', { replace: true });
+        }
         
         return registeredUser;
       }

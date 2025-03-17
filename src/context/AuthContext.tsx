@@ -22,7 +22,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isMounted, setIsMounted] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   
-  // Ensure we only create one instance of the auth provider
+  // Default fallback auth value to prevent blank screen
+  const fallbackAuth = {
+    user: null,
+    isAuthenticated: false,
+    isLoading: false,
+    isInitialized: true,
+    login: async () => null,
+    register: async () => null,
+    logout: async () => {},
+    updateUserProfile: async () => null,
+    supabase: null
+  };
+  
+  // Safely initialize auth provider
   let auth;
   
   try {
@@ -30,25 +43,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   } catch (err) {
     console.error("Error in useAuthProvider:", err);
     setError(err instanceof Error ? err : new Error("Failed to initialize auth provider"));
-    
-    // Return fallback auth value to prevent blank screen
-    auth = {
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-      isInitialized: true,
-      login: async () => null,
-      register: async () => null,
-      logout: async () => {},
-      updateUserProfile: async () => null,
-      supabase: null
-    };
+    auth = fallbackAuth;
   }
   
   useEffect(() => {
     // Mark the provider as mounted
     setIsMounted(true);
     console.log("AuthProvider mounted");
+    
     return () => {
       console.log("AuthProvider unmounted");
       setIsMounted(false);
@@ -76,16 +78,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       </div>
     );
   }
-
-  // Log auth state changes
-  useEffect(() => {
-    console.log("AuthContext state update:", {
-      isAuthenticated: auth.isAuthenticated,
-      isLoading: auth.isLoading,
-      isInitialized: auth.isInitialized,
-      userExists: !!auth.user
-    });
-  }, [auth.isAuthenticated, auth.isLoading, auth.isInitialized, auth.user]);
 
   // Always provide the context values, even if we're still initializing
   return (

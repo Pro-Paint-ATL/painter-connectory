@@ -8,35 +8,25 @@ const ADMIN_EMAILS = ['admin@painterconnectory.com', 'propaintatl@gmail.com', 'y
 
 /**
  * Formats a Supabase user into our application's User model
+ * Simplified to avoid infinite recursion with profiles table
  */
 export const formatUser = (supabaseUser: SupabaseUser | null): User | null => {
   if (!supabaseUser) return null;
 
-  try {
-    // Default values
-    const defaultRole: UserRole = ADMIN_EMAILS.includes(supabaseUser.email?.toLowerCase() || '') 
-      ? "admin" 
-      : supabaseUser.user_metadata?.role as UserRole || "customer";
-    
-    // Basic user object without profile data to prevent recursion
-    const user: User = {
-      id: supabaseUser.id,
-      name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || '',
-      email: supabaseUser.email || '',
-      role: defaultRole,
-      avatar: supabaseUser.user_metadata?.avatar_url || undefined
-    };
-    
-    return user;
-  } catch (error) {
-    console.error("Error formatting user:", error);
-    
-    // Fallback to basic user information
-    return supabaseUser ? {
-      id: supabaseUser.id,
-      name: supabaseUser.email?.split('@')[0] || '',
-      email: supabaseUser.email || '',
-      role: ADMIN_EMAILS.includes(supabaseUser.email?.toLowerCase() || '') ? "admin" : "customer",
-    } : null;
-  }
+  // Get email from user data
+  const email = supabaseUser.email || '';
+  
+  // Determine role - admin emails get admin role, otherwise use metadata role or default to customer
+  const role: UserRole = ADMIN_EMAILS.includes(email.toLowerCase()) 
+    ? "admin" 
+    : (supabaseUser.user_metadata?.role as UserRole || "customer");
+  
+  // Create basic user object without querying profiles table
+  return {
+    id: supabaseUser.id,
+    name: supabaseUser.user_metadata?.name || email.split('@')[0] || '',
+    email: email,
+    role: role,
+    avatar: supabaseUser.user_metadata?.avatar_url || undefined
+  };
 };

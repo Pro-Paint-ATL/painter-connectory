@@ -33,7 +33,7 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
       if (data.user) {
         console.log("User authenticated successfully:", data.user.id);
         
-        // Use the simplified formatUser function
+        // Use the simplified formatUser function that doesn't query profiles
         const formattedUser = formatUser(data.user);
         
         console.log("Formatted user data:", formattedUser);
