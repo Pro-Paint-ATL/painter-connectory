@@ -59,13 +59,6 @@ const LoginDialog = ({
     try {
       console.log("Login dialog: Attempting login with email:", email);
       await onLogin(email, password);
-      console.log("Login successful, redirecting to profile");
-      
-      // Close the dialog after successful login
-      onOpenChange(false);
-      
-      // Navigate to profile page
-      navigate("/profile");
     } catch (error) {
       console.error("Login dialog: Error during login:", error);
       setError(error instanceof Error ? error.message : "Login failed. Please try again.");
