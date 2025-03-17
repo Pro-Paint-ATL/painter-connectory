@@ -59,6 +59,11 @@ const LoginDialog = ({
     try {
       console.log("Login dialog: Attempting login with email:", email);
       await onLogin(email, password);
+      console.log("Login dialog: Login attempt completed");
+      
+      // Close the dialog after login attempt is complete
+      // This helps prevent multiple login attempts
+      onOpenChange(false);
     } catch (error) {
       console.error("Login dialog: Error during login:", error);
       setError(error instanceof Error ? error.message : "Login failed. Please try again.");

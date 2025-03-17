@@ -3,7 +3,7 @@ import { useAuthSession } from "./auth/useAuthSession";
 import { useAuthActions } from "./auth/useAuthActions";
 import { useAuthNavigation } from "./auth/useNavigation";
 import { supabase } from "@/lib/supabase";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { UserRole } from "@/types/auth";
 import { useToast } from "./use-toast";
 
@@ -14,13 +14,21 @@ export const useAuthProvider = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
+  const hasNavigated = useRef(false);
 
   // Navigate when authentication state changes
   useEffect(() => {
-    if (user && isInitialized) {
+    // Only navigate if authenticated AND initialized AND not yet navigated
+    if (user && isInitialized && !hasNavigated.current) {
       console.log("Auth state is initialized with user, navigating to profile");
       // Navigate directly to profile for all users
       navigate('/profile');
+      hasNavigated.current = true;
+    }
+    
+    // Reset navigation flag when user changes to null (logged out)
+    if (!user) {
+      hasNavigated.current = false;
     }
   }, [user, isInitialized, navigate]);
 
@@ -33,9 +41,8 @@ export const useAuthProvider = () => {
       const loggedInUser = await login(email, password);
       
       if (loggedInUser) {
-        console.log("Login successful, navigating to profile page");
-        // Force navigation to profile page
-        navigate('/profile', { replace: true });
+        console.log("Login successful, user object returned:", loggedInUser.id);
+        // Do NOT force navigation here - let the useEffect handle it
         return loggedInUser;
       }
       
@@ -64,7 +71,7 @@ export const useAuthProvider = () => {
       
       if (registeredUser) {
         console.log("User registered successfully with role:", registeredUser.role);
-        navigate('/profile', { replace: true });
+        // Do NOT force navigation here - let the useEffect handle it
         return registeredUser;
       }
       
@@ -89,6 +96,7 @@ export const useAuthProvider = () => {
       await logout();
       console.log("User logged out, navigating to home page");
       navigate('/', { replace: true });
+      hasNavigated.current = false;
     } catch (error) {
       console.error("Logout error:", error);
       toast({
