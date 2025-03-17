@@ -32,6 +32,7 @@ const LoginDialog = ({
   const [password, setPassword] = useState("");
   const [localLoading, setLocalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   const navigate = useNavigate();
 
   // Clear error when inputs change
@@ -47,23 +48,33 @@ const LoginDialog = ({
       setPassword("");
       setLocalLoading(false);
       setError(null);
+      setHasSubmitted(false);
     }
   }, [isOpen]);
 
+  // Close dialog after successful login
+  useEffect(() => {
+    if (hasSubmitted && !isLoading && !localLoading && !error) {
+      // Login was successful, close the dialog
+      onOpenChange(false);
+    }
+  }, [hasSubmitted, isLoading, localLoading, error, onOpenChange]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    if (localLoading || isLoading) return;
+    
     console.log("Login dialog: Form submitted");
     setError(null);
     setLocalLoading(true);
+    setHasSubmitted(true);
     
     try {
       console.log("Login dialog: Attempting login with email:", email);
       await onLogin(email, password);
       console.log("Login dialog: Login attempt completed");
-      
-      // Close the dialog after login attempt is complete
-      // This helps prevent multiple login attempts
-      onOpenChange(false);
     } catch (error) {
       console.error("Login dialog: Error during login:", error);
       setError(error instanceof Error ? error.message : "Login failed. Please try again.");
@@ -73,7 +84,11 @@ const LoginDialog = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      // Prevent closing dialog during login attempt
+      if (localLoading || isLoading) return;
+      onOpenChange(open);
+    }}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Login</DialogTitle>

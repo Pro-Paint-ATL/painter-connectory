@@ -15,15 +15,22 @@ export const useAuthProvider = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const { toast } = useToast();
   const hasNavigated = useRef(false);
+  const isAuthenticating = useRef(false);
 
   // Navigate when authentication state changes
   useEffect(() => {
     // Only navigate if authenticated AND initialized AND not yet navigated
-    if (user && isInitialized && !hasNavigated.current) {
+    if (user && isInitialized && !hasNavigated.current && !isAuthenticating.current) {
       console.log("Auth state is initialized with user, navigating to profile");
-      // Navigate directly to profile for all users
-      navigate('/profile');
+      
+      // Set navigation flag before navigating to prevent loops
       hasNavigated.current = true;
+      
+      // Use setTimeout to ensure this happens after render
+      setTimeout(() => {
+        // Navigate directly to profile for all users
+        navigate('/profile');
+      }, 0);
     }
     
     // Reset navigation flag when user changes to null (logged out)
@@ -37,19 +44,28 @@ export const useAuthProvider = () => {
     try {
       console.log("Login handler started for email:", email);
       setIsLoggingIn(true);
+      isAuthenticating.current = true;
       
       const loggedInUser = await login(email, password);
       
       if (loggedInUser) {
         console.log("Login successful, user object returned:", loggedInUser.id);
-        // Do NOT force navigation here - let the useEffect handle it
+        
+        // Set navigation flag to avoid loops
+        hasNavigated.current = true;
+        
+        // Explicit navigation after successful login
+        navigate('/profile', { replace: true });
+        
         return loggedInUser;
       }
       
       console.log("Login did not return a valid user");
+      isAuthenticating.current = false;
       return null;
     } catch (error) {
       console.error("Login handler error:", error);
+      isAuthenticating.current = false;
       toast({
         title: "Login Error",
         description: "Failed to complete the login process. Please try again.",
@@ -58,6 +74,10 @@ export const useAuthProvider = () => {
       return null;
     } finally {
       setIsLoggingIn(false);
+      // Reset the authenticating flag after a delay
+      setTimeout(() => {
+        isAuthenticating.current = false;
+      }, 500);
     }
   };
 
@@ -65,20 +85,29 @@ export const useAuthProvider = () => {
   const handleRegister = async (name: string, email: string, password: string, role: UserRole) => {
     console.log("Registering user with role:", role);
     setIsRegistering(true);
+    isAuthenticating.current = true;
     
     try {
       const registeredUser = await register(name, email, password, role);
       
       if (registeredUser) {
         console.log("User registered successfully with role:", registeredUser.role);
-        // Do NOT force navigation here - let the useEffect handle it
+        
+        // Set navigation flag to avoid loops
+        hasNavigated.current = true;
+        
+        // Explicit navigation after successful registration
+        navigate('/profile', { replace: true });
+        
         return registeredUser;
       }
       
       console.log("Registration did not return a user object");
+      isAuthenticating.current = false;
       return null;
     } catch (error) {
       console.error("Registration error:", error);
+      isAuthenticating.current = false;
       toast({
         title: "Registration Error",
         description: error instanceof Error ? error.message : "There was a problem creating your account.",
@@ -87,6 +116,10 @@ export const useAuthProvider = () => {
       return null;
     } finally {
       setIsRegistering(false);
+      // Reset the authenticating flag after a delay
+      setTimeout(() => {
+        isAuthenticating.current = false;
+      }, 500);
     }
   };
 
@@ -97,6 +130,7 @@ export const useAuthProvider = () => {
       console.log("User logged out, navigating to home page");
       navigate('/', { replace: true });
       hasNavigated.current = false;
+      isAuthenticating.current = false;
     } catch (error) {
       console.error("Logout error:", error);
       toast({
