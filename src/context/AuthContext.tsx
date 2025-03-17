@@ -20,12 +20,18 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Track if the provider has been mounted
   const [isMounted, setIsMounted] = useState(false);
+  
+  // Ensure we only create one instance of the auth provider
   const auth = useAuthProvider();
   
   useEffect(() => {
     // Mark the provider as mounted
     setIsMounted(true);
-    return () => setIsMounted(false);
+    console.log("AuthProvider mounted");
+    return () => {
+      console.log("AuthProvider unmounted");
+      setIsMounted(false);
+    }
   }, []);
   
   // Only show the loading screen during initial authentication
@@ -40,6 +46,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     );
   }
 
+  // Log auth state changes
+  useEffect(() => {
+    console.log("AuthContext state update:", {
+      isAuthenticated: auth.isAuthenticated,
+      isLoading: auth.isLoading,
+      isInitialized: auth.isInitialized,
+      userExists: !!auth.user
+    });
+  }, [auth.isAuthenticated, auth.isLoading, auth.isInitialized, auth.user]);
+
   // Always provide the context values, even if we're still initializing
   return (
     <AuthContext.Provider value={auth}>
@@ -48,6 +64,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 
+// Export hook to use auth context
 export const useAuth = () => {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 };

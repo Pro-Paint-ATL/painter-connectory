@@ -50,8 +50,10 @@ const LoginDialog = ({
     if (loginAttempted && !isLoading && !localLoading && !error) {
       // Login was successful, close the dialog
       console.log("Login successful, closing dialog");
-      onOpenChange(false);
-      setLoginAttempted(false);
+      setTimeout(() => {
+        onOpenChange(false);
+        setLoginAttempted(false);
+      }, 300);
     }
   }, [loginAttempted, isLoading, localLoading, error, onOpenChange]);
 
@@ -73,8 +75,8 @@ const LoginDialog = ({
     } catch (error) {
       console.error("Login dialog: Error during login:", error);
       setError(error instanceof Error ? error.message : "Login failed. Please try again.");
-    } finally {
-      setLocalLoading(false);
+      setLocalLoading(false); // Reset local loading state on error
+      setLoginAttempted(false); // Reset login attempt on error
     }
   };
 

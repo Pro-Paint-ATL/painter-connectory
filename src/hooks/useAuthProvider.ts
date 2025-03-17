@@ -9,7 +9,7 @@ import { useToast } from "./use-toast";
 
 export const useAuthProvider = () => {
   const { user, setUser, isLoading: sessionLoading, isInitialized } = useAuthSession();
-  const { login, register, logout, updateUserProfile, isLoading: actionLoading } = useAuthActions(user, setUser);
+  const { login: loginAction, register: registerAction, logout: logoutAction, updateUserProfile, isLoading: actionLoading } = useAuthActions(user, setUser);
   const { navigateBasedOnRole, navigate } = useAuthNavigation(user);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -18,6 +18,7 @@ export const useAuthProvider = () => {
   // Refs to track navigation and authentication state
   const hasNavigated = useRef(false);
   const isAuthenticating = useRef(false);
+  const loginCompleted = useRef(false);
 
   // Handle navigation when authentication state changes
   useEffect(() => {
@@ -43,6 +44,7 @@ export const useAuthProvider = () => {
     // Reset navigation flag when user logs out
     if (!user) {
       hasNavigated.current = false;
+      loginCompleted.current = false;
     }
   }, [user, isInitialized, navigateBasedOnRole]);
 
@@ -54,33 +56,41 @@ export const useAuthProvider = () => {
       // Set loading state and authentication flag
       setIsLoggingIn(true);
       isAuthenticating.current = true;
+      loginCompleted.current = false;
       
-      const loggedInUser = await login(email, password);
+      const loggedInUser = await loginAction(email, password);
       
       if (loggedInUser) {
         console.log("Login successful, user:", loggedInUser.id);
         
         // Set navigation flag to prevent redundant navigation
         hasNavigated.current = true;
+        loginCompleted.current = true;
         
         // Navigate to appropriate page based on user role
         setTimeout(() => {
           if (loggedInUser.role === "painter") {
             navigate('/painter-dashboard', { replace: true });
+          } else if (loggedInUser.role === "admin") {
+            navigate('/admin', { replace: true });
           } else {
             navigate('/profile', { replace: true });
           }
-        }, 100);
+        }, 300);
         
         return loggedInUser;
       }
       
       console.log("Login did not return a valid user");
       isAuthenticating.current = false;
+      loginCompleted.current = false;
+      setIsLoggingIn(false);
       return null;
     } catch (error) {
       console.error("Login handler error:", error);
       isAuthenticating.current = false;
+      loginCompleted.current = false;
+      setIsLoggingIn(false);
       toast({
         title: "Login Error",
         description: "Failed to complete the login process. Please try again.",
@@ -88,10 +98,12 @@ export const useAuthProvider = () => {
       });
       throw error; // Re-throw to allow LoginDialog to handle the error
     } finally {
-      setIsLoggingIn(false);
-      // Reset authentication flag after a delay to allow navigation to complete
+      // Reset authentication flag and loading state after a delay
       setTimeout(() => {
-        isAuthenticating.current = false;
+        if (loginCompleted.current) {
+          setIsLoggingIn(false);
+        }
+        isAuthenticating.current = loginCompleted.current;
       }, 800);
     }
   };
@@ -103,7 +115,7 @@ export const useAuthProvider = () => {
     isAuthenticating.current = true;
     
     try {
-      const registeredUser = await register(name, email, password, role);
+      const registeredUser = await registerAction(name, email, password, role);
       
       if (registeredUser) {
         console.log("User registered successfully with role:", registeredUser.role);
@@ -118,7 +130,7 @@ export const useAuthProvider = () => {
           } else {
             navigate('/profile', { replace: true });
           }
-        }, 100);
+        }, 300);
         
         return registeredUser;
       }
@@ -147,11 +159,12 @@ export const useAuthProvider = () => {
   // Handle logout with navigation
   const handleLogout = async () => {
     try {
-      await logout();
+      await logoutAction();
       console.log("User logged out, navigating to home page");
       navigate('/', { replace: true });
       hasNavigated.current = false;
       isAuthenticating.current = false;
+      loginCompleted.current = false;
     } catch (error) {
       console.error("Logout error:", error);
       toast({

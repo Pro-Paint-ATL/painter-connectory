@@ -27,7 +27,7 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
           variant: "destructive"
         });
         stopLoading();
-        return null;
+        throw new Error(error.message);
       }
 
       if (data.user) {
@@ -50,18 +50,18 @@ export const useLoginAction = (user: User | null, setUser: (user: User | null) =
       
       console.log("No user data returned from authentication");
       stopLoading();
-      return null;
+      throw new Error("No user data returned");
     } catch (error: any) {
       console.error("Login error:", error);
       
       toast({
         title: "Login Error",
-        description: "An error occurred during login. Please try again.",
+        description: error.message || "An error occurred during login. Please try again.",
         variant: "destructive"
       });
       
       stopLoading();
-      return null;
+      throw error;
     }
   };
 
