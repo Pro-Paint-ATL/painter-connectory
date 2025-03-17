@@ -49,6 +49,7 @@ const LoginDialog = ({
   useEffect(() => {
     if (loginAttempted && !isLoading && !localLoading && !error) {
       // Login was successful, close the dialog
+      console.log("Login successful, closing dialog");
       onOpenChange(false);
       setLoginAttempted(false);
     }

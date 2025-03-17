@@ -21,18 +21,23 @@ export const useAuthProvider = () => {
 
   // Handle navigation when authentication state changes
   useEffect(() => {
+    // Skip navigation if we're in the middle of an authentication process
+    if (isAuthenticating.current) {
+      console.log("Skipping navigation, authentication in progress");
+      return;
+    }
+
     // Only navigate if we have a user, auth is initialized, and we haven't already navigated
-    if (user && isInitialized && !hasNavigated.current && !isAuthenticating.current) {
+    if (user && isInitialized && !hasNavigated.current) {
       console.log("Auth state is initialized with user, navigating to profile");
       
       // Set navigation flag to prevent redundant navigation
       hasNavigated.current = true;
       
-      // Navigate to appropriate page based on user role
+      // Delay navigation slightly to ensure state updates
       setTimeout(() => {
-        // Use role-based navigation for a more tailored experience
         navigateBasedOnRole();
-      }, 0);
+      }, 100);
     }
     
     // Reset navigation flag when user logs out
@@ -45,6 +50,7 @@ export const useAuthProvider = () => {
   const handleLogin = async (email: string, password: string) => {
     try {
       console.log("Login handler started for email:", email);
+      
       // Set loading state and authentication flag
       setIsLoggingIn(true);
       isAuthenticating.current = true;
@@ -58,11 +64,13 @@ export const useAuthProvider = () => {
         hasNavigated.current = true;
         
         // Navigate to appropriate page based on user role
-        if (loggedInUser.role === "painter") {
-          navigate('/painter-dashboard', { replace: true });
-        } else {
-          navigate('/profile', { replace: true });
-        }
+        setTimeout(() => {
+          if (loggedInUser.role === "painter") {
+            navigate('/painter-dashboard', { replace: true });
+          } else {
+            navigate('/profile', { replace: true });
+          }
+        }, 100);
         
         return loggedInUser;
       }
@@ -81,10 +89,10 @@ export const useAuthProvider = () => {
       throw error; // Re-throw to allow LoginDialog to handle the error
     } finally {
       setIsLoggingIn(false);
-      // Reset authentication flag after a short delay to allow navigation to complete
+      // Reset authentication flag after a delay to allow navigation to complete
       setTimeout(() => {
         isAuthenticating.current = false;
-      }, 500);
+      }, 800);
     }
   };
 
@@ -104,11 +112,13 @@ export const useAuthProvider = () => {
         hasNavigated.current = true;
         
         // Navigate based on role
-        if (registeredUser.role === "painter") {
-          navigate('/painter-dashboard', { replace: true });
-        } else {
-          navigate('/profile', { replace: true });
-        }
+        setTimeout(() => {
+          if (registeredUser.role === "painter") {
+            navigate('/painter-dashboard', { replace: true });
+          } else {
+            navigate('/profile', { replace: true });
+          }
+        }, 100);
         
         return registeredUser;
       }
@@ -127,10 +137,10 @@ export const useAuthProvider = () => {
       throw error; // Re-throw to allow RegisterDialog to handle the error
     } finally {
       setIsRegistering(false);
-      // Reset authentication flag after a short delay
+      // Reset authentication flag after a delay
       setTimeout(() => {
         isAuthenticating.current = false;
-      }, 500);
+      }, 800);
     }
   };
 
