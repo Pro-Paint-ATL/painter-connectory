@@ -84,9 +84,6 @@ const Footer = () => {
               <Link to="/careers" className="text-muted-foreground hover:text-foreground transition-colors">
                 Careers
               </Link>
-              <Link to="/press" className="text-muted-foreground hover:text-foreground transition-colors">
-                Press
-              </Link>
             </nav>
             
             <nav className="flex flex-col space-y-3">

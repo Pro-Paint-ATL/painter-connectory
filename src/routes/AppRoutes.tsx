@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -21,7 +20,6 @@ const SubscriptionManagement = lazy(() => import("@/pages/SubscriptionManagement
 // Company pages
 const AboutUs = lazy(() => import("@/pages/AboutUs"));
 const Careers = lazy(() => import("@/pages/Careers"));
-const Press = lazy(() => import("@/pages/Press"));
 
 // Legal pages
 const TermsOfService = lazy(() => import("@/pages/TermsOfService"));
@@ -75,7 +73,6 @@ const AppRoutes = () => {
       {/* Company pages */}
       <Route path="/about" element={<AboutUs />} />
       <Route path="/careers" element={<Careers />} />
-      <Route path="/press" element={<Press />} />
       
       {/* Legal pages */}
       <Route path="/terms" element={<TermsOfService />} />
