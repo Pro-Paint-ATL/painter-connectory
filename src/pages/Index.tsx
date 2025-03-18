@@ -153,7 +153,7 @@ const Index = () => {
                 <img 
                   src={logoUrl}
                   alt="Pro Paint Logo"
-                  className="w-[120px] h-[120px] mb-8"
+                  className="w-[240px] h-[240px] mb-8"
                 />
                 <h2 className="text-3xl md:text-4xl font-bold mb-6">Quality Results From Expert Painters</h2>
                 <p className="text-lg text-muted-foreground mb-8">
@@ -291,4 +291,3 @@ const Index = () => {
 };
 
 export default Index;
-
