@@ -4,11 +4,29 @@ import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import ImageBackgroundRemover from "../ui/ImageBackgroundRemover";
 
+interface City {
+  city: string;
+  state: string;
+  code: string;
+}
+
+const majorCities: City[] = [
+  { city: "Miami", state: "FL", code: "MIA" },
+  { city: "Atlanta", state: "GA", code: "ATL" },
+  { city: "New York", state: "NY", code: "NY" },
+  { city: "Los Angeles", state: "CA", code: "LA" },
+  { city: "Chicago", state: "IL", code: "CHI" },
+  { city: "Dallas", state: "TX", code: "DAL" },
+  { city: "Houston", state: "TX", code: "HOU" },
+  { city: "Phoenix", state: "AZ", code: "PHX" },
+  { city: "Philadelphia", state: "PA", code: "PHL" },
+  { city: "San Antonio", state: "TX", code: "SAT" },
+];
+
 const Footer = () => {
   const { user } = useAuth();
   const [logoUrl, setLogoUrl] = useState("/lovable-uploads/46745e2b-4793-4b28-81bd-0b41822d517f.png");
-
-  const [currentCity, setCurrentCity] = useState(majorCities[0]);
+  const [currentCity, setCurrentCity] = useState<City>(majorCities[0]);
 
   useEffect(() => {
     const randomCity = majorCities[Math.floor(Math.random() * majorCities.length)];
