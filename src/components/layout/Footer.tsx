@@ -46,7 +46,7 @@ const Footer = () => {
               <img 
                 src={logoUrl}
                 alt="Pro Paint Logo" 
-                className="w-10 h-10"
+                className="w-20 h-20"
               />
               <span className="font-semibold text-xl">Pro Paint {currentCity.code}</span>
             </Link>
