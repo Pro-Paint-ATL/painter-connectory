@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -38,9 +37,8 @@ const DepositAgreementForm = ({
   // Calculate deposit amount (20% of total)
   const depositAmount = Math.round(amount * 0.2 * 100) / 100;
   
-  const isOneDay = projectType === "Color Consultation" || 
-                   projectType === "Other" || 
-                   amount < 300;
+  // Simplified condition for one-day projects
+  const isOneDay = projectType === "Color Consultation" || amount < 300;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
