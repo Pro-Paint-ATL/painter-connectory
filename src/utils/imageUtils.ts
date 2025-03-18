@@ -34,7 +34,7 @@ function resizeImageIfNeeded(canvas: HTMLCanvasElement, ctx: CanvasRenderingCont
 export const removeBackground = async (imageElement: HTMLImageElement): Promise<Blob> => {
   try {
     console.log('Starting background removal process...');
-    const segmenter = await pipeline('image-segmentation', 'Xenova/segformer-b0-finetuned-ade-512-512',{
+    const segmenter = await pipeline('image-segmentation', 'Xenova/segformer-b0-finetuned-ade-512-512', {
       device: 'webgpu',
     });
     
@@ -44,12 +44,15 @@ export const removeBackground = async (imageElement: HTMLImageElement): Promise<
     
     if (!ctx) throw new Error('Could not get canvas context');
     
+    // Clear the canvas first to ensure transparency
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
     // Resize image if needed and draw it to canvas
     const wasResized = resizeImageIfNeeded(canvas, ctx, imageElement);
     console.log(`Image ${wasResized ? 'was' : 'was not'} resized. Final dimensions: ${canvas.width}x${canvas.height}`);
     
     // Get image data as base64
-    const imageData = canvas.toDataURL('image/jpeg', 0.8);
+    const imageData = canvas.toDataURL('image/png', 1.0);  // Changed to PNG format with max quality
     console.log('Image converted to base64');
     
     // Process the image with the segmentation model
@@ -66,32 +69,32 @@ export const removeBackground = async (imageElement: HTMLImageElement): Promise<
     const outputCanvas = document.createElement('canvas');
     outputCanvas.width = canvas.width;
     outputCanvas.height = canvas.height;
-    const outputCtx = outputCanvas.getContext('2d');
+    const outputCtx = outputCanvas.getContext('2d', { willReadFrequently: true });
     
     if (!outputCtx) throw new Error('Could not get output canvas context');
+    
+    // Clear the output canvas first
+    outputCtx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
     
     // Draw original image
     outputCtx.drawImage(canvas, 0, 0);
     
     // Apply the mask
-    const outputImageData = outputCtx.getImageData(
-      0, 0,
-      outputCanvas.width,
-      outputCanvas.height
-    );
+    const outputImageData = outputCtx.getImageData(0, 0, outputCanvas.width, outputCanvas.height);
     const data = outputImageData.data;
     
-    // Apply inverted mask to alpha channel
+    // Apply inverted mask to alpha channel with improved threshold
     for (let i = 0; i < result[0].mask.data.length; i++) {
-      // Invert the mask value (1 - value) to keep the subject instead of the background
-      const alpha = Math.round((1 - result[0].mask.data[i]) * 255);
+      const maskValue = result[0].mask.data[i];
+      // Use a threshold to make the background completely transparent
+      const alpha = maskValue < 0.2 ? 255 : 0;
       data[i * 4 + 3] = alpha;
     }
     
     outputCtx.putImageData(outputImageData, 0, 0);
     console.log('Mask applied successfully');
     
-    // Convert canvas to blob
+    // Convert canvas to blob with PNG format
     return new Promise((resolve, reject) => {
       outputCanvas.toBlob(
         (blob) => {
@@ -103,7 +106,7 @@ export const removeBackground = async (imageElement: HTMLImageElement): Promise<
           }
         },
         'image/png',
-        1.0
+        1.0  // Maximum quality for PNG
       );
     });
   } catch (error) {
