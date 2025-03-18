@@ -2,18 +2,21 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import RoomCalculator, { RoomDetail } from "@/components/calculator/RoomCalculator";
+import RoomCalculator, { RoomDetail, ExteriorDetail } from "@/components/calculator/RoomCalculator";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const EstimateCalculator = () => {
   const [totalCost, setTotalCost] = useState(0);
   const [roomDetails, setRoomDetails] = useState<RoomDetail[]>([]);
+  const [exteriorDetails, setExteriorDetails] = useState<ExteriorDetail[]>([]);
   const [painterId, setPainterId] = useState<string | undefined>(undefined);
   const [showSubscriptionInfo, setShowSubscriptionInfo] = useState(false);
+  const [activeTab, setActiveTab] = useState("interior");
   const { search } = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -27,9 +30,13 @@ const EstimateCalculator = () => {
     }
   }, [search]);
 
-  const handleCalculate = (cost: number, details: RoomDetail[]) => {
+  const handleCalculate = (cost: number, details: RoomDetail[] | ExteriorDetail[]) => {
     setTotalCost(cost);
-    setRoomDetails(details);
+    if (activeTab === "interior") {
+      setRoomDetails(details as RoomDetail[]);
+    } else {
+      setExteriorDetails(details as ExteriorDetail[]);
+    }
   };
 
   const handleSaveEstimate = () => {
@@ -70,7 +77,7 @@ const EstimateCalculator = () => {
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold mb-4">Paint Estimate Calculator</h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Get an accurate estimate for your painting project by providing room details below.
+            Get an accurate estimate for your painting project by providing details below.
           </p>
           {user?.role === "painter" && (
             <Button 
@@ -126,7 +133,26 @@ const EstimateCalculator = () => {
         )}
 
         <div className="mt-8">
-          <RoomCalculator onCalculate={handleCalculate} painterId={painterId} />
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="interior">Interior Painting</TabsTrigger>
+              <TabsTrigger value="exterior">Exterior Painting</TabsTrigger>
+            </TabsList>
+            <TabsContent value="interior">
+              <RoomCalculator 
+                onCalculate={handleCalculate} 
+                painterId={painterId} 
+                calculatorType="interior" 
+              />
+            </TabsContent>
+            <TabsContent value="exterior">
+              <RoomCalculator 
+                onCalculate={handleCalculate} 
+                painterId={painterId} 
+                calculatorType="exterior" 
+              />
+            </TabsContent>
+          </Tabs>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 mt-8">
