@@ -109,7 +109,7 @@ const CookiePolicy = () => {
             and update the "Last Updated" date at the top of this page.
           </p>
           <p>
-            If you have questions about this Cookie Policy, please contact us at privacy@propaint.com.
+            If you have questions about this Cookie Policy, please contact us at support@propaintatl.com.
           </p>
         </section>
       </div>
