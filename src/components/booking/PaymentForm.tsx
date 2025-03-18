@@ -42,16 +42,11 @@ const PaymentForm = ({ amount, onSuccess, onCancel, bookingId }: PaymentFormProp
     setPaymentError(null);
 
     try {
-      // Confirm payment
+      // Confirm payment with proper options structure
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: window.location.origin + "/profile", // In case of redirect
-          payment_method_data: {
-            metadata: {
-              booking_id: bookingId,
-            },
-          },
         },
         redirect: 'if_required',
       });
