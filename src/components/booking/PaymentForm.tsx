@@ -4,6 +4,7 @@ import { useStripe, useElements, PaymentElement, AddressElement } from '@stripe/
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface PaymentFormProps {
   amount: number;
@@ -27,44 +28,116 @@ const PaymentForm = ({ amount, onSuccess, onCancel, bookingId }: PaymentFormProp
       return;
     }
 
+    if (!bookingId) {
+      setPaymentError("Booking reference is missing. Please try again or contact support.");
+      toast({
+        title: "Payment Failed",
+        description: "Booking reference is missing. Please try again or contact support.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsProcessing(true);
     setPaymentError(null);
 
-    // Confirm payment
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: window.location.origin + "/profile", // In case of redirect
-      },
-      redirect: 'if_required',
-    });
+    try {
+      // Confirm payment
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: window.location.origin + "/profile", // In case of redirect
+          payment_method_data: {
+            metadata: {
+              booking_id: bookingId,
+            },
+          },
+        },
+        redirect: 'if_required',
+      });
 
-    if (error) {
-      // Show error to customer
-      setPaymentError(error.message || 'An unknown error occurred');
-      setIsProcessing(false);
-      
+      if (error) {
+        // Show error to customer
+        setPaymentError(error.message || 'An unknown error occurred');
+        toast({
+          title: "Payment Failed",
+          description: error.message || 'An unknown error occurred',
+          variant: "destructive",
+        });
+      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        // Payment succeeded
+        toast({
+          title: "Payment Successful",
+          description: `Your payment of $${amount.toFixed(2)} has been processed successfully.`,
+        });
+        
+        // Update booking status in database
+        if (bookingId) {
+          try {
+            await supabase
+              .from('bookings')
+              .update({ 
+                status: 'deposit_paid',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', bookingId);
+            
+            // Update payment status in database
+            await supabase
+              .from('booking_payments')
+              .update({ 
+                status: 'succeeded',
+                updated_at: new Date().toISOString()
+              })
+              .eq('booking_id', bookingId)
+              .eq('payment_type', 'deposit');
+              
+          } catch (dbError) {
+            console.error('Error updating booking status:', dbError);
+          }
+        }
+        
+        // Call the success callback
+        onSuccess();
+      } else {
+        // Handle other payment states
+        let message = 'Payment processing';
+        let needsAction = false;
+        
+        if (paymentIntent) {
+          switch(paymentIntent.status) {
+            case 'requires_payment_method':
+              message = 'Payment failed. Please try another payment method.';
+              break;
+            case 'requires_action':
+              message = 'Additional authentication required. Please complete the verification process.';
+              needsAction = true;
+              break;
+            case 'processing':
+              message = 'Payment is processing. Please wait...';
+              break;
+            default:
+              message = `Payment status: ${paymentIntent.status}`;
+          }
+        }
+        
+        setPaymentError(needsAction ? null : message);
+        toast({
+          title: "Payment Status",
+          description: message,
+          variant: needsAction ? "default" : "destructive",
+        });
+      }
+    } catch (unexpectedError) {
+      console.error('Unexpected payment error:', unexpectedError);
+      setPaymentError('An unexpected error occurred. Please try again.');
       toast({
-        title: "Payment Failed",
-        description: error.message || 'An unknown error occurred',
+        title: "Payment Error",
+        description: 'An unexpected error occurred. Please try again.',
         variant: "destructive",
       });
-    } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-      // Payment succeeded
-      toast({
-        title: "Payment Successful",
-        description: `Your deposit of $${amount.toFixed(2)} has been processed successfully.`,
-      });
-      
-      // Call the success callback
-      onSuccess();
-    } else {
-      // Payment requires additional action or failed silently
+    } finally {
       setIsProcessing(false);
-      toast({
-        title: "Payment Status",
-        description: `Payment status: ${paymentIntent?.status || 'unknown'}`,
-      });
     }
   };
 
