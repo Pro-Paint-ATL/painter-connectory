@@ -25,7 +25,7 @@ const majorCities: City[] = [
 
 const Footer = () => {
   const { user } = useAuth();
-  const [logoUrl, setLogoUrl] = useState("/lovable-uploads/46745e2b-4793-4b28-81bd-0b41822d517f.png");
+  const [logoUrl, setLogoUrl] = useState("/lovable-uploads/16b16ae1-6014-4375-8e38-67ee73bbaea6.png");
   const [currentCity, setCurrentCity] = useState<City>(majorCities[0]);
 
   useEffect(() => {

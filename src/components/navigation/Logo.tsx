@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import ImageBackgroundRemover from "../ui/ImageBackgroundRemover";
@@ -10,7 +9,7 @@ interface LogoProps {
 
 const Logo = ({ city }: LogoProps) => {
   const { user } = useAuth();
-  const [logoUrl, setLogoUrl] = useState("/lovable-uploads/46745e2b-4793-4b28-81bd-0b41822d517f.png");
+  const [logoUrl, setLogoUrl] = useState("/lovable-uploads/16b16ae1-6014-4375-8e38-67ee73bbaea6.png");
 
   const handleProcessedImage = (newImageUrl: string) => {
     setLogoUrl(newImageUrl);
