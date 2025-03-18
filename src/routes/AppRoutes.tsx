@@ -18,6 +18,16 @@ const PainterSubscription = lazy(() => import("@/pages/PainterSubscription"));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const SubscriptionManagement = lazy(() => import("@/pages/SubscriptionManagement"));
 
+// Company pages
+const AboutUs = lazy(() => import("@/pages/AboutUs"));
+const Careers = lazy(() => import("@/pages/Careers"));
+const Press = lazy(() => import("@/pages/Press"));
+
+// Legal pages
+const TermsOfService = lazy(() => import("@/pages/TermsOfService"));
+const PrivacyPolicy = lazy(() => import("@/pages/PrivacyPolicy"));
+const CookiePolicy = lazy(() => import("@/pages/CookiePolicy"));
+
 // Loading component for route loading
 const RouteLoadingPage = () => (
   <div className="flex items-center justify-center min-h-[50vh]">
@@ -61,6 +71,17 @@ const AppRoutes = () => {
       <Route path="/calculator" element={<EstimateCalculator />} />
       <Route path="/find-painters" element={<FindPainters />} />
       <Route path="/painter/:id" element={<PainterProfile />} />
+      
+      {/* Company pages */}
+      <Route path="/about" element={<AboutUs />} />
+      <Route path="/careers" element={<Careers />} />
+      <Route path="/press" element={<Press />} />
+      
+      {/* Legal pages */}
+      <Route path="/terms" element={<TermsOfService />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/cookies" element={<CookiePolicy />} />
+      
       <Route 
         path="/profile" 
         element={

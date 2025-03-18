@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
@@ -77,26 +78,26 @@ const Footer = () => {
             
             <nav className="flex flex-col space-y-3">
               <p className="font-medium">Company</p>
-              <Link to="#" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors">
                 About Us
               </Link>
-              <Link to="#" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/careers" className="text-muted-foreground hover:text-foreground transition-colors">
                 Careers
               </Link>
-              <Link to="#" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/press" className="text-muted-foreground hover:text-foreground transition-colors">
                 Press
               </Link>
             </nav>
             
             <nav className="flex flex-col space-y-3">
               <p className="font-medium">Legal</p>
-              <Link to="#" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
                 Terms of Service
               </Link>
-              <Link to="#" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
                 Privacy Policy
               </Link>
-              <Link to="#" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/cookies" className="text-muted-foreground hover:text-foreground transition-colors">
                 Cookie Policy
               </Link>
             </nav>
