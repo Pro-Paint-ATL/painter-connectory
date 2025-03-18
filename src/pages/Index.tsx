@@ -149,7 +149,7 @@ const Index = () => {
         <div className="container px-4 mx-auto">
           <div className="mb-12">
             <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div className="flex flex-col items-center md:items-start">
+              <div className="flex flex-col items-center md:items-center">
                 <img 
                   src={logoUrl}
                   alt="Pro Paint Logo"
@@ -291,3 +291,4 @@ const Index = () => {
 };
 
 export default Index;
+
