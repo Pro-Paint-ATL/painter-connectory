@@ -26,7 +26,7 @@ const majorCities: City[] = [
 
 const Footer = () => {
   const { user } = useAuth();
-  const [logoUrl, setLogoUrl] = useState("/lovable-uploads/16b16ae1-6014-4375-8e38-67ee73bbaea6.png");
+  const [logoUrl, setLogoUrl] = useState("/lovable-uploads/c5bc4b6f-5600-448b-bd75-e1cb336175db.png");
   const [currentCity, setCurrentCity] = useState<City>(majorCities[0]);
 
   useEffect(() => {
@@ -47,13 +47,13 @@ const Footer = () => {
               <img 
                 src={logoUrl}
                 alt="Pro Paint Logo" 
-                className="w-20 h-20"
+                className="w-20 h-20 object-contain"
               />
               <span className="font-semibold text-xl">Pro Paint {currentCity.code}</span>
             </Link>
             {user?.role === 'admin' && (
               <ImageBackgroundRemover 
-                imageUrl="/lovable-uploads/46745e2b-4793-4b28-81bd-0b41822d517f.png"
+                imageUrl="/lovable-uploads/c5bc4b6f-5600-448b-bd75-e1cb336175db.png"
                 onProcessed={handleProcessedImage}
               />
             )}

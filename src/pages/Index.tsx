@@ -50,7 +50,7 @@ const TestimonialCard = ({ quote, author, role }: { quote: string; author: strin
 
 const Index = () => {
   const navigate = useNavigate();
-  const [logoUrl, setLogoUrl] = useState("/lovable-uploads/16b16ae1-6014-4375-8e38-67ee73bbaea6.png");
+  const [logoUrl, setLogoUrl] = useState("/lovable-uploads/c5bc4b6f-5600-448b-bd75-e1cb336175db.png");
 
   const handleNavigate = (path: string) => {
     navigate(path);
@@ -153,7 +153,7 @@ const Index = () => {
                 <img 
                   src={logoUrl}
                   alt="Pro Paint Logo"
-                  className="w-[240px] h-[240px] mb-8"
+                  className="w-[240px] h-[240px] mb-8 object-contain"
                 />
                 <h2 className="text-3xl md:text-4xl font-bold mb-6">Quality Results From Expert Painters</h2>
                 <p className="text-lg text-muted-foreground mb-8">
