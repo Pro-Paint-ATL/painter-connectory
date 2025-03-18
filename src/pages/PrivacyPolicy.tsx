@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Separator } from "@/components/ui/separator";
 
@@ -16,7 +15,7 @@ const PrivacyPolicy = () => {
           </p>
           <p>
             Please read this Privacy Policy carefully. By accessing or using our Services, you acknowledge that you have read, 
-            understood, and agree to be bound by this Privacy Policy.
+            understood, and agreed to be bound by this Privacy Policy.
           </p>
         </section>
         
@@ -114,8 +113,7 @@ const PrivacyPolicy = () => {
           <h2 className="text-2xl font-semibold mb-3">6. Contact Us</h2>
           <p>
             If you have questions or concerns about this Privacy Policy or our privacy practices, 
-            please contact us at privacy@propaint.com or by mail at Pro Paint Privacy Team, 
-            123 Main Street, Suite 456, Miami, FL 33101.
+            please contact us at support@propaintatl.com.
           </p>
         </section>
       </div>
