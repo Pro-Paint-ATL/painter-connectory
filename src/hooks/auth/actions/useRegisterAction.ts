@@ -54,19 +54,19 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
         console.error("Registration error:", error);
         
         // Handle specific error for disabled email signups
-        if (error.message === "Email signups are disabled") {
+        if (error.message.includes("Email signups are disabled")) {
           toast({
-            title: "Registration Disabled",
-            description: "Email signups are currently disabled. Please contact the administrator to enable signups.",
+            title: "Email Signups Disabled",
+            description: "Email signups are currently disabled. Please contact the administrator.",
             variant: "destructive"
           });
         } 
-        // Handle email sending errors
-        else if (error.message === "Error sending confirmation email" || error.code === "unexpected_failure") {
+        // Handle email sending errors - suggest enabling email settings
+        else if (error.message.includes("Error sending confirmation email") || error.code === "unexpected_failure") {
           toast({
-            title: "Registration Issue",
-            description: "Your account was created but there was an issue sending the confirmation email. Please try logging in.",
-            variant: "destructive"
+            title: "Email Configuration Issue",
+            description: "Your account was created but there was an issue with the email service. Please check with the administrator to enable email settings in Supabase.",
+            variant: "warning"
           });
           
           // Try to return the user anyway so they can try logging in
@@ -91,7 +91,7 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
       if (data.user && !data.session) {
         toast({
           title: "Registration Successful",
-          description: "Your account was created. You may need to verify your email before logging in.",
+          description: "Your account was created. You need to verify your email before logging in.",
         });
         setIsLoading(false);
         return null;

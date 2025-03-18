@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { UserRole } from "@/types/auth";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface RegisterDialogProps {
@@ -36,7 +36,7 @@ const RegisterDialog = ({
   const [role, setRole] = useState<UserRole>("customer");
   const [localLoading, setLocalLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [showEmailDisabledWarning, setShowEmailDisabledWarning] = useState(true);
+  const [showEmailInfo, setShowEmailInfo] = useState(true);
   
   // Reset form when dialog opens/closes
   useEffect(() => {
@@ -76,7 +76,7 @@ const RegisterDialog = ({
       // If we're still loading after 5 seconds, show a timeout message
       const timeoutId = setTimeout(() => {
         if (localLoading) {
-          setErrorMessage("Registration is taking longer than expected. Please check if email confirmation is required in the system settings.");
+          setErrorMessage("Registration is taking longer than expected. This could be due to email configuration issues.");
           setLocalLoading(false);
         }
       }, 5000);
@@ -85,12 +85,16 @@ const RegisterDialog = ({
       return () => clearTimeout(timeoutId);
     } catch (error) {
       console.error("Registration error in dialog:", error);
-      if (error instanceof Error && error.message.includes("Email signups are disabled")) {
-        setErrorMessage("Email signups are currently disabled in Supabase. Please enable them in the Supabase dashboard.");
-      } else if (error instanceof Error && error.message.includes("confirmation email")) {
-        setErrorMessage("Your account was created but there was an issue sending the confirmation email. You may still be able to log in.");
+      if (error instanceof Error) {
+        if (error.message.includes("Email signups are disabled")) {
+          setErrorMessage("Email signups are currently disabled in Supabase. The administrator needs to enable them in the Supabase dashboard.");
+        } else if (error.message.includes("confirmation email")) {
+          setErrorMessage("Your account was created but there was an issue sending the confirmation email. This is likely a Supabase email configuration issue.");
+        } else {
+          setErrorMessage(error.message);
+        }
       } else {
-        setErrorMessage(error instanceof Error ? error.message : "Registration failed");
+        setErrorMessage("Registration failed");
       }
       setLocalLoading(false);
     }
@@ -119,15 +123,15 @@ const RegisterDialog = ({
           </Alert>
         )}
         
-        {showEmailDisabledWarning && (
+        {showEmailInfo && (
           <Alert className="bg-amber-50 border-amber-200">
-            <AlertCircle className="h-4 w-4 text-amber-500" />
+            <Info className="h-4 w-4 text-amber-500" />
             <AlertDescription className="text-amber-700">
-              If you're testing, you may need to enable email signups in the Supabase dashboard.
+              The administrator may need to configure email settings in Supabase for registration to work properly.
               <Button 
                 variant="link" 
                 className="text-amber-700 p-0 h-auto font-normal underline ml-1"
-                onClick={() => setShowEmailDisabledWarning(false)}
+                onClick={() => setShowEmailInfo(false)}
               >
                 Dismiss
               </Button>
@@ -221,7 +225,7 @@ const RegisterDialog = ({
         </form>
         
         <DialogFooter className="text-center justify-center text-xs text-muted-foreground mt-4">
-          Need to set up email auth? Visit Supabase Authentication settings
+          The administrator needs to enable email auth in Supabase for signups to work
         </DialogFooter>
       </DialogContent>
     </Dialog>
