@@ -106,8 +106,7 @@ const TermsOfService = () => {
         <section>
           <h2 className="text-2xl font-semibold mb-3">8. Contact Information</h2>
           <p>
-            If you have questions about these Terms, please contact us at legal@propaint.com or by mail at Pro Paint Legal Department,
-            123 Main Street, Suite 456, Miami, FL 33101.
+            If you have questions about these Terms, please contact us at support@propaintatl.com.
           </p>
         </section>
       </div>
