@@ -35,11 +35,11 @@ import {
   AlertCircle, 
   Brush,
   DollarSign,
-  CreditCard,
+  FileSignature,
   ChevronRight
 } from "lucide-react";
 import BookingCalendar from "@/components/booking/BookingCalendar";
-import PaymentForm from "@/components/booking/PaymentForm";
+import DepositAgreementForm from "@/components/booking/DepositAgreementForm";
 import { Painter } from "@/types/painter";
 import { Json } from "@/integrations/supabase/types";
 
@@ -66,7 +66,6 @@ const Booking = () => {
   const [projectType, setProjectType] = useState<string>("");
   const [address, setAddress] = useState<string>(() => {
     if (user?.location) {
-      // Safely cast to UserLocation type
       const userLocation = user.location as UserLocation;
       return userLocation.address || "";
     }
@@ -75,7 +74,6 @@ const Booking = () => {
   
   const [phone, setPhone] = useState<string>(() => {
     if (user?.location) {
-      // Safely cast to UserLocation type
       const userLocation = user.location as UserLocation;
       return userLocation.phone || "";
     }
@@ -110,7 +108,6 @@ const Booking = () => {
       const location = data.location as Json;
       let locationAddress = "";
       
-      // Safely handle location data
       if (location && typeof location === 'object' && !Array.isArray(location)) {
         locationAddress = (location as any).address || "Location not specified";
       }
@@ -146,7 +143,7 @@ const Booking = () => {
   }, [user, navigate, toast]);
   
   useEffect(() => {
-    setDepositAmount(Math.round(totalAmount * 0.15 * 100) / 100);
+    setDepositAmount(Math.round(totalAmount * 0.2 * 100) / 100);
   }, [totalAmount]);
   
   const handleTimeSelection = (time: string) => {
@@ -240,7 +237,7 @@ const Booking = () => {
           phone,
           project_type: projectType,
           notes,
-          status: "pending_deposit",
+          status: "pending_agreement",
           total_amount: totalAmount,
           deposit_amount: depositAmount
         })
@@ -274,15 +271,10 @@ const Booking = () => {
     }
   };
   
-  const handlePaymentSuccess = () => {
+  const handleAgreementSuccess = () => {
     if (bookingId) {
-      supabase
-        .from("bookings")
-        .update({ status: "deposit_paid" })
-        .eq("id", bookingId);
-      
       toast({
-        title: "Payment Successful",
+        title: "Agreement Signed",
         description: "Your booking is confirmed. The painter will contact you soon."
       });
       
@@ -322,6 +314,14 @@ const Booking = () => {
     );
   }
   
+  const formattedBookingDate = bookingDate
+    ? bookingDate.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric"
+      })
+    : "";
+
   return (
     <div className="container mx-auto py-12 px-4">
       <div className="max-w-3xl mx-auto">
@@ -366,7 +366,7 @@ const Booking = () => {
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activeTab === "3" ? 'bg-primary text-white' : 'bg-muted'}`}>
                 3
               </div>
-              <span className="text-xs mt-1">Payment</span>
+              <span className="text-xs mt-1">Agreement</span>
             </div>
           </div>
         </div>
@@ -501,7 +501,7 @@ const Booking = () => {
                       <span className="font-bold">${totalAmount.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center text-sm text-muted-foreground">
-                      <span>Good Faith Deposit (15%)</span>
+                      <span>Good Faith Deposit (20%)</span>
                       <span>${depositAmount.toFixed(2)}</span>
                     </div>
                     <div className="pt-2 text-xs text-muted-foreground">
@@ -539,9 +539,9 @@ const Booking = () => {
             >
               <Card>
                 <CardHeader>
-                  <CardTitle>Payment</CardTitle>
+                  <CardTitle>Booking Agreement</CardTitle>
                   <CardDescription>
-                    Pay the good faith deposit to confirm your booking
+                    Review and sign the agreement for your painting project
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -561,13 +561,7 @@ const Booking = () => {
                     <div className="flex flex-col sm:flex-row gap-4 text-sm">
                       <div className="flex items-center gap-1 text-muted-foreground">
                         <Calendar className="h-3.5 w-3.5" />
-                        <span>
-                          {bookingDate?.toLocaleDateString("en-US", {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric"
-                          })}
-                        </span>
+                        <span>{formattedBookingDate}</span>
                       </div>
                       
                       <div className="flex items-center gap-1 text-muted-foreground">
@@ -587,31 +581,46 @@ const Booking = () => {
                         <span className="font-medium">${totalAmount.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">Deposit Due Now</span>
-                        <span className="font-bold">${depositAmount.toFixed(2)}</span>
+                        <span className="text-sm font-medium">
+                          {projectType === "Color Consultation" || projectType === "Other" || totalAmount < 300 
+                            ? "Payment Due at Completion" 
+                            : "Deposit Due after First Day"}
+                        </span>
+                        <span className="font-bold">
+                          {projectType === "Color Consultation" || projectType === "Other" || totalAmount < 300 
+                            ? `$${totalAmount.toFixed(2)}` 
+                            : `$${depositAmount.toFixed(2)}`}
+                        </span>
                       </div>
                     </div>
                   </div>
                   
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-muted-foreground" />
-                      <Label>Payment Method</Label>
+                      <FileSignature className="h-4 w-4 text-muted-foreground" />
+                      <Label>Digital Agreement</Label>
                     </div>
-                    <PaymentForm 
-                      amount={depositAmount} 
+                    
+                    <DepositAgreementForm 
+                      amount={totalAmount}
                       bookingId={bookingId}
-                      onSuccess={handlePaymentSuccess}
+                      onSuccess={handleAgreementSuccess}
                       onCancel={() => setActiveTab("2")}
+                      projectType={projectType}
+                      customerName={user?.name || "Customer"}
+                      painterName={painter.name}
+                      bookingDate={formattedBookingDate}
                     />
                   </div>
                   
                   <Alert>
                     <Info className="h-4 w-4" />
-                    <AlertTitle>Deposit Information</AlertTitle>
+                    <AlertTitle>Agreement Information</AlertTitle>
                     <AlertDescription>
-                      This is a 15% good faith deposit to secure your booking. 
-                      The remaining balance will be due upon completion of the work.
+                      This is a legally binding agreement between you and the painter.
+                      {projectType === "Color Consultation" || projectType === "Other" || totalAmount < 300 
+                        ? " Payment will be due upon completion of the work." 
+                        : " A 20% good faith deposit will be due upon completion of the first day of work."}
                     </AlertDescription>
                   </Alert>
                 </CardContent>
