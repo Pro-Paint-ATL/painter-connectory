@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -50,6 +50,7 @@ const TestimonialCard = ({ quote, author, role }: { quote: string; author: strin
 
 const Index = () => {
   const navigate = useNavigate();
+  const [logoUrl, setLogoUrl] = useState("/lovable-uploads/16b16ae1-6014-4375-8e38-67ee73bbaea6.png");
 
   const handleNavigate = (path: string) => {
     navigate(path);
@@ -146,32 +147,39 @@ const Index = () => {
       {/* Features with Image */}
       <section className="py-16 md:py-24 bg-secondary/20">
         <div className="container px-4 mx-auto">
-          <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">Quality Results From Expert Painters</h2>
-              <p className="text-lg text-muted-foreground mb-8">
-                Our network of professional painters delivers outstanding results for every project. From residential touch-ups to commercial overhauls, we connect you with skilled professionals.
-              </p>
-              <Button 
-                size="lg"
-                onClick={() => handleNavigate("/find-painters")}
+          <div className="flex flex-col items-center mb-12">
+            <img 
+              src={logoUrl}
+              alt="Pro Paint Logo"
+              className="w-[120px] h-[120px] mb-8"
+            />
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-bold mb-6">Quality Results From Expert Painters</h2>
+                <p className="text-lg text-muted-foreground mb-8">
+                  Our network of professional painters delivers outstanding results for every project. From residential touch-ups to commercial overhauls, we connect you with skilled professionals.
+                </p>
+                <Button 
+                  size="lg"
+                  onClick={() => handleNavigate("/find-painters")}
+                >
+                  Find Your Painter
+                </Button>
+              </div>
+              <motion.div 
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7 }}
+                className="rounded-xl overflow-hidden shadow-xl"
               >
-                Find Your Painter
-              </Button>
+                <img 
+                  src="/lovable-uploads/bdd722ac-9f89-47c1-b465-bc989b51d903.png" 
+                  alt="Painting preparation with ladder and purple trim" 
+                  className="w-full h-auto"
+                />
+              </motion.div>
             </div>
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7 }}
-              className="rounded-xl overflow-hidden shadow-xl"
-            >
-              <img 
-                src="/lovable-uploads/bdd722ac-9f89-47c1-b465-bc989b51d903.png" 
-                alt="Painting preparation with ladder and purple trim" 
-                className="w-full h-auto"
-              />
-            </motion.div>
           </div>
 
           <div className="text-center mb-16 mt-20">
