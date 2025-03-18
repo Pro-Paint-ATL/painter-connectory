@@ -183,7 +183,7 @@ const Index = () => {
           </div>
 
           <div className="text-center mb-16 mt-20">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose PaintConnect</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose Pro Paint</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Benefits for both customers and professional painters
             </p>
