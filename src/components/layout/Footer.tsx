@@ -1,31 +1,23 @@
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { PaintBucket, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
+import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import ImageBackgroundRemover from "../ui/ImageBackgroundRemover";
 
 const Footer = () => {
-  // List of major cities with their respective codes
-  const majorCities = [
-    { city: "Miami", state: "FL", code: "MIA" },
-    { city: "Atlanta", state: "GA", code: "ATL" },
-    { city: "New York", state: "NY", code: "NY" },
-    { city: "Los Angeles", state: "CA", code: "LA" },
-    { city: "Chicago", state: "IL", code: "CHI" },
-    { city: "Dallas", state: "TX", code: "DAL" },
-    { city: "Houston", state: "TX", code: "HOU" },
-    { city: "Phoenix", state: "AZ", code: "PHX" },
-    { city: "Philadelphia", state: "PA", code: "PHL" },
-    { city: "San Antonio", state: "TX", code: "SAT" },
-  ];
+  const { user } = useAuth();
+  const [logoUrl, setLogoUrl] = useState("/lovable-uploads/46745e2b-4793-4b28-81bd-0b41822d517f.png");
 
   const [currentCity, setCurrentCity] = useState(majorCities[0]);
 
   useEffect(() => {
-    // In a real app, you would detect user's location or set from preferences
-    // For now, we'll just randomly select a city on load for demonstration
     const randomCity = majorCities[Math.floor(Math.random() * majorCities.length)];
     setCurrentCity(randomCity);
   }, []);
+
+  const handleProcessedImage = (newImageUrl: string) => {
+    setLogoUrl(newImageUrl);
+  };
 
   return (
     <footer className="bg-secondary/50 backdrop-blur-sm border-t">
@@ -33,9 +25,19 @@ const Footer = () => {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3 lg:grid-cols-4">
           <div className="flex flex-col space-y-3">
             <Link to="/" className="flex items-center space-x-2">
-              <PaintBucket className="h-6 w-6" />
+              <img 
+                src={logoUrl}
+                alt="Pro Paint Logo" 
+                className="w-10 h-10"
+              />
               <span className="font-semibold text-xl">Pro Paint {currentCity.code}</span>
             </Link>
+            {user?.role === 'admin' && (
+              <ImageBackgroundRemover 
+                imageUrl="/lovable-uploads/46745e2b-4793-4b28-81bd-0b41822d517f.png"
+                onProcessed={handleProcessedImage}
+              />
+            )}
             <p className="text-muted-foreground max-w-xs">
               Connecting quality painters with customers for beautiful results in {currentCity.city}, {currentCity.state}.
             </p>
