@@ -14,7 +14,7 @@ import {
   Sofa, 
   Home, 
   Plus,
-  Tree,
+  Trees,
   Shrub,
   Building
 } from "lucide-react";
@@ -944,3 +944,4 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId,
 };
 
 export default RoomCalculator;
+
