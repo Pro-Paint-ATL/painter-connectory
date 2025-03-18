@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, FileSignature, CheckCircle } from 'lucide-react';
+import { Loader2, FileSignature } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -123,7 +123,7 @@ const DepositAgreementForm = ({
   const getAgreementText = () => {
     const paymentTerms = isOneDay 
       ? `PAYMENT TERMS: Customer agrees to pay the full amount of $${amount.toFixed(2)} at the completion of the work on ${bookingDate}.`
-      : `PAYMENT TERMS: Customer agrees to pay a good-faith deposit of $${depositAmount.toFixed(2)} (20% of the total estimated cost) at the completion of the first day of work. The remaining balance of $${(amount - depositAmount).toFixed(2)} shall be paid upon the completion of the project.`;
+      : `PAYMENT TERMS: Customer agrees to pay a good-faith deposit of $${depositAmount.toFixed(2)} (20% of the total estimated cost) at the completion of the first day of work. The remaining balance of $${(amount - depositAmount).toFixed(2)} shall be paid within one (1) business day after the completion of the project.`;
 
     return `
 GOOD FAITH AGREEMENT BETWEEN CUSTOMER AND PAINTER
