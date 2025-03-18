@@ -66,7 +66,7 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
           toast({
             title: "Email Configuration Issue",
             description: "Your account was created but there was an issue with the email service. Please check with the administrator to enable email settings in Supabase.",
-            variant: "warning"
+            variant: "destructive" // Changed from "warning" to "destructive" to match the allowed variants
           });
           
           // Try to return the user anyway so they can try logging in
