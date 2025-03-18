@@ -57,11 +57,9 @@ export interface ExteriorDetail {
   windows: number;
   doors: number;
   features: {
-    shutters: boolean;
-    gutters: boolean;
     deckPorch: boolean;
+    deckArea: number;
   };
-  prep: number;
   complexity: number;
   cost: number;
 }
@@ -87,10 +85,7 @@ interface ExteriorRate {
   doorCost: number;
   windowCost: number;
   multistoryFactor: number;
-  shutterCost: number;
-  gutterCostPerFt: number;
-  deckPorchCost: number;
-  prepFactor: number;
+  deckCostPerSqFt: number;
   complexityFactor: number;
 }
 
@@ -111,14 +106,11 @@ const defaultExteriorRates: ExteriorRate = {
     stucco: 4.00,
     metal: 3.50,
   },
-  trim: 1.50, // Additional per sq ft
-  doorCost: 75,
-  windowCost: 45,
+  trim: 0.25, // Additional per sq ft (changed from 1.50 to 0.25)
+  doorCost: 40, // Changed from 75 to 40
+  windowCost: 20, // Changed from 45 to 20
   multistoryFactor: 0.30, // 30% increase per additional story
-  shutterCost: 30, // Per pair
-  gutterCostPerFt: 3.50,
-  deckPorchCost: 350, // Base cost
-  prepFactor: 0.20, // 20% increase per prep level
+  deckCostPerSqFt: 3.00, // Changed from fixed cost to per sq ft
   complexityFactor: 0.25, // 25% increase per complexity level
 };
 
@@ -154,11 +146,9 @@ const initialExterior: ExteriorDetail[] = [
     windows: 10,
     doors: 2,
     features: {
-      shutters: false,
-      gutters: false,
       deckPorch: false,
+      deckArea: 0
     },
-    prep: 1,
     complexity: 1,
     cost: 0,
   },
@@ -240,20 +230,9 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId,
           exteriorCost *= 1 + ((exterior.stories - 1) * exteriorRates.multistoryFactor);
         }
         
-        if (exterior.features.shutters) {
-          exteriorCost += (exterior.windows / 2) * exteriorRates.shutterCost;
+        if (exterior.features.deckPorch && exterior.features.deckArea > 0) {
+          exteriorCost += exterior.features.deckArea * exteriorRates.deckCostPerSqFt;
         }
-        
-        if (exterior.features.gutters) {
-          const estimatedPerimeter = Math.sqrt(exterior.area) * 4;
-          exteriorCost += estimatedPerimeter * exteriorRates.gutterCostPerFt;
-        }
-        
-        if (exterior.features.deckPorch) {
-          exteriorCost += exteriorRates.deckPorchCost;
-        }
-        
-        exteriorCost *= 1 + ((exterior.prep - 1) * exteriorRates.prepFactor);
         
         exteriorCost *= 1 + ((exterior.complexity - 1) * exteriorRates.complexityFactor);
         
@@ -303,52 +282,15 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId,
     ]);
   };
 
-  const addExterior = () => {
-    const newExteriorId = `exterior${exteriors.length + 1}`;
-    setExteriors([
-      ...exteriors,
-      {
-        id: newExteriorId,
-        name: `Exterior Area ${exteriors.length + 1}`,
-        area: 500,
-        stories: 1,
-        siding: "vinyl",
-        trim: true,
-        windows: 4,
-        doors: 1,
-        features: {
-          shutters: false,
-          gutters: false,
-          deckPorch: false,
-        },
-        prep: 1,
-        complexity: 1,
-        cost: 0,
-      },
-    ]);
-  };
-
   const removeRoom = (id: string) => {
     if (rooms.length > 1) {
       setRooms(rooms.filter((room) => room.id !== id));
     }
   };
 
-  const removeExterior = (id: string) => {
-    if (exteriors.length > 1) {
-      setExteriors(exteriors.filter((exterior) => exterior.id !== id));
-    }
-  };
-
   const updateRoom = (id: string, updates: Partial<RoomDetail>) => {
     setRooms(
       rooms.map((room) => (room.id === id ? { ...room, ...updates } : room))
-    );
-  };
-
-  const updateExterior = (id: string, updates: Partial<ExteriorDetail>) => {
-    setExteriors(
-      exteriors.map((exterior) => (exterior.id === id ? { ...exterior, ...updates } : exterior))
     );
   };
 
@@ -608,6 +550,116 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId,
     </div>
   );
 
+  const addExterior = () => {
+    const newExteriorId = `exterior${exteriors.length + 1}`;
+    setExteriors([
+      ...exteriors,
+      {
+        id: newExteriorId,
+        name: `Exterior Area ${exteriors.length + 1}`,
+        area: 500,
+        stories: 1,
+        siding: "vinyl",
+        trim: true,
+        windows: 4,
+        doors: 1,
+        features: {
+          deckPorch: false,
+          deckArea: 0
+        },
+        complexity: 1,
+        cost: 0,
+      },
+    ]);
+  };
+
+  const removeExterior = (id: string) => {
+    if (exteriors.length > 1) {
+      setExteriors(exteriors.filter((exterior) => exterior.id !== id));
+    }
+  };
+
+  const updateExterior = (id: string, updates: Partial<ExteriorDetail>) => {
+    setExteriors(
+      exteriors.map((exterior) => (exterior.id === id ? { ...exterior, ...updates } : exterior))
+    );
+  };
+
+  const renderCouponSection = () => {
+    if (!painterId) return null;
+    
+    return (
+      <>
+        <Separator className="my-4" />
+        <div className="space-y-4">
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="coupon-code">Have a Coupon Code?</Label>
+            <div className="flex gap-2">
+              <Input
+                id="coupon-code"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                placeholder="Enter coupon code"
+                className="flex-1"
+                disabled={!!appliedCoupon}
+              />
+              {!appliedCoupon ? (
+                <Button 
+                  onClick={applyCoupon} 
+                  disabled={!couponCode}
+                  className="gap-2"
+                >
+                  <TicketPercent className="h-4 w-4" />
+                  Apply
+                </Button>
+              ) : (
+                <Button 
+                  onClick={removeCoupon} 
+                  variant="outline"
+                >
+                  Remove
+                </Button>
+              )}
+            </div>
+          </div>
+          
+          {appliedCoupon && (
+            <div className="p-4 bg-muted rounded-md">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <TicketPercent className="h-5 w-5 text-primary" />
+                  <span className="font-medium">
+                    {Math.round(appliedCoupon.discount * 100)}% Discount Applied
+                  </span>
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  Code: {appliedCoupon.id}
+                </span>
+              </div>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span>Original Total:</span>
+                  <span>${totalCost.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-primary">
+                  <span>Discount:</span>
+                  <span>-${Math.round(totalCost * appliedCoupon.discount).toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {appliedCoupon && (
+            <div className="flex justify-between font-medium text-lg text-primary">
+              <span>Discounted Total</span>
+              <span>${discountedTotal.toLocaleString()}</span>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  };
+
   const renderExteriorCalculator = () => (
     <div className="space-y-4">
       <div className="flex flex-col space-y-4">
@@ -730,33 +782,9 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId,
               <div className="border border-dashed border-muted-foreground/30 p-3 rounded-md">
                 <h4 className="font-medium mb-2 flex items-center gap-2">
                   <Plus className="h-4 w-4" />
-                  Additional Features
+                  Deck/Porch
                 </h4>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`${exterior.id}-shutters`}
-                      checked={exterior.features.shutters}
-                      onCheckedChange={(checked) =>
-                        updateExterior(exterior.id, { 
-                          features: { ...exterior.features, shutters: checked === true }
-                        })
-                      }
-                    />
-                    <Label htmlFor={`${exterior.id}-shutters`}>Shutters</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`${exterior.id}-gutters`}
-                      checked={exterior.features.gutters}
-                      onCheckedChange={(checked) =>
-                        updateExterior(exterior.id, { 
-                          features: { ...exterior.features, gutters: checked === true }
-                        })
-                      }
-                    />
-                    <Label htmlFor={`${exterior.id}-gutters`}>Gutters & Downspouts</Label>
-                  </div>
+                <div className="space-y-3">
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id={`${exterior.id}-deck`}
@@ -767,32 +795,24 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId,
                         })
                       }
                     />
-                    <Label htmlFor={`${exterior.id}-deck`}>Deck/Porch</Label>
+                    <Label htmlFor={`${exterior.id}-deck`}>Include Deck/Porch</Label>
                   </div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <Label htmlFor={`${exterior.id}-prep`}>Required Preparation</Label>
-                  <span className="text-sm text-muted-foreground">
-                    Level {exterior.prep}
-                  </span>
-                </div>
-                <Slider
-                  id={`${exterior.id}-prep`}
-                  min={1}
-                  max={3}
-                  step={1}
-                  value={[exterior.prep]}
-                  onValueChange={(value) =>
-                    updateExterior(exterior.id, { prep: value[0] })
-                  }
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Minimal</span>
-                  <span>Moderate</span>
-                  <span>Extensive</span>
+                  {exterior.features.deckPorch && (
+                    <div className="space-y-2 pl-6">
+                      <Label htmlFor={`${exterior.id}-deck-area`}>Deck Area (sq ft)</Label>
+                      <Input
+                        id={`${exterior.id}-deck-area`}
+                        type="number"
+                        min="0"
+                        value={exterior.features.deckArea}
+                        onChange={(e) =>
+                          updateExterior(exterior.id, { 
+                            features: { ...exterior.features, deckArea: Number(e.target.value) }
+                          })
+                        }
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -854,87 +874,12 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId,
           <p>This is a preliminary estimate based on the information provided.</p>
           <p>Final costs may vary based on site conditions and specific requirements.</p>
           {painterId && (
-            <p>Base rates vary by siding type. Additional costs for multi-story buildings, trim, and special features.</p>
+            <p>Base rates vary by siding type. Additional costs for multi-story buildings, trim, doors ($40 each), windows ($20 each), and decks ($3.00 per sq ft).</p>
           )}
         </CardFooter>
       </Card>
     </div>
   );
-
-  const renderCouponSection = () => {
-    if (!painterId) return null;
-    
-    return (
-      <>
-        <Separator className="my-4" />
-        <div className="space-y-4">
-          <div className="flex flex-col space-y-2">
-            <Label htmlFor="coupon-code">Have a Coupon Code?</Label>
-            <div className="flex gap-2">
-              <Input
-                id="coupon-code"
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                placeholder="Enter coupon code"
-                className="flex-1"
-                disabled={!!appliedCoupon}
-              />
-              {!appliedCoupon ? (
-                <Button 
-                  onClick={applyCoupon} 
-                  disabled={!couponCode}
-                  className="gap-2"
-                >
-                  <TicketPercent className="h-4 w-4" />
-                  Apply
-                </Button>
-              ) : (
-                <Button 
-                  onClick={removeCoupon} 
-                  variant="outline"
-                >
-                  Remove
-                </Button>
-              )}
-            </div>
-          </div>
-          
-          {appliedCoupon && (
-            <div className="p-4 bg-muted rounded-md">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <TicketPercent className="h-5 w-5 text-primary" />
-                  <span className="font-medium">
-                    {Math.round(appliedCoupon.discount * 100)}% Discount Applied
-                  </span>
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  Code: {appliedCoupon.id}
-                </span>
-              </div>
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span>Original Total:</span>
-                  <span>${totalCost.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-primary">
-                  <span>Discount:</span>
-                  <span>-${Math.round(totalCost * appliedCoupon.discount).toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {appliedCoupon && (
-            <div className="flex justify-between font-medium text-lg text-primary">
-              <span>Discounted Total</span>
-              <span>${discountedTotal.toLocaleString()}</span>
-            </div>
-          )}
-        </div>
-      </>
-    );
-  };
 
   return (
     <>
@@ -944,4 +889,3 @@ const RoomCalculator: React.FC<RoomCalculatorProps> = ({ onCalculate, painterId,
 };
 
 export default RoomCalculator;
-
