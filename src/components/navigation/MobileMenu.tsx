@@ -39,14 +39,15 @@ const MobileMenu = ({
   currentCity,
 }: MobileMenuProps) => {
   const navigate = useNavigate();
+  const [open, setOpen] = React.useState(false);
 
-  const handleNavigation = (path: string, closeSheet: () => void) => {
-    closeSheet(); // Close the sheet before navigation
+  const handleNavigation = (path: string) => {
+    setOpen(false); // Close the sheet before navigation
     navigate(path);
   };
 
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className="md:hidden">
           <Menu className="h-5 w-5" />
@@ -54,7 +55,6 @@ const MobileMenu = ({
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:w-80">
-        {/* Use proper children rendering instead of the function component pattern */}
         <div className="flex flex-col gap-4 mt-8">
           <div className="flex items-center space-x-2 mb-6">
             <Avatar className="w-8 h-8">
@@ -72,7 +72,7 @@ const MobileMenu = ({
             <Button
               key={item.href}
               variant="ghost"
-              onClick={() => handleNavigation(item.href, () => document.querySelector<HTMLButtonElement>('[data-radix-collection-item]')?.click())}
+              onClick={() => handleNavigation(item.href)}
               className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
             >
               {item.icon}
@@ -83,7 +83,7 @@ const MobileMenu = ({
             <>
               <Button
                 variant="ghost"
-                onClick={() => handleNavigation("/profile", () => document.querySelector<HTMLButtonElement>('[data-radix-collection-item]')?.click())}
+                onClick={() => handleNavigation("/profile")}
                 className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
               >
                 <User className="h-4 w-4 mr-2" />
@@ -93,14 +93,14 @@ const MobileMenu = ({
                 <>
                   <Button
                     variant="ghost"
-                    onClick={() => handleNavigation("/painter-dashboard", () => document.querySelector<HTMLButtonElement>('[data-radix-collection-item]')?.click())}
+                    onClick={() => handleNavigation("/painter-dashboard")}
                     className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
                   >
                     Dashboard
                   </Button>
                   <Button
                     variant="ghost"
-                    onClick={() => handleNavigation("/subscription", () => document.querySelector<HTMLButtonElement>('[data-radix-collection-item]')?.click())}
+                    onClick={() => handleNavigation("/subscription")}
                     className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
                   >
                     Subscription
@@ -110,7 +110,7 @@ const MobileMenu = ({
               {user?.role === "admin" && (
                 <Button
                   variant="ghost"
-                  onClick={() => handleNavigation("/admin", () => document.querySelector<HTMLButtonElement>('[data-radix-collection-item]')?.click())}
+                  onClick={() => handleNavigation("/admin")}
                   className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
                 >
                   Admin Dashboard
@@ -119,7 +119,7 @@ const MobileMenu = ({
               <Button
                 variant="ghost"
                 onClick={() => {
-                  document.querySelector<HTMLButtonElement>('[data-radix-collection-item]')?.click();
+                  setOpen(false);
                   onLogout();
                 }}
                 className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
