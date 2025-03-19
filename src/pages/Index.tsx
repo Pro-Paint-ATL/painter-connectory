@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -103,7 +104,7 @@ const Index = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-xl text-white/90 mb-8 max-w-2xl mx-auto"
+              className="text-2xl text-white/90 mb-8 max-w-2xl mx-auto"
             >
               {addLetterShadow("Connect with skilled painters in your area and get accurate estimates for your painting projects.")}
             </motion.p>
