@@ -252,55 +252,64 @@ const ManageJobs = () => {
   };
 
   return (
-    <div className="container max-w-screen-xl py-8">
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Manage Your Jobs</h1>
-          <p className="text-muted-foreground">
-            View, edit, and manage all your posted painting jobs
-          </p>
-        </div>
-        <Button onClick={() => navigate("/post-job")}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Post New Job
-        </Button>
-      </div>
-
-      <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="relative w-full md:w-80">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search your jobs..."
-            className="w-full pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+    <div className="relative min-h-screen">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-75 -z-10"
+        style={{ backgroundImage: 'url("/public/lovable-uploads/c5bc4b6f-5600-448b-bd75-e1cb336175db.png")' }}
+      />
+      
+      {/* Content Container with semi-transparent background for better readability */}
+      <div className="container max-w-screen-xl py-8 relative z-10 bg-background/80 backdrop-blur-sm rounded-lg">
+        <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Manage Your Jobs</h1>
+            <p className="text-muted-foreground">
+              View, edit, and manage all your posted painting jobs
+            </p>
+          </div>
+          <Button onClick={() => navigate("/post-job")}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Post New Job
+          </Button>
         </div>
 
-        <Button 
-          variant="outline" 
-          onClick={fetchJobs}
+        <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search your jobs..."
+              className="w-full pl-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <Button 
+            variant="outline" 
+            onClick={fetchJobs}
+          >
+            Refresh
+          </Button>
+        </div>
+
+        <Tabs 
+          defaultValue="all" 
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="mb-6"
         >
-          Refresh
-        </Button>
+          <TabsList>
+            <TabsTrigger value="all">All Jobs</TabsTrigger>
+            <TabsTrigger value="open">Open Jobs</TabsTrigger>
+            <TabsTrigger value="assigned">Assigned</TabsTrigger>
+            <TabsTrigger value="completed">Completed</TabsTrigger>
+            <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {renderJobs()}
       </div>
-
-      <Tabs 
-        defaultValue="all" 
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="mb-6"
-      >
-        <TabsList>
-          <TabsTrigger value="all">All Jobs</TabsTrigger>
-          <TabsTrigger value="open">Open Jobs</TabsTrigger>
-          <TabsTrigger value="assigned">Assigned</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
-          <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      {renderJobs()}
     </div>
   );
 };
