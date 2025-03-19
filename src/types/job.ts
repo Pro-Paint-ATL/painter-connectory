@@ -33,7 +33,7 @@ export interface Bid {
   status: BidStatus;
   created_at: string;
   updated_at: string;
-  painter?: User;
+  painter?: User | any; // Allow any to handle Supabase join errors
   job?: Job;
 }
 

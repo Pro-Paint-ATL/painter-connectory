@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -70,7 +69,6 @@ const PostJob = () => {
     const files = e.target.files;
     if (!files) return;
 
-    // Check if adding these files would exceed the maximum allowed
     if (images.length + files.length > MAX_IMAGES) {
       toast({
         title: "Too many images",
@@ -84,7 +82,6 @@ const PostJob = () => {
     const newImageUrls: string[] = [];
 
     Array.from(files).forEach((file) => {
-      // Check file size
       if (file.size > MAX_FILE_SIZE) {
         toast({
           title: "File too large",
@@ -94,7 +91,6 @@ const PostJob = () => {
         return;
       }
 
-      // Check file type
       if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
         toast({
           title: "Invalid file type",
@@ -104,7 +100,6 @@ const PostJob = () => {
         return;
       }
 
-      // Create preview URL
       const url = URL.createObjectURL(file);
       newImages.push(file);
       newImageUrls.push(url);
@@ -112,13 +107,11 @@ const PostJob = () => {
 
     setImages((prev) => [...prev, ...newImages]);
     setImageUrls((prev) => [...prev, ...newImageUrls]);
-    e.target.value = ""; // Reset the input
+    e.target.value = "";
   };
 
   const removeImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
-    
-    // Release the object URL to avoid memory leaks
     URL.revokeObjectURL(imageUrls[index]);
     setImageUrls((prev) => prev.filter((_, i) => i !== index));
   };
@@ -131,24 +124,9 @@ const PostJob = () => {
 
     try {
       for (const file of images) {
-        // Create a unique file name
         const fileName = `${Date.now()}-${file.name}`;
-        
-        // Upload the file to the public folder
-        const response = await fetch(file);
-        const blob = await response.blob();
-        const fileObj = new File([blob], fileName, { type: file.type });
-        
-        // Add to public folder
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        
-        // Create a FileList object
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(fileObj);
-        fileInput.files = dataTransfer.files;
-        
-        // The server will handle this file now
+        const fileURL = URL.createObjectURL(file);
+        console.log(`Simulating upload for: ${fileName}`, fileURL);
         uploadedUrls.push(`/lovable-uploads/${fileName}`);
       }
 
@@ -178,10 +156,8 @@ const PostJob = () => {
 
     setIsSubmitting(true);
     try {
-      // Upload images first
       const uploadedImageUrls = await uploadImages();
 
-      // Now create the job post
       const { data, error } = await supabase
         .from("jobs")
         .insert({
@@ -209,7 +185,6 @@ const PostJob = () => {
         description: "Your job has been successfully posted.",
       });
 
-      // Navigate to the job details page
       navigate(`/job/${data.id}`);
     } catch (error: any) {
       console.error("Error posting job:", error);

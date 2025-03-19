@@ -21,7 +21,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { JobWithBids, Bid } from "@/types/job";
+import { JobWithBids, Bid, BidStatus, JobStatus } from "@/types/job";
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -107,17 +107,23 @@ const JobDetails = () => {
 
       if (jobError) throw jobError;
 
+      // Ensure job status is a valid JobStatus
+      const status = validateJobStatus(jobData.status);
+
       // Fetch bids for this job if the user is the customer
       let bids: Bid[] = [];
       if (user?.id === jobData.customer_id) {
         const { data: bidsData, error: bidsError } = await supabase
           .from("bids")
-          .select("*, painter:painter_id(id, name, avatar)")
+          .select("*, painter:profiles!painter_id(id, name, avatar)")
           .eq("job_id", id)
           .order("created_at", { ascending: false });
 
         if (bidsError) throw bidsError;
-        bids = bidsData as Bid[];
+        bids = bidsData.map(bid => ({
+          ...bid,
+          status: validateBidStatus(bid.status)
+        })) as Bid[];
       } 
       // If user is a painter, only fetch their own bid if it exists
       else if (user?.role === "painter") {
@@ -128,10 +134,17 @@ const JobDetails = () => {
           .eq("painter_id", user.id);
 
         if (ownBidError) throw ownBidError;
-        bids = ownBidData as Bid[];
+        bids = ownBidData.map(bid => ({
+          ...bid,
+          status: validateBidStatus(bid.status)
+        })) as Bid[];
       }
 
-      setJob({ ...jobData, bids });
+      setJob({ 
+        ...jobData, 
+        bids, 
+        status 
+      } as JobWithBids);
     } catch (error: any) {
       console.error("Error fetching job details:", error);
       toast({
@@ -142,6 +155,21 @@ const JobDetails = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper functions to validate status values
+  const validateJobStatus = (status: string): JobStatus => {
+    const validStatuses: JobStatus[] = ['open', 'assigned', 'completed', 'cancelled'];
+    return validStatuses.includes(status as JobStatus) 
+      ? (status as JobStatus) 
+      : 'open';
+  };
+
+  const validateBidStatus = (status: string): BidStatus => {
+    const validStatuses: BidStatus[] = ['pending', 'accepted', 'rejected'];
+    return validStatuses.includes(status as BidStatus)
+      ? (status as BidStatus)
+      : 'pending';
   };
 
   const handleSubmitBid = async (values: FormValues) => {
@@ -203,7 +231,11 @@ const JobDetails = () => {
       if (data) {
         setJob(prev => {
           if (!prev) return null;
-          const updatedBids = [...(prev.bids || []), data];
+          const updatedBid: Bid = {
+            ...data,
+            status: validateBidStatus(data.status)
+          };
+          const updatedBids = [...(prev.bids || []), updatedBid];
           return { ...prev, bids: updatedBids };
         });
       }
