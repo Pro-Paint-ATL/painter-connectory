@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -157,7 +156,6 @@ const JobDetails = () => {
     }
   };
 
-  // Helper functions to validate status values
   const validateJobStatus = (status: string): JobStatus => {
     const validStatuses: JobStatus[] = ['open', 'assigned', 'completed', 'cancelled'];
     return validStatuses.includes(status as JobStatus) 
