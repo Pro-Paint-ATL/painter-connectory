@@ -61,18 +61,30 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
             variant: "destructive"
           });
         } 
-        // Handle email sending errors - suggest enabling email settings
+        // Handle email sending errors - attempt to proceed with registration anyway
         else if (error.message.includes("Error sending confirmation email") || error.code === "unexpected_failure") {
-          toast({
-            title: "Email Configuration Issue",
-            description: "Your account was created but there was an issue with the email service. Please check with the administrator to enable email settings in Supabase.",
-            variant: "destructive" // Changed from "warning" to "destructive" to match the allowed variants
-          });
-          
-          // Try to return the user anyway so they can try logging in
+          // If the user was created but email failed, we still have a user object
           if (data?.user) {
+            // Format user data for our app
             const formattedUser = await formatUser(data.user);
+            
+            // Display warning about email config
+            toast({
+              title: "Registration Successful",
+              description: "Your account was created, but there was an issue sending the verification email. You can still proceed to log in.",
+              variant: "destructive" 
+            });
+            
+            // Update user in context
+            setUser(formattedUser);
+            setIsLoading(false);
             return formattedUser;
+          } else {
+            toast({
+              title: "Registration Error",
+              description: "There was an issue with registration. Please try logging in or contact support.",
+              variant: "destructive"
+            });
           }
         } 
         else {
