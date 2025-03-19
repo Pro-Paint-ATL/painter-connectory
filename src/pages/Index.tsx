@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -57,27 +56,30 @@ const Index = () => {
     navigate(path);
   };
 
-  // Helper function to add text shadow to each letter while preserving spaces
   const addLetterShadow = (text: string) => {
-    return text.split(' ').map((word, wordIndex) => (
-      <React.Fragment key={`word-${wordIndex}`}>
-        {word.split('').map((letter, letterIndex) => (
-          <span 
-            key={`letter-${wordIndex}-${letterIndex}`} 
-            className="inline-block" 
-            style={{ textShadow: '1px 1px 1px #0EA5E9' }}
-          >
-            {letter}
-          </span>
-        ))}
-        {wordIndex < text.split(' ').length - 1 && <span> </span>}
-      </React.Fragment>
-    ));
+    return text.split(/(\s+)/).map((part, partIndex) => {
+      if (/^\s+$/.test(part)) {
+        return <span key={`space-${partIndex}`}>{part}</span>;
+      }
+      
+      return (
+        <React.Fragment key={`word-${partIndex}`}>
+          {part.split('').map((letter, letterIndex) => (
+            <span 
+              key={`letter-${partIndex}-${letterIndex}`} 
+              className="inline-block" 
+              style={{ textShadow: '1px 1px 1px #0EA5E9' }}
+            >
+              {letter}
+            </span>
+          ))}
+        </React.Fragment>
+      );
+    });
   };
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section with Background Image */}
       <section className="relative py-20 md:py-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-secondary/70 mix-blend-overlay -z-10" />
         <div className="absolute inset-0 -z-20">
@@ -133,7 +135,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* How It Works */}
       <section className="py-16 md:py-24 bg-background">
         <div className="container px-4 mx-auto">
           <div className="text-center mb-16">
@@ -163,7 +164,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Features with Image */}
       <section className="py-16 md:py-24 bg-secondary/20">
         <div className="container px-4 mx-auto">
           <div className="mb-12">
@@ -233,7 +233,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Testimonials */}
       <section className="py-16 md:py-24 bg-background relative">
         <div className="absolute right-0 top-0 h-full w-1/3 opacity-10 pointer-events-none">
           <img 
@@ -270,7 +269,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA with Background Image */}
       <section className="py-16 md:py-24 relative">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/90 to-secondary/80 -z-10" />
         <div className="absolute inset-0 -z-20">
