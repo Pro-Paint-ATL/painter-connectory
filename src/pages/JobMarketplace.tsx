@@ -23,6 +23,14 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from "@/components/ui/pagination";
 
 const JobMarketplace = () => {
   const navigate = useNavigate();
@@ -35,6 +43,10 @@ const JobMarketplace = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [projectTypeFilter, setProjectTypeFilter] = useState<string>("");
   const [activeTab, setActiveTab] = useState("all");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const jobsPerPage = 9;
 
   useEffect(() => {
     if (!user) return;
@@ -117,6 +129,8 @@ const JobMarketplace = () => {
     }
 
     setFilteredJobs(filtered);
+    // Reset to first page when filters change
+    setCurrentPage(1);
   };
 
   const ProjectTypes = [
@@ -135,6 +149,48 @@ const JobMarketplace = () => {
 
   const navigateToJobDetails = (jobId: string) => {
     navigate(`/job/${jobId}`);
+  };
+
+  // Get current page of jobs
+  const indexOfLastJob = currentPage * jobsPerPage;
+  const indexOfFirstJob = indexOfLastJob - jobsPerPage;
+  const currentJobs = filteredJobs.slice(indexOfFirstJob, indexOfLastJob);
+  const totalPages = Math.ceil(filteredJobs.length / jobsPerPage);
+
+  // Change page
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+
+  const renderPagination = () => {
+    if (filteredJobs.length <= jobsPerPage) return null;
+
+    return (
+      <Pagination className="mt-8">
+        <PaginationContent>
+          {currentPage > 1 && (
+            <PaginationItem>
+              <PaginationPrevious onClick={() => paginate(currentPage - 1)} />
+            </PaginationItem>
+          )}
+          
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
+            <PaginationItem key={number}>
+              <PaginationLink 
+                isActive={currentPage === number}
+                onClick={() => paginate(number)}
+              >
+                {number}
+              </PaginationLink>
+            </PaginationItem>
+          ))}
+          
+          {currentPage < totalPages && (
+            <PaginationItem>
+              <PaginationNext onClick={() => paginate(currentPage + 1)} />
+            </PaginationItem>
+          )}
+        </PaginationContent>
+      </Pagination>
+    );
   };
 
   const renderJobCards = () => {
@@ -168,7 +224,7 @@ const JobMarketplace = () => {
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredJobs.map((job) => (
+        {currentJobs.map((job) => (
           <Card key={job.id} className="overflow-hidden h-full flex flex-col">
             <CardHeader className="pb-3">
               <div className="flex justify-between items-start">
@@ -324,6 +380,7 @@ const JobMarketplace = () => {
       </Tabs>
 
       {renderJobCards()}
+      {renderPagination()}
     </div>
   );
 };
