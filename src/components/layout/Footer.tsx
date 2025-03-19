@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import ImageBackgroundRemover from "../ui/ImageBackgroundRemover";
 
 interface City {
   city: string;
@@ -34,10 +33,6 @@ const Footer = () => {
     setCurrentCity(randomCity);
   }, []);
 
-  const handleProcessedImage = (newImageUrl: string) => {
-    setLogoUrl(newImageUrl);
-  };
-
   return (
     <footer className="bg-secondary/50 backdrop-blur-sm border-t">
       <div className="container px-4 py-10 md:py-12 mx-auto">
@@ -51,12 +46,6 @@ const Footer = () => {
               />
               <span className="font-semibold text-xl">Pro Paint {currentCity.code}</span>
             </Link>
-            {user?.role === 'admin' && (
-              <ImageBackgroundRemover 
-                imageUrl="/lovable-uploads/c5bc4b6f-5600-448b-bd75-e1cb336175db.png"
-                onProcessed={handleProcessedImage}
-              />
-            )}
             <p className="text-muted-foreground max-w-xs">
               Connecting quality painters with customers for beautiful results in {currentCity.city}, {currentCity.state}.
             </p>
