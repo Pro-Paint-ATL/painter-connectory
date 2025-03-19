@@ -57,6 +57,15 @@ const Index = () => {
     navigate(path);
   };
 
+  // Helper function to wrap each letter with a border
+  const wrapLettersWithBorder = (text: string) => {
+    return text.split('').map((letter, index) => (
+      <span key={index} className="border border-primary px-[1px] mx-[1px] inline-block">
+        {letter}
+      </span>
+    ));
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section with Background Image */}
@@ -83,9 +92,9 @@ const Index = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-xl text-white/90 mb-8 max-w-2xl mx-auto border border-primary p-4 rounded-md"
+              className="text-xl text-white/90 mb-8 max-w-2xl mx-auto"
             >
-              Connect with skilled painters in your area and get accurate estimates for your painting projects.
+              {wrapLettersWithBorder("Connect with skilled painters in your area and get accurate estimates for your painting projects.")}
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
