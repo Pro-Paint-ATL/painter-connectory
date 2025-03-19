@@ -253,9 +253,9 @@ const ManageJobs = () => {
 
   return (
     <div className="relative min-h-screen">
-      {/* Background Image */}
+      {/* Background Image - removed opacity-75 */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-75 -z-10"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat -z-10"
         style={{ backgroundImage: 'url("/public/lovable-uploads/c5bc4b6f-5600-448b-bd75-e1cb336175db.png")' }}
       />
       
