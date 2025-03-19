@@ -10,12 +10,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { Clock, FileEdit, Settings, LogOut, Plus } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import ProfileBackgroundUploader from "@/components/ui/ProfileBackgroundUploader";
 
 const CustomerProfile = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
   const { user, logout, updateUserProfile } = useAuth();
   const navigate = useNavigate();
+  const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null>(null);
   
   useEffect(() => {
     if (user?.role === "painter") {
@@ -132,7 +134,7 @@ const CustomerProfile = () => {
     <div className="relative min-h-screen">
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat -z-10"
-        style={{ backgroundImage: 'url("/public/lovable-uploads/f4b62cc6-109b-4647-b004-0ebc8236d06d.png")' }}
+        style={{ backgroundImage: backgroundImageUrl ? `url("${backgroundImageUrl}")` : 'none' }}
       />
       
       <div className="container mx-auto py-8 px-4 relative z-10">
@@ -243,6 +245,8 @@ const CustomerProfile = () => {
                         <Label htmlFor="bio">About Me</Label>
                         <Textarea id="bio" name="bio" placeholder="Tell painters a bit about yourself or your project needs" defaultValue={user.location?.bio || ''} />
                       </div>
+                      
+                      <ProfileBackgroundUploader onImageUploaded={setBackgroundImageUrl} />
                       
                       <Button type="submit">Save Changes</Button>
                     </form>
