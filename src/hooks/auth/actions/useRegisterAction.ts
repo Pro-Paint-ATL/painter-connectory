@@ -72,8 +72,8 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
             
             // Display information about successful registration despite email issues
             toast({
-              title: "Registration Successful",
-              description: "Your account was created successfully. You can now log in with your credentials.",
+              title: "SMTP Configuration Issue",
+              description: "Your account was created successfully, but there was an issue with the SMTP configuration. You can log in with your credentials.",
               variant: "default" 
             });
             
