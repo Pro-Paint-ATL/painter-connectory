@@ -57,16 +57,21 @@ const Index = () => {
     navigate(path);
   };
 
-  // Helper function to add text shadow to each letter
+  // Helper function to add text shadow to each letter while preserving spaces
   const addLetterShadow = (text: string) => {
-    return text.split('').map((letter, index) => (
-      <span 
-        key={index} 
-        className="inline-block" 
-        style={{ textShadow: '1px 1px 1px #0EA5E9' }}
-      >
-        {letter}
-      </span>
+    return text.split(' ').map((word, wordIndex) => (
+      <React.Fragment key={`word-${wordIndex}`}>
+        {word.split('').map((letter, letterIndex) => (
+          <span 
+            key={`letter-${wordIndex}-${letterIndex}`} 
+            className="inline-block" 
+            style={{ textShadow: '1px 1px 1px #0EA5E9' }}
+          >
+            {letter}
+          </span>
+        ))}
+        {wordIndex < text.split(' ').length - 1 && <span> </span>}
+      </React.Fragment>
     ));
   };
 
