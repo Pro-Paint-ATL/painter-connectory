@@ -20,10 +20,10 @@ const NavItems = ({ items, onNavigate, className = "" }: NavItemsProps) => {
           key={index}
           variant="ghost"
           onClick={() => onNavigate(item.href)}
-          className="flex items-center"
+          className="flex items-center gap-2"
         >
           {item.icon}
-          {item.label}
+          <span>{item.label}</span>
         </Button>
       ))}
     </nav>
