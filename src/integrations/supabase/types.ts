@@ -9,6 +9,44 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      bids: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          job_id: string
+          painter_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          job_id: string
+          painter_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          job_id?: string
+          painter_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bids_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_agreements: {
         Row: {
           agreement_date: string
@@ -151,6 +189,63 @@ export type Database = {
           time?: string
           total_amount?: number
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      jobs: {
+        Row: {
+          address: string
+          budget_range: string | null
+          city: string
+          created_at: string
+          customer_id: string
+          description: string
+          desired_start_date: string | null
+          id: string
+          images: string[]
+          project_type: string
+          square_footage: number | null
+          state: string
+          status: string
+          title: string
+          updated_at: string
+          zip_code: string
+        }
+        Insert: {
+          address: string
+          budget_range?: string | null
+          city: string
+          created_at?: string
+          customer_id: string
+          description: string
+          desired_start_date?: string | null
+          id?: string
+          images?: string[]
+          project_type: string
+          square_footage?: number | null
+          state: string
+          status?: string
+          title: string
+          updated_at?: string
+          zip_code: string
+        }
+        Update: {
+          address?: string
+          budget_range?: string | null
+          city?: string
+          created_at?: string
+          customer_id?: string
+          description?: string
+          desired_start_date?: string | null
+          id?: string
+          images?: string[]
+          project_type?: string
+          square_footage?: number | null
+          state?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          zip_code?: string
         }
         Relationships: []
       }

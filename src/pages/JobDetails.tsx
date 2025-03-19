@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,7 +16,6 @@ import {
   Paintbrush,
   Send,
   Ruler, 
-  Swatch,
   X 
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -30,7 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Carousel,
@@ -855,7 +854,7 @@ const JobDetails = () => {
                   {job.budget_range && (
                     <div>
                       <div className="flex items-center mb-2">
-                        <Swatch className="h-4 w-4 mr-2 text-primary" />
+                        <DollarSign className="h-4 w-4 mr-2 text-primary" />
                         <span className="text-sm font-medium">Budget Range</span>
                       </div>
                       <p>{job.budget_range}</p>

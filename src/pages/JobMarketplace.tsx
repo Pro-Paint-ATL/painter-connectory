@@ -12,7 +12,7 @@ import {
   MapPin, 
   Paintbrush, 
   Search,
-  Swatch,
+  DollarSign,
   Ruler 
 } from "lucide-react";
 
@@ -194,7 +194,7 @@ const JobMarketplace = () => {
                 
                 {job.budget_range && (
                   <div className="flex items-center mb-2">
-                    <Swatch className="h-4 w-4 mr-2 text-primary" />
+                    <DollarSign className="h-4 w-4 mr-2 text-primary" />
                     <span className="text-sm">{job.budget_range}</span>
                   </div>
                 )}

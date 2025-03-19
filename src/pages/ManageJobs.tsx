@@ -4,45 +4,26 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { format } from "date-fns";
-import { 
-  CalendarIcon, 
-  Clock, 
-  Edit, 
-  Loader2, 
-  MapPin, 
-  Plus, 
-  Paintbrush, 
-  Trash2,
-  Users
-} from "lucide-react";
 import { Job } from "@/types/job";
+import { format } from "date-fns";
+import { Loader2, PlusCircle, Search, Calendar, MapPin, Paintbrush } from "lucide-react";
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Separator } from "@/components/ui/separator";
 
 const ManageJobs = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("active");
-  const [jobToDelete, setJobToDelete] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
     if (!user) {
@@ -51,27 +32,20 @@ const ManageJobs = () => {
     }
 
     if (user.role !== "customer") {
-      toast({
-        title: "Access Denied",
-        description: "Only customers can access the job management page.",
-        variant: "destructive",
-      });
       navigate("/");
       return;
     }
 
     fetchJobs();
-  }, [user, navigate]);
+  }, [user]);
 
   const fetchJobs = async () => {
-    if (!user) return;
-
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from("jobs")
         .select("*, bids(count)")
-        .eq("customer_id", user.id)
+        .eq("customer_id", user?.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -82,6 +56,7 @@ const ManageJobs = () => {
       })) as Job[];
 
       setJobs(processedJobs);
+      setFilteredJobs(processedJobs);
     } catch (error: any) {
       console.error("Error fetching jobs:", error);
       toast({
@@ -94,81 +69,82 @@ const ManageJobs = () => {
     }
   };
 
-  const handleDeleteJob = async () => {
-    if (!jobToDelete) return;
+  useEffect(() => {
+    applyFilters();
+  }, [searchQuery, activeTab, jobs]);
 
-    setIsDeleting(true);
+  const applyFilters = () => {
+    let filtered = [...jobs];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        job =>
+          job.title.toLowerCase().includes(query) ||
+          job.description.toLowerCase().includes(query) ||
+          job.city.toLowerCase().includes(query) ||
+          job.state.toLowerCase().includes(query) ||
+          job.project_type.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply tab filter
+    if (activeTab !== "all") {
+      filtered = filtered.filter(job => job.status === activeTab);
+    }
+
+    setFilteredJobs(filtered);
+  };
+
+  const handleDeleteJob = async (jobId: string) => {
+    if (!confirm("Are you sure you want to delete this job? This cannot be undone.")) {
+      return;
+    }
+
     try {
+      // Update job status to cancelled rather than deleting
       const { error } = await supabase
         .from("jobs")
-        .delete()
-        .eq("id", jobToDelete)
+        .update({ status: "cancelled" })
+        .eq("id", jobId)
         .eq("customer_id", user?.id);
 
       if (error) throw error;
 
       toast({
-        title: "Job Deleted",
-        description: "Your job has been deleted successfully.",
+        title: "Job cancelled",
+        description: "Your job has been cancelled successfully.",
       });
 
-      // Update local state
-      setJobs(prevJobs => prevJobs.filter(job => job.id !== jobToDelete));
+      // Refresh the job list
+      fetchJobs();
     } catch (error: any) {
-      console.error("Error deleting job:", error);
+      console.error("Error cancelling job:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to delete job. Please try again.",
+        description: error.message || "Failed to cancel job. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsDeleting(false);
-      setJobToDelete(null);
     }
   };
 
-  const renderJobStatus = (status: string) => {
-    let statusText = status.charAt(0).toUpperCase() + status.slice(1);
-    let variant: "default" | "secondary" | "destructive" | "outline" = "secondary";
-
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case "open":
-        statusText = "Open for Bids";
-        variant = "default";
-        break;
-      case "assigned":
-        statusText = "Painter Assigned";
-        variant = "secondary";
-        break;
-      case "completed":
-        statusText = "Completed";
-        variant = "outline";
-        break;
-      case "cancelled":
-        statusText = "Cancelled";
-        variant = "destructive";
-        break;
-    }
-
-    return <Badge variant={variant}>{statusText}</Badge>;
-  };
-
-  const filteredJobs = () => {
-    switch (activeTab) {
-      case "active":
-        return jobs.filter(job => job.status === "open" || job.status === "assigned");
-      case "completed":
-        return jobs.filter(job => job.status === "completed");
-      case "cancelled":
-        return jobs.filter(job => job.status === "cancelled");
+      case 'open':
+        return <Badge>Open for Bids</Badge>;
+      case 'assigned':
+        return <Badge variant="secondary">Painter Assigned</Badge>;
+      case 'completed':
+        return <Badge variant="outline">Completed</Badge>;
+      case 'cancelled':
+        return <Badge variant="destructive">Cancelled</Badge>;
       default:
-        return jobs;
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
-  const renderJobCards = () => {
-    const filtered = filteredJobs();
-
+  const renderJobs = () => {
     if (isLoading) {
       return (
         <div className="flex justify-center items-center h-64">
@@ -178,18 +154,28 @@ const ManageJobs = () => {
       );
     }
 
-    if (filtered.length === 0) {
+    if (filteredJobs.length === 0) {
       return (
         <div className="text-center p-8">
           <p className="text-muted-foreground mb-4">
-            {activeTab === "active" 
-              ? "You don't have any active jobs. Create a new job to get started!" 
-              : "No jobs found in this category."}
+            {searchQuery || activeTab !== "all"
+              ? "No jobs match your filters"
+              : "You haven't posted any jobs yet"}
           </p>
-          {activeTab === "active" && (
+          {searchQuery || activeTab !== "all" ? (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSearchQuery("");
+                setActiveTab("all");
+              }}
+            >
+              Clear Filters
+            </Button>
+          ) : (
             <Button onClick={() => navigate("/post-job")}>
-              <Plus className="mr-2 h-4 w-4" />
-              Post a New Job
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Post Your First Job
             </Button>
           )}
         </div>
@@ -197,15 +183,15 @@ const ManageJobs = () => {
     }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.map((job) => (
-          <Card key={job.id} className="overflow-hidden flex flex-col">
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-start mb-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {filteredJobs.map((job) => (
+          <Card key={job.id} className="overflow-hidden h-full flex flex-col">
+            <CardHeader className="pb-3">
+              <div className="flex justify-between items-start">
                 <CardTitle className="text-xl line-clamp-2">{job.title}</CardTitle>
-                {renderJobStatus(job.status)}
+                {getStatusBadge(job.status)}
               </div>
-              <div className="flex items-center text-sm text-muted-foreground">
+              <div className="flex items-center text-sm text-muted-foreground mt-1">
                 <MapPin className="h-4 w-4 mr-1" />
                 <span>
                   {job.city}, {job.state}
@@ -214,77 +200,45 @@ const ManageJobs = () => {
             </CardHeader>
 
             <CardContent className="pb-2 flex-grow">
-              <div className="flex items-center mb-2">
-                <Paintbrush className="h-4 w-4 mr-2 text-primary" />
-                <span className="text-sm">{job.project_type}</span>
+              <div className="mb-4">
+                <div className="flex items-center mb-2">
+                  <Paintbrush className="h-4 w-4 mr-2 text-primary" />
+                  <span className="text-sm font-medium">{job.project_type}</span>
+                </div>
+                
+                {job.desired_start_date && (
+                  <div className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-2 text-primary" />
+                    <span className="text-sm">
+                      Start: {format(new Date(job.desired_start_date), "MMM d, yyyy")}
+                    </span>
+                  </div>
+                )}
               </div>
               
-              <div className="flex items-center mb-2">
-                <Users className="h-4 w-4 mr-2 text-primary" />
-                <span className="text-sm">
-                  {job.bid_count} bid{job.bid_count !== 1 ? 's' : ''}
-                </span>
-              </div>
+              <Separator className="my-3" />
               
-              <div className="flex items-center">
-                <CalendarIcon className="h-4 w-4 mr-2 text-primary" />
-                <span className="text-sm">
-                  {job.desired_start_date 
-                    ? `Start: ${format(new Date(job.desired_start_date), "MMM d, yyyy")}` 
-                    : "No start date specified"}
-                </span>
-              </div>
-              
-              <div className="mt-4">
-                <p className="text-sm line-clamp-2">{job.description}</p>
-              </div>
+              <p className="text-sm line-clamp-3">{job.description}</p>
             </CardContent>
 
-            <CardFooter className="pt-2 flex-shrink-0">
+            <CardFooter className="pt-0">
               <div className="w-full flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">
-                  Posted {format(new Date(job.created_at), "MMM d, yyyy")}
-                </span>
+                <Badge variant="outline" className="font-normal">
+                  {job.bid_count} {job.bid_count === 1 ? "bid" : "bids"}
+                </Badge>
                 <div className="flex gap-2">
                   {job.status === "open" && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-8 px-2">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Job</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete this job? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => {
-                              setJobToDelete(job.id);
-                              handleDeleteJob();
-                            }}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            {isDeleting && jobToDelete === job.id ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Deleting...
-                              </>
-                            ) : (
-                              "Delete"
-                            )}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => handleDeleteJob(job.id)}
+                    >
+                      Cancel
+                    </Button>
                   )}
                   <Button 
-                    onClick={() => navigate(`/job/${job.id}`)}
                     size="sm"
+                    onClick={() => navigate(`/job/${job.id}`)}
                   >
                     View Details
                   </Button>
@@ -303,29 +257,50 @@ const ManageJobs = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Manage Your Jobs</h1>
           <p className="text-muted-foreground">
-            Post jobs, review bids, and manage your painting projects
+            View, edit, and manage all your posted painting jobs
           </p>
         </div>
         <Button onClick={() => navigate("/post-job")}>
-          <Plus className="mr-2 h-4 w-4" />
-          Post a New Job
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Post New Job
+        </Button>
+      </div>
+
+      <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="relative w-full md:w-80">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search your jobs..."
+            className="w-full pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        <Button 
+          variant="outline" 
+          onClick={fetchJobs}
+        >
+          Refresh
         </Button>
       </div>
 
       <Tabs 
-        defaultValue="active" 
-        value={activeTab} 
+        defaultValue="all" 
+        value={activeTab}
         onValueChange={setActiveTab}
         className="mb-6"
       >
         <TabsList>
-          <TabsTrigger value="active">Active Jobs</TabsTrigger>
+          <TabsTrigger value="all">All Jobs</TabsTrigger>
+          <TabsTrigger value="open">Open Jobs</TabsTrigger>
+          <TabsTrigger value="assigned">Assigned</TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
           <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
         </TabsList>
       </Tabs>
 
-      {renderJobCards()}
+      {renderJobs()}
     </div>
   );
 };
