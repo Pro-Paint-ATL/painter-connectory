@@ -62,6 +62,7 @@ const JobDetails = () => {
   const [selectedBidId, setSelectedBidId] = useState<string | null>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isUpdatingBidStatus, setIsUpdatingBidStatus] = useState(false);
+  const [painterProfiles, setPainterProfiles] = useState<{[key: string]: any}>({});
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -112,17 +113,38 @@ const JobDetails = () => {
       // Fetch bids for this job if the user is the customer
       let bids: Bid[] = [];
       if (user?.id === jobData.customer_id) {
+        // Fix: Don't use join syntax, fetch bids separately 
         const { data: bidsData, error: bidsError } = await supabase
           .from("bids")
-          .select("*, painter:profiles!painter_id(id, name, avatar)")
+          .select("*")
           .eq("job_id", id)
           .order("created_at", { ascending: false });
 
         if (bidsError) throw bidsError;
+        
         bids = bidsData.map(bid => ({
           ...bid,
           status: validateBidStatus(bid.status)
         })) as Bid[];
+        
+        // Fetch painter profiles separately
+        const painterIds = bids.map(bid => bid.painter_id);
+        if (painterIds.length > 0) {
+          const { data: painters, error: paintersError } = await supabase
+            .from("profiles")
+            .select("id, name, avatar")
+            .in("id", painterIds);
+            
+          if (!paintersError && painters) {
+            // Create a lookup object for painter profiles
+            const profilesLookup = painters.reduce((acc, painter) => {
+              acc[painter.id] = painter;
+              return acc;
+            }, {} as {[key: string]: any});
+            
+            setPainterProfiles(profilesLookup);
+          }
+        }
       } 
       // If user is a painter, only fetch their own bid if it exists
       else if (user?.role === "painter") {
@@ -154,6 +176,11 @@ const JobDetails = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Get painter profile from the lookup object
+  const getPainterProfile = (painterId: string) => {
+    return painterProfiles[painterId] || { name: "Painter", avatar: null };
   };
 
   const validateJobStatus = (status: string): JobStatus => {
@@ -640,7 +667,7 @@ const JobDetails = () => {
               </h3>
               <p className="text-sm text-green-700 mb-3">
                 You've accepted a bid from{" "}
-                <span className="font-semibold">{(acceptedBid.painter as any)?.name || "a painter"}</span>{" "}
+                <span className="font-semibold">{getPainterProfile(acceptedBid.painter_id).name}</span>{" "}
                 for ${acceptedBid.amount.toFixed(2)}.
               </p>
             </div>
@@ -662,46 +689,49 @@ const JobDetails = () => {
             <TabsContent value="pending" className="space-y-4 mt-4">
               {job.bids
                 .filter(bid => bid.status === "pending")
-                .map((bid) => (
-                  <div 
-                    key={bid.id} 
-                    className="border rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between"
-                  >
-                    <div className="mb-4 md:mb-0">
-                      <div className="flex items-center mb-1">
-                        <p className="font-semibold">
-                          {(bid.painter as any)?.name || "Painter"}
-                        </p>
+                .map((bid) => {
+                  const painterProfile = getPainterProfile(bid.painter_id);
+                  return (
+                    <div 
+                      key={bid.id} 
+                      className="border rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between"
+                    >
+                      <div className="mb-4 md:mb-0">
+                        <div className="flex items-center mb-1">
+                          <p className="font-semibold">
+                            {painterProfile.name}
+                          </p>
+                        </div>
+                        <div className="text-2xl font-bold mb-2">
+                          ${bid.amount.toFixed(2)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Submitted {format(new Date(bid.created_at), "MMM d, yyyy")}
+                        </div>
                       </div>
-                      <div className="text-2xl font-bold mb-2">
-                        ${bid.amount.toFixed(2)}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Submitted {format(new Date(bid.created_at), "MMM d, yyyy")}
+                      
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline" 
+                          onClick={() => {
+                            setSelectedBidId(bid.id);
+                            setShowAcceptDialog(true);
+                          }}
+                          disabled={isUpdatingBidStatus}
+                        >
+                          Accept
+                        </Button>
+                        <Button 
+                          variant="destructive"
+                          onClick={() => handleRejectBid(bid.id)}
+                          disabled={isUpdatingBidStatus}
+                        >
+                          Decline
+                        </Button>
                       </div>
                     </div>
-                    
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline" 
-                        onClick={() => {
-                          setSelectedBidId(bid.id);
-                          setShowAcceptDialog(true);
-                        }}
-                        disabled={isUpdatingBidStatus}
-                      >
-                        Accept
-                      </Button>
-                      <Button 
-                        variant="destructive"
-                        onClick={() => handleRejectBid(bid.id)}
-                        disabled={isUpdatingBidStatus}
-                      >
-                        Decline
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               
               {pendingBids === 0 && (
                 <p className="text-muted-foreground py-4 text-center">
@@ -715,7 +745,7 @@ const JobDetails = () => {
                 <div className="border rounded-lg p-4">
                   <div className="flex items-center mb-2">
                     <p className="font-semibold">
-                      {(acceptedBid.painter as any)?.name || "Painter"}
+                      {getPainterProfile(acceptedBid.painter_id).name}
                     </p>
                   </div>
                   <div className="text-2xl font-bold mb-2">
@@ -735,21 +765,24 @@ const JobDetails = () => {
             <TabsContent value="rejected" className="space-y-4 mt-4">
               {job.bids
                 .filter(bid => bid.status === "rejected")
-                .map((bid) => (
-                  <div key={bid.id} className="border rounded-lg p-4">
-                    <div className="flex items-center mb-2">
-                      <p className="font-semibold">
-                        {(bid.painter as any)?.name || "Painter"}
-                      </p>
+                .map((bid) => {
+                  const painterProfile = getPainterProfile(bid.painter_id);
+                  return (
+                    <div key={bid.id} className="border rounded-lg p-4">
+                      <div className="flex items-center mb-2">
+                        <p className="font-semibold">
+                          {painterProfile.name}
+                        </p>
+                      </div>
+                      <div className="text-xl font-semibold mb-2">
+                        ${bid.amount.toFixed(2)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Rejected on {format(new Date(bid.updated_at), "MMM d, yyyy")}
+                      </div>
                     </div>
-                    <div className="text-xl font-semibold mb-2">
-                      ${bid.amount.toFixed(2)}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Rejected on {format(new Date(bid.updated_at), "MMM d, yyyy")}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               
               {job.bids.filter(bid => bid.status === "rejected").length === 0 && (
                 <p className="text-muted-foreground py-4 text-center">
