@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -16,6 +17,12 @@ const NotFound = lazy(() => import("@/pages/NotFound"));
 const PainterSubscription = lazy(() => import("@/pages/PainterSubscription"));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const SubscriptionManagement = lazy(() => import("@/pages/SubscriptionManagement"));
+
+// Job Marketplace pages
+const PostJob = lazy(() => import("@/pages/PostJob"));
+const JobMarketplace = lazy(() => import("@/pages/JobMarketplace"));
+const JobDetails = lazy(() => import("@/pages/JobDetails"));
+const ManageJobs = lazy(() => import("@/pages/ManageJobs"));
 
 // Company pages
 const AboutUs = lazy(() => import("@/pages/AboutUs"));
@@ -56,6 +63,13 @@ const AppRoutes = () => {
     return <>{children}</>;
   };
 
+  const CustomerRoute = ({ children }: { children: React.ReactNode }) => {
+    if (!user || user.role !== "customer") {
+      return <Navigate to="/" replace />;
+    }
+    return <>{children}</>;
+  };
+
   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     if (!isAuthenticated) {
       return <Navigate to="/" replace />;
@@ -78,6 +92,40 @@ const AppRoutes = () => {
       <Route path="/terms" element={<TermsOfService />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/cookies" element={<CookiePolicy />} />
+      
+      {/* Job Marketplace Routes */}
+      <Route 
+        path="/post-job" 
+        element={
+          <CustomerRoute>
+            <PostJob />
+          </CustomerRoute>
+        } 
+      />
+      <Route 
+        path="/marketplace" 
+        element={
+          <PainterRoute>
+            <JobMarketplace />
+          </PainterRoute>
+        } 
+      />
+      <Route 
+        path="/job/:id" 
+        element={
+          <ProtectedRoute>
+            <JobDetails />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/manage-jobs" 
+        element={
+          <CustomerRoute>
+            <ManageJobs />
+          </CustomerRoute>
+        } 
+      />
       
       <Route 
         path="/profile" 
