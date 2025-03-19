@@ -61,18 +61,20 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
             variant: "destructive"
           });
         } 
-        // Handle email sending errors - attempt to proceed with registration anyway
+        // Handle email sending errors - allow registration to continue despite email errors
         else if (error.message.includes("Error sending confirmation email") || error.code === "unexpected_failure") {
-          // If the user was created but email failed, we still have a user object
+          // If the user was created but email failed, we can still use the user
           if (data?.user) {
+            console.log("User created despite email error, attempting to proceed with registration");
+            
             // Format user data for our app
             const formattedUser = await formatUser(data.user);
             
-            // Display warning about email config
+            // Display information about successful registration despite email issues
             toast({
               title: "Registration Successful",
-              description: "Your account was created, but there was an issue sending the verification email. You can still proceed to log in.",
-              variant: "destructive" 
+              description: "Your account was created successfully. You can now log in with your credentials.",
+              variant: "default" 
             });
             
             // Update user in context
@@ -81,8 +83,8 @@ export const useRegisterAction = (user: User | null, setUser: (user: User | null
             return formattedUser;
           } else {
             toast({
-              title: "Registration Error",
-              description: "There was an issue with registration. Please try logging in or contact support.",
+              title: "Registration Issue",
+              description: "Your account might have been created but there was an email configuration issue. Please try logging in with your credentials.",
               variant: "destructive"
             });
           }
