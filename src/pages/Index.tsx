@@ -106,7 +106,7 @@ const Index = () => {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="text-2xl text-white/90 mb-8 max-w-2xl mx-auto"
             >
-              {addLetterShadow("Connect with skilled painters in your area and get accurate estimates for your painting projects.")}
+              {addLetterShadow("Connect with skilled painters in your area and get accurate\nestimates for your painting projects.")}
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
