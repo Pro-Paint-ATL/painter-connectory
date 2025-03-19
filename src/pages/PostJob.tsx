@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -124,9 +125,16 @@ const PostJob = () => {
 
     try {
       for (const file of images) {
+        // Fix: Don't try to fetch the file directly
+        // Instead, create a simulated URL for demo purposes
         const fileName = `${Date.now()}-${file.name}`;
+        
+        // Create a blob URL for the file
         const fileURL = URL.createObjectURL(file);
         console.log(`Simulating upload for: ${fileName}`, fileURL);
+        
+        // In a real implementation, you would upload to Supabase storage
+        // For now, we'll just create a fake URL in the public folder
         uploadedUrls.push(`/lovable-uploads/${fileName}`);
       }
 
