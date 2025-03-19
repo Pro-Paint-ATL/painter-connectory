@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -9,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, FileEdit, Settings, LogOut } from "lucide-react";
+import { Clock, FileEdit, Settings, LogOut, Plus } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 const CustomerProfile = () => {
@@ -35,13 +34,12 @@ const CustomerProfile = () => {
     const bio = formData.get('bio') as string;
     
     if (user) {
-      // Get existing location data or create new object
       const locationData = {
         address,
         latitude: user.location?.latitude || 0,
         longitude: user.location?.longitude || 0,
-        phone, // Added phone field
-        bio    // Added bio field
+        phone,
+        bio
       };
       
       try {
@@ -137,6 +135,16 @@ const CustomerProfile = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
+        <div className="flex justify-end mb-6">
+          <Button 
+            onClick={() => navigate('/post-job')} 
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Post a Job
+          </Button>
+        </div>
+        
         <div className="flex flex-col md:flex-row gap-6">
           <div className="w-full md:w-1/3">
             <Card className="sticky top-6">
@@ -176,6 +184,15 @@ const CustomerProfile = () => {
                   >
                     <Settings className="mr-2 h-4 w-4" />
                     Account Settings
+                  </Button>
+                  
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start"
+                    onClick={() => navigate("/manage-jobs")}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Manage My Jobs
                   </Button>
                 </div>
                 

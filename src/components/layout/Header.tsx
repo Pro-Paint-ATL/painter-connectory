@@ -1,50 +1,13 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { Calculator, PaintBucket } from "lucide-react";
+import { Calculator, PaintBucket, Plus, Briefcase, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Logo from "../navigation/Logo";
 import NavItems from "../navigation/NavItems";
 import UserMenu from "../navigation/UserMenu";
 import MobileMenu from "../navigation/MobileMenu";
 import AuthButtons from "../auth/AuthButtons";
-
-const navItems = [
-  {
-    label: "Find Painters",
-    href: "/find-painters",
-    icon: <PaintBucket className="h-4 w-4 mr-2" />,
-  },
-  {
-    label: "Estimate Calculator",
-    href: "/calculator",
-    icon: <Calculator className="h-4 w-4 mr-2" />,
-  },
-];
-
-const majorCities = [
-  { city: "Miami", state: "FL", code: "MIA" },
-  { city: "Atlanta", state: "GA", code: "ATL" },
-  { city: "New York", state: "NY", code: "NY" },
-  { city: "Los Angeles", state: "CA", code: "LA" },
-  { city: "Chicago", state: "IL", code: "CHI" },
-  { city: "Dallas", state: "TX", code: "DAL" },
-  { city: "Houston", state: "TX", code: "HOU" },
-  { city: "Phoenix", state: "AZ", code: "PHX" },
-  { city: "Philadelphia", state: "PA", code: "PHL" },
-  { city: "San Antonio", state: "TX", code: "SAT" },
-  { city: "San Diego", state: "CA", code: "SD" },
-  { city: "San Francisco", state: "CA", code: "SF" },
-  { city: "Seattle", state: "WA", code: "SEA" },
-  { city: "Denver", state: "CO", code: "DEN" },
-  { city: "Boston", state: "MA", code: "BOS" },
-  { city: "Las Vegas", state: "NV", code: "LV" },
-  { city: "Portland", state: "OR", code: "PDX" },
-  { city: "Detroit", state: "MI", code: "DET" },
-  { city: "Minneapolis", state: "MN", code: "MSP" },
-  { city: "New Orleans", state: "LA", code: "NOLA" },
-];
 
 const Header = () => {
   const { user, isAuthenticated, login, register, logout } = useAuth();
@@ -94,6 +57,58 @@ const Header = () => {
     }
   };
 
+  // Define public navigation items available to all users
+  const publicNavItems = [
+    {
+      label: "Find Painters",
+      href: "/find-painters",
+      icon: <PaintBucket className="h-4 w-4" />,
+    },
+    {
+      label: "Estimate Calculator",
+      href: "/calculator",
+      icon: <Calculator className="h-4 w-4" />,
+    },
+  ];
+
+  // Additional navigation items for customers
+  const customerNavItems = user?.role === "customer" ? [
+    {
+      label: "Post a Job",
+      href: "/post-job",
+      icon: <Plus className="h-4 w-4" />,
+    },
+    {
+      label: "My Jobs",
+      href: "/manage-jobs",
+      icon: <Briefcase className="h-4 w-4" />,
+    },
+    {
+      label: "Profile",
+      href: "/profile",
+      icon: <User className="h-4 w-4" />,
+    }
+  ] : [];
+
+  // Additional navigation items for painters
+  const painterNavItems = user?.role === "painter" ? [
+    {
+      label: "Job Marketplace",
+      href: "/marketplace",
+      icon: <Briefcase className="h-4 w-4" />,
+    },
+    {
+      label: "Dashboard",
+      href: "/painter-dashboard",
+      icon: <User className="h-4 w-4" />,
+    }
+  ] : [];
+
+  // Combine navigation items based on user role
+  const navItems = isAuthenticated 
+    ? [...publicNavItems, ...(user?.role === "customer" ? customerNavItems : painterNavItems)]
+    : publicNavItems;
+
   const handleNavigation = (path: string) => {
     navigate(path);
   };
@@ -142,5 +157,29 @@ const Header = () => {
     </header>
   );
 };
+
+// Keep the majorCities array definition
+const majorCities = [
+  { city: "Miami", state: "FL", code: "MIA" },
+  { city: "Atlanta", state: "GA", code: "ATL" },
+  { city: "New York", state: "NY", code: "NY" },
+  { city: "Los Angeles", state: "CA", code: "LA" },
+  { city: "Chicago", state: "IL", code: "CHI" },
+  { city: "Dallas", state: "TX", code: "DAL" },
+  { city: "Houston", state: "TX", code: "HOU" },
+  { city: "Phoenix", state: "AZ", code: "PHX" },
+  { city: "Philadelphia", state: "PA", code: "PHL" },
+  { city: "San Antonio", state: "TX", code: "SAT" },
+  { city: "San Diego", state: "CA", code: "SD" },
+  { city: "San Francisco", state: "CA", code: "SF" },
+  { city: "Seattle", state: "WA", code: "SEA" },
+  { city: "Denver", state: "CO", code: "DEN" },
+  { city: "Boston", state: "MA", code: "BOS" },
+  { city: "Las Vegas", state: "NV", code: "LV" },
+  { city: "Portland", state: "OR", code: "PDX" },
+  { city: "Detroit", state: "MI", code: "DET" },
+  { city: "Minneapolis", state: "MN", code: "MSP" },
+  { city: "New Orleans", state: "LA", code: "NOLA" },
+];
 
 export default Header;
