@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -131,8 +132,8 @@ const CustomerProfile = () => {
   return (
     <div className="relative min-h-screen">
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat -z-10"
-        style={{ backgroundImage: 'url("/lovable-uploads/46745e2b-4793-4b28-81bd-0b41822d517f.png")' }}
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat -z-10 opacity-90"
+        style={{ backgroundImage: 'url("/lovable-uploads/3fffd889-d8a4-4a24-a6e0-6c03b8cc437f.png")' }}
       />
       
       <div className="container mx-auto py-8 px-4 relative z-10">
@@ -153,7 +154,7 @@ const CustomerProfile = () => {
           
           <div className="flex flex-col md:flex-row gap-6">
             <div className="w-full md:w-1/3">
-              <Card className="sticky top-6 bg-background/95 backdrop-blur-sm">
+              <Card className="sticky top-6 bg-background/95 backdrop-blur-sm shadow-lg">
                 <CardContent className="p-6">
                   <div className="flex flex-col items-center text-center mb-6">
                     <Avatar className="h-24 w-24 mb-4">
@@ -214,7 +215,7 @@ const CustomerProfile = () => {
             
             <div className="w-full md:w-2/3">
               {activeTab === "profile" && (
-                <Card className="bg-background/95 backdrop-blur-sm">
+                <Card className="bg-background/95 backdrop-blur-sm shadow-lg">
                   <CardHeader>
                     <h2 className="text-xl font-bold">Edit Profile</h2>
                   </CardHeader>
@@ -251,7 +252,7 @@ const CustomerProfile = () => {
               )}
               
               {activeTab === "bookings" && (
-                <Card className="bg-background/95 backdrop-blur-sm">
+                <Card className="bg-background/95 backdrop-blur-sm shadow-lg">
                   <CardHeader>
                     <h2 className="text-xl font-bold">Booking History</h2>
                   </CardHeader>
@@ -302,7 +303,7 @@ const CustomerProfile = () => {
               )}
               
               {activeTab === "settings" && (
-                <Card className="bg-background/95 backdrop-blur-sm">
+                <Card className="bg-background/95 backdrop-blur-sm shadow-lg">
                   <CardHeader>
                     <h2 className="text-xl font-bold">Account Settings</h2>
                   </CardHeader>
