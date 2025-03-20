@@ -25,8 +25,8 @@ const FindPainters = () => {
     <div className="relative min-h-screen">
       {/* Background Image */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat -z-10 opacity-90"
-        style={{ backgroundImage: 'url("/lovable-uploads/e42930dd-5c66-4ee9-aa1a-9dcafc979718.png")' }}
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat -z-10 opacity-95"
+        style={{ backgroundImage: 'url("/lovable-uploads/ad32a05e-2690-4158-95ac-5073084afe46.png")' }}
       />
       
       {/* Content with semi-transparent overlay for better readability */}
@@ -37,14 +37,14 @@ const FindPainters = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="text-center mb-8 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-6 rounded-lg">
+            <div className="text-center mb-8 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm p-6 rounded-lg shadow-lg">
               <h1 className="text-3xl md:text-4xl font-bold mb-4">Find Painters Near You</h1>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
                 Browse painters in your area and connect with professionals for your project.
               </p>
             </div>
 
-            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-6 rounded-lg mb-6">
+            <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm p-6 rounded-lg shadow-lg mb-6">
               <PainterSearchFilters 
                 filters={filters}
                 onFilterChange={updateFilters}
@@ -52,7 +52,7 @@ const FindPainters = () => {
               />
             </div>
 
-            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-6 rounded-lg">
+            <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm p-6 rounded-lg shadow-lg">
               <Tabs defaultValue="all" className="mb-8">
                 <TabsList>
                   <TabsTrigger value="all">All Painters</TabsTrigger>
