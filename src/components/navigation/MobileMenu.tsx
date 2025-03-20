@@ -46,6 +46,9 @@ const MobileMenu = ({
     navigate(path);
   };
 
+  // Check if "Profile" is already in the navItems to avoid duplication
+  const hasProfileInNavItems = navItems.some(item => item.href === "/profile");
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
@@ -81,14 +84,16 @@ const MobileMenu = ({
           ))}
           {isAuthenticated && (
             <>
-              <Button
-                variant="ghost"
-                onClick={() => handleNavigation("/profile")}
-                className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
-              >
-                <User className="h-4 w-4 mr-2" />
-                Profile
-              </Button>
+              {!hasProfileInNavItems && (
+                <Button
+                  variant="ghost"
+                  onClick={() => handleNavigation("/profile")}
+                  className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Profile
+                </Button>
+              )}
               {user?.role === "painter" && (
                 <>
                   <Button
