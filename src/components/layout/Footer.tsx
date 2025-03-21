@@ -77,13 +77,13 @@ const Footer = () => {
             
             <nav className="flex flex-col space-y-3">
               <p className="font-medium">Legal</p>
-              <Link to="/terms" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/terms-of-service" className="text-muted-foreground hover:text-foreground transition-colors">
                 Terms of Service
               </Link>
-              <Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/privacy-policy" className="text-muted-foreground hover:text-foreground transition-colors">
                 Privacy Policy
               </Link>
-              <Link to="/cookies" className="text-muted-foreground hover:text-foreground transition-colors">
+              <Link to="/cookie-policy" className="text-muted-foreground hover:text-foreground transition-colors">
                 Cookie Policy
               </Link>
             </nav>
