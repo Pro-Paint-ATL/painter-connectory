@@ -50,7 +50,7 @@ const AppRoutes = () => {
       <Route 
         path="/marketplace" 
         element={
-          isPainter ? <JobMarketplace /> : <Navigate to="/" replace />
+          isAuthenticated ? <JobMarketplace /> : <Navigate to="/" replace />
         } 
       />
       <Route 
@@ -100,7 +100,7 @@ const AppRoutes = () => {
       <Route 
         path="/profile" 
         element={
-          isCustomer ? <CustomerProfile /> : <Navigate to="/" replace />
+          isAuthenticated ? <CustomerProfile /> : <Navigate to="/" replace />
         } 
       />
       <Route 

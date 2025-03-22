@@ -14,6 +14,7 @@ import {
   Menu,
   PaintBucket,
   LogOut,
+  Briefcase
 } from "lucide-react";
 import { User as UserType } from "@/types/auth";
 
@@ -48,6 +49,8 @@ const MobileMenu = ({
 
   // Check if "Profile" is already in the navItems to avoid duplication
   const hasProfileInNavItems = navItems.some(item => item.href === "/profile");
+  // Check if "Job Marketplace" is already in the navItems
+  const hasMarketplaceInNavItems = navItems.some(item => item.href === "/marketplace");
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -92,6 +95,16 @@ const MobileMenu = ({
                 >
                   <User className="h-4 w-4 mr-2" />
                   Profile
+                </Button>
+              )}
+              {user?.role === "painter" && !hasMarketplaceInNavItems && (
+                <Button
+                  variant="ghost"
+                  onClick={() => handleNavigation("/marketplace")}
+                  className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
+                >
+                  <Briefcase className="h-4 w-4 mr-2" />
+                  Job Marketplace
                 </Button>
               )}
               {user?.role === "painter" && (
