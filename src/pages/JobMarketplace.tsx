@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -345,7 +344,7 @@ const JobMarketplace = () => {
               <SelectValue placeholder="Filter by project type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Project Types</SelectItem>
+              <SelectItem value="all-types">All Project Types</SelectItem>
               {ProjectTypes.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
