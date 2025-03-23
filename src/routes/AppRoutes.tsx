@@ -19,6 +19,7 @@ import PainterSubscription from "@/pages/PainterSubscription";
 import CustomerProfile from "@/pages/CustomerProfile";
 import SubscriptionManagement from "@/pages/SubscriptionManagement";
 import AdminDashboard from "@/pages/AdminDashboard";
+import AdminSubscriptions from "@/pages/AdminSubscriptions";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import TermsOfService from "@/pages/TermsOfService";
 import CookiePolicy from "@/pages/CookiePolicy";
@@ -115,6 +116,12 @@ const AppRoutes = () => {
         path="/admin" 
         element={
           isAdmin ? <AdminDashboard /> : <Navigate to="/" replace />
+        } 
+      />
+      <Route 
+        path="/admin/subscriptions" 
+        element={
+          isAdmin ? <AdminSubscriptions /> : <Navigate to="/" replace />
         } 
       />
 
