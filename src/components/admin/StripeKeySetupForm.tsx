@@ -164,7 +164,7 @@ const StripeKeySetupForm = () => {
                     <FormLabel>Stripe Secret Key</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="sk_test_..."
+                        placeholder="sk_live_..."
                         type="password"
                         autoComplete="off"
                         {...field}

@@ -128,11 +128,16 @@ const AppRoutes = () => {
       />
 
       {/* Stripe Setup route */}
-      <Route path="/stripe-setup" element={
-        <Layout>
-          <StripeSetup />
-        </Layout>
-      } />
+      <Route 
+        path="/stripe-setup" 
+        element={
+          isAdmin ? (
+            <Layout>
+              <StripeSetup />
+            </Layout>
+          ) : <Navigate to="/" replace />
+        } 
+      />
 
       {/* Catch all */}
       <Route path="*" element={<NotFound />} />
