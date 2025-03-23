@@ -1,7 +1,9 @@
-
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import StripeSetup from "@/pages/StripeSetup";
+import { BrowserRouter } from "react-router-dom";
+import Layout from "@/components/Layout";
 
 // Pages
 import Index from "@/pages/Index";
@@ -36,98 +38,107 @@ const AppRoutes = () => {
   const isCustomer = isAuthenticated && user.role === "customer";
 
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/" element={<Index />} />
-      <Route path="/about" element={<AboutUs />} />
-      <Route path="/calculator" element={<EstimateCalculator />} />
-      <Route path="/find-painters" element={<FindPainters />} />
-      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-      <Route path="/terms-of-service" element={<TermsOfService />} />
-      <Route path="/cookie-policy" element={<CookiePolicy />} />
-      <Route path="/careers" element={<Careers />} />
-      
-      {/* Job marketplace routes */}
-      <Route 
-        path="/marketplace" 
-        element={
-          isAuthenticated ? <JobMarketplace /> : <Navigate to="/" replace />
-        } 
-      />
-      <Route 
-        path="/job/:id" 
-        element={
-          isAuthenticated ? <JobDetails /> : <Navigate to="/" replace />
-        } 
-      />
-      <Route 
-        path="/post-job" 
-        element={
-          isCustomer ? <PostJob /> : <Navigate to="/" replace />
-        } 
-      />
-      <Route 
-        path="/manage-jobs" 
-        element={
-          isCustomer ? <ManageJobs /> : <Navigate to="/" replace />
-        } 
-      />
+    <BrowserRouter>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<Index />} />
+        <Route path="/about" element={<AboutUs />} />
+        <Route path="/calculator" element={<EstimateCalculator />} />
+        <Route path="/find-painters" element={<FindPainters />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/cookie-policy" element={<CookiePolicy />} />
+        <Route path="/careers" element={<Careers />} />
+        
+        {/* Job marketplace routes */}
+        <Route 
+          path="/marketplace" 
+          element={
+            isAuthenticated ? <JobMarketplace /> : <Navigate to="/" replace />
+          } 
+        />
+        <Route 
+          path="/job/:id" 
+          element={
+            isAuthenticated ? <JobDetails /> : <Navigate to="/" replace />
+          } 
+        />
+        <Route 
+          path="/post-job" 
+          element={
+            isCustomer ? <PostJob /> : <Navigate to="/" replace />
+          } 
+        />
+        <Route 
+          path="/manage-jobs" 
+          element={
+            isCustomer ? <ManageJobs /> : <Navigate to="/" replace />
+          } 
+        />
 
-      {/* Painter routes */}
-      <Route 
-        path="/painter/:id" 
-        element={<PainterProfile />} 
-      />
-      <Route 
-        path="/painter-dashboard" 
-        element={
-          isPainter ? <PainterDashboard /> : <Navigate to="/" replace />
-        } 
-      />
-      <Route 
-        path="/subscription" 
-        element={
-          isPainter ? <PainterSubscription /> : <Navigate to="/" replace />
-        } 
-      />
-      <Route 
-        path="/manage-subscription" 
-        element={
-          isAuthenticated ? <SubscriptionManagement /> : <Navigate to="/" replace />
-        } 
-      />
+        {/* Painter routes */}
+        <Route 
+          path="/painter/:id" 
+          element={<PainterProfile />} 
+        />
+        <Route 
+          path="/painter-dashboard" 
+          element={
+            isPainter ? <PainterDashboard /> : <Navigate to="/" replace />
+          } 
+        />
+        <Route 
+          path="/subscription" 
+          element={
+            isPainter ? <PainterSubscription /> : <Navigate to="/" replace />
+          } 
+        />
+        <Route 
+          path="/manage-subscription" 
+          element={
+            isAuthenticated ? <SubscriptionManagement /> : <Navigate to="/" replace />
+          } 
+        />
 
-      {/* Customer routes */}
-      <Route 
-        path="/profile" 
-        element={
-          isAuthenticated ? <CustomerProfile /> : <Navigate to="/" replace />
-        } 
-      />
-      <Route 
-        path="/booking/:painterId" 
-        element={
-          isCustomer ? <Booking /> : <Navigate to="/" replace />
-        } 
-      />
+        {/* Customer routes */}
+        <Route 
+          path="/profile" 
+          element={
+            isAuthenticated ? <CustomerProfile /> : <Navigate to="/" replace />
+          } 
+        />
+        <Route 
+          path="/booking/:painterId" 
+          element={
+            isCustomer ? <Booking /> : <Navigate to="/" replace />
+          } 
+        />
 
-      {/* Admin routes */}
-      <Route 
-        path="/admin" 
-        element={
-          isAdmin ? <AdminDashboard /> : <Navigate to="/" replace />
-        } 
-      />
-      <Route 
-        path="/admin/subscriptions" 
-        element={
-          isAdmin ? <AdminSubscriptions /> : <Navigate to="/" replace />
-        } 
-      />
+        {/* Admin routes */}
+        <Route 
+          path="/admin" 
+          element={
+            isAdmin ? <AdminDashboard /> : <Navigate to="/" replace />
+          } 
+        />
+        <Route 
+          path="/admin/subscriptions" 
+          element={
+            isAdmin ? <AdminSubscriptions /> : <Navigate to="/" replace />
+          } 
+        />
 
-      {/* Catch all */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        {/* Stripe Setup route */}
+        <Route path="/stripe-setup" element={
+          <Layout>
+            <StripeSetup />
+          </Layout>
+        } />
+
+        {/* Catch all */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
   );
 };
 

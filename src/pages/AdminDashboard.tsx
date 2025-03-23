@@ -111,23 +111,10 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="container max-w-7xl mx-auto py-12 px-4">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Manage painter subscriptions and revenue</p>
-        </div>
-        <div>
-          <Button 
-            variant="outline" 
-            onClick={() => navigate("/admin/subscriptions")}
-          >
-            Manage Subscriptions
-          </Button>
-        </div>
-      </div>
+    <div className="container max-w-6xl mx-auto py-12 px-4">
+      <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
       
-      <div className="grid gap-6 md:grid-cols-3 mb-8">
+      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 mb-12">
         <Card>
           <CardContent className="flex items-center pt-6">
             <div className="bg-primary/10 p-3 rounded-full mr-4">
@@ -162,6 +149,23 @@ const AdminDashboard = () => {
               <h3 className="text-2xl font-bold">{pastDuePainters}</h3>
             </div>
           </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Stripe Integration</CardTitle>
+            <CardDescription>Configure payment processing</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Set up your Stripe API keys for subscription management and payment processing.
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button onClick={() => navigate("/stripe-setup")} className="w-full">
+              Configure Stripe
+            </Button>
+          </CardFooter>
         </Card>
       </div>
       
