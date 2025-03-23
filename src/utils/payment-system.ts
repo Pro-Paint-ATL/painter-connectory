@@ -1,5 +1,5 @@
 
-import { stripe } from './stripe-server';
+import { stripe } from '@/utils/stripe-server';
 import { supabase } from '@/lib/supabase';
 import { BookingStatus, PaymentType, BookingPayment, BookingWithPayments, Booking, Subscription } from '@/types/auth';
 import { Json } from '@/integrations/supabase/types';

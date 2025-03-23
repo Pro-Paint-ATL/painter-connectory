@@ -1,4 +1,3 @@
-
 import Stripe from 'stripe';
 
 // Initialize Stripe with the secret key from environment
@@ -8,6 +7,9 @@ const getStripe = () => {
     apiVersion: '2023-08-16'
   });
 };
+
+// Export a singleton Stripe instance for direct use
+export const stripe = getStripe();
 
 // This is a factory function to create a Stripe instance
 export const getStripeInstance = () => {
@@ -22,23 +24,23 @@ export const getSubscriptionPriceId = () => {
 // Create a subscription for a customer
 export const createSubscription = async (customerId: string, paymentMethodId: string) => {
   try {
-    const stripe = getStripe();
+    const stripeInstance = getStripe();
     const priceId = getSubscriptionPriceId();
     
     // Attach the payment method to the customer
-    await stripe.paymentMethods.attach(paymentMethodId, {
+    await stripeInstance.paymentMethods.attach(paymentMethodId, {
       customer: customerId,
     });
 
     // Set the payment method as the default for the customer
-    await stripe.customers.update(customerId, {
+    await stripeInstance.customers.update(customerId, {
       invoice_settings: {
         default_payment_method: paymentMethodId,
       },
     });
 
     // Create the subscription
-    const subscription = await stripe.subscriptions.create({
+    const subscription = await stripeInstance.subscriptions.create({
       customer: customerId,
       items: [{ price: priceId }],
       expand: ['latest_invoice.payment_intent'],
@@ -147,12 +149,12 @@ export const refundGoodFaithDeposit = async (paymentIntentId: string) => {
 };
 
 // Handle webhook events from Stripe
-export const handleWebhookEvent = async (body: string, signature: string) => {
+export const handleWebhookEvent = async (body: string, signature: string, webhookSecret?: string) => {
   try {
-    const stripe = getStripe();
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
+    const stripeInstance = getStripe();
+    const secret = webhookSecret || process.env.STRIPE_WEBHOOK_SECRET || '';
     
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    const event = stripeInstance.webhooks.constructEvent(body, signature, secret);
     
     switch (event.type) {
       case 'customer.subscription.created':

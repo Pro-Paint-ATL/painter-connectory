@@ -16,7 +16,8 @@ export const stripeWebhookHandler = async (request: Request) => {
     // This is your webhook secret from Stripe dashboard
     const webhookSecret = 'whsec_your_webhook_secret';
     
-    const result = await handleWebhookEvent(body, signature, webhookSecret);
+    // Updated to use only the required two arguments
+    const result = await handleWebhookEvent(body, signature);
     
     return new Response(JSON.stringify(result), {
       status: 200,
