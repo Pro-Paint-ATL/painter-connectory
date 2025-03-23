@@ -22,9 +22,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Check, AlertCircle, ExternalLink } from "lucide-react";
+import { Check, AlertCircle, ExternalLink, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // Form validation schema
 const stripeFormSchema = z.object({
@@ -52,6 +53,8 @@ const StripeKeySetupForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [setupComplete, setSetupComplete] = useState(false);
   const [checkingConfig, setCheckingConfig] = useState(true);
+  const [savedData, setSavedData] = useState<Partial<StripeFormValues> | null>(null);
+  const [functionError, setFunctionError] = useState<string | null>(null);
   
   // Initialize form with react-hook-form
   const form = useForm<StripeFormValues>({
@@ -77,7 +80,15 @@ const StripeKeySetupForm = () => {
           headers: {
             Authorization: `Bearer ${session.access_token}`
           }
+        }).catch(error => {
+          console.error("Error invoking check-stripe-config function:", error);
+          return { error };
         });
+        
+        if (response.error) {
+          console.error("Error from check-stripe-config:", response.error);
+          return;
+        }
         
         if (response.data && response.data.configured) {
           setSetupComplete(true);
@@ -98,6 +109,7 @@ const StripeKeySetupForm = () => {
     if (savedFormData) {
       try {
         const parsedData = JSON.parse(savedFormData);
+        setSavedData(parsedData);
         Object.keys(parsedData).forEach(key => {
           form.setValue(key as keyof StripeFormValues, parsedData[key]);
         });
@@ -110,6 +122,7 @@ const StripeKeySetupForm = () => {
   // Save form data to localStorage when it changes
   const saveFormData = (data: Partial<StripeFormValues>) => {
     localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(data));
+    setSavedData(data);
   };
 
   // Handle form field changes
@@ -120,6 +133,7 @@ const StripeKeySetupForm = () => {
 
   const onSubmit = async (data: StripeFormValues) => {
     setIsSubmitting(true);
+    setFunctionError(null);
     
     try {
       // Get the auth token for the current user
@@ -135,9 +149,16 @@ const StripeKeySetupForm = () => {
         headers: {
           Authorization: `Bearer ${session.access_token}`
         }
+      }).catch(error => {
+        console.error("Error invoking set-secrets function for secret key:", error);
+        setFunctionError("There was an error communicating with the server. The set-secrets function may still be deploying. Please wait a minute and try again.");
+        throw new Error("Failed to set secret key: " + (error.message || "Network error"));
       });
       
-      if (secretKeyResponse.error) throw new Error("Failed to set secret key: " + secretKeyResponse.error.message);
+      if (secretKeyResponse.error) {
+        console.error("Error response from set-secrets for secret key:", secretKeyResponse.error);
+        throw new Error("Failed to set secret key: " + secretKeyResponse.error.message);
+      }
       
       // Set the Stripe Webhook Secret
       const webhookResponse = await supabase.functions.invoke('set-secrets', {
@@ -167,6 +188,7 @@ const StripeKeySetupForm = () => {
       
       // Clear the saved form data on successful submission
       localStorage.removeItem(FORM_STORAGE_KEY);
+      setSavedData(null);
       
       setSetupComplete(true);
     } catch (error) {
@@ -216,6 +238,26 @@ const StripeKeySetupForm = () => {
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {savedData && Object.keys(savedData).length > 0 && (
+                <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                  <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <AlertTitle>Saved form data detected</AlertTitle>
+                  <AlertDescription>
+                    Your previously entered data has been restored.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {functionError && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Edge Function Error</AlertTitle>
+                  <AlertDescription>
+                    {functionError}
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               <div className="bg-amber-50 dark:bg-amber-950/20 p-4 rounded-md mb-6">
                 <div className="flex gap-3">
                   <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />

@@ -21,6 +21,9 @@ serve(async (req) => {
 
     const configured = !!(stripeSecretKey && stripeWebhookSecret && stripePriceId);
 
+    console.log(`Stripe configuration check - Keys configured: ${configured}`);
+    console.log(`Secret Key: ${!!stripeSecretKey}, Webhook Secret: ${!!stripeWebhookSecret}, Price ID: ${!!stripePriceId}`);
+
     return new Response(
       JSON.stringify({
         configured,

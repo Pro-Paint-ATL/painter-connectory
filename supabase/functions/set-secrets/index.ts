@@ -35,7 +35,7 @@ serve(async (req) => {
     
     if (userError || !userData?.user) {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: 'Unauthorized', details: userError?.message }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -47,7 +47,14 @@ serve(async (req) => {
       .eq('id', userData.user.id)
       .single();
 
-    if (profileError || !profiles || profiles.role !== 'admin') {
+    if (profileError) {
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch profile', details: profileError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!profiles || profiles.role !== 'admin') {
       return new Response(
         JSON.stringify({ error: 'Admin access required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -66,8 +73,22 @@ serve(async (req) => {
       );
     }
 
-    // Set the secret value using Deno.env
-    await Deno.env.set(key, value);
+    console.log(`Setting secret: ${key}`);
+    
+    // Instead of using Deno.env.set which only sets for the current process,
+    // we'll use Supabase to store the secret
+    const { error: secretError } = await supabaseClient.rpc('set_secret', {
+      name: key,
+      value: value
+    });
+
+    if (secretError) {
+      console.error('Error setting secret:', secretError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to set secret', details: secretError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Return success response
     return new Response(
