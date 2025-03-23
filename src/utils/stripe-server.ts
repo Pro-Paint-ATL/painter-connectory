@@ -1,8 +1,25 @@
 import Stripe from 'stripe';
 
+// Instead of direct process.env access, use a function that safely handles environment access
+const getEnv = (key: string, defaultValue: string = ''): string => {
+  // Check if we're in a browser environment
+  if (typeof window !== 'undefined') {
+    // In client-side code, environment variables need to be exposed via import.meta.env in Vite
+    // Only VITE_ prefixed variables are exposed to the client
+    return (import.meta.env[key] as string) || defaultValue;
+  }
+  
+  // In server environment (like Edge Functions)
+  if (typeof process !== 'undefined' && process.env) {
+    return process.env[key] || defaultValue;
+  }
+  
+  return defaultValue;
+};
+
 // Initialize Stripe with the secret key from environment
 const getStripe = () => {
-  const key = process.env.STRIPE_SECRET_KEY || '';
+  const key = getEnv('STRIPE_SECRET_KEY', '');
   return new Stripe(key, {
     apiVersion: '2023-08-16'
   });
@@ -18,7 +35,7 @@ export const getStripeInstance = () => {
 
 // Helper function to get the monthly subscription price ID
 export const getSubscriptionPriceId = () => {
-  return process.env.STRIPE_PRICE_ID || '';
+  return getEnv('STRIPE_PRICE_ID', '');
 };
 
 // Create a subscription for a customer
@@ -56,8 +73,8 @@ export const createSubscription = async (customerId: string, paymentMethodId: st
 // Create a customer in Stripe
 export const createCustomer = async (email: string, name: string) => {
   try {
-    const stripe = getStripe();
-    const customer = await stripe.customers.create({
+    const stripeInstance = getStripe();
+    const customer = await stripeInstance.customers.create({
       email,
       name,
     });
@@ -71,8 +88,8 @@ export const createCustomer = async (email: string, name: string) => {
 // Create a Stripe Connect account for painters
 export const createConnectAccount = async (email: string, name: string) => {
   try {
-    const stripe = getStripe();
-    const account = await stripe.accounts.create({
+    const stripeInstance = getStripe();
+    const account = await stripeInstance.accounts.create({
       type: 'express',
       email,
       business_type: 'individual',
@@ -95,8 +112,8 @@ export const createConnectAccount = async (email: string, name: string) => {
 // Create an account link for a painter to complete onboarding
 export const createAccountLink = async (accountId: string, refreshUrl: string, returnUrl: string) => {
   try {
-    const stripe = getStripe();
-    const accountLink = await stripe.accountLinks.create({
+    const stripeInstance = getStripe();
+    const accountLink = await stripeInstance.accountLinks.create({
       account: accountId,
       refresh_url: refreshUrl,
       return_url: returnUrl,
@@ -112,14 +129,14 @@ export const createAccountLink = async (accountId: string, refreshUrl: string, r
 // Transfer funds to a painter's connected account
 export const transferFundsToPainter = async (amount: number, painterId: string, description: string) => {
   try {
-    const stripe = getStripe();
+    const stripeInstance = getStripe();
     
     // Platform fee (10% of the amount)
     const platformFee = Math.round(amount * 0.1);
     const transferAmount = amount - platformFee;
 
     // Create a transfer to the painter's connected account
-    const transfer = await stripe.transfers.create({
+    const transfer = await stripeInstance.transfers.create({
       amount: transferAmount,
       currency: 'usd',
       destination: painterId, // Painter's Stripe Connect account ID
@@ -136,8 +153,8 @@ export const transferFundsToPainter = async (amount: number, painterId: string, 
 // Process refund of good faith deposit
 export const refundGoodFaithDeposit = async (paymentIntentId: string) => {
   try {
-    const stripe = getStripe();
-    const refund = await stripe.refunds.create({
+    const stripeInstance = getStripe();
+    const refund = await stripeInstance.refunds.create({
       payment_intent: paymentIntentId,
       reason: 'requested_by_customer',
     });
@@ -152,7 +169,7 @@ export const refundGoodFaithDeposit = async (paymentIntentId: string) => {
 export const handleWebhookEvent = async (body: string, signature: string, webhookSecret?: string) => {
   try {
     const stripeInstance = getStripe();
-    const secret = webhookSecret || process.env.STRIPE_WEBHOOK_SECRET || '';
+    const secret = webhookSecret || getEnv('STRIPE_WEBHOOK_SECRET', '');
     
     const event = stripeInstance.webhooks.constructEvent(body, signature, secret);
     
