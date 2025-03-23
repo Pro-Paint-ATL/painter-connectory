@@ -1,29 +1,30 @@
 
 import Stripe from 'stripe';
 
-// In production, these values should come from environment variables
-// For deployed applications, consider using Netlify/Vercel environment variables
-const PRODUCTION_MODE = true;
+// Initialize Stripe with the secret key from environment
+const getStripe = () => {
+  const key = process.env.STRIPE_SECRET_KEY || '';
+  return new Stripe(key, {
+    apiVersion: '2023-08-16'
+  });
+};
 
-// This is a test key, in production it would be stored securely and not in client-side code
-const STRIPE_SECRET_KEY = PRODUCTION_MODE 
-  ? 'sk_test_51OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcUXQnMhJ97qXKTKhbhLgdpBDVaFMXqiYUkSVSCEZzRMTg500Ip6Sxgus'
-  : 'sk_test_51OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcUXQnMhJ97qXKTKhbhLgdpBDVaFMXqiYUkSVSCEZzRMTg500Ip6Sxgus';
+// This is a factory function to create a Stripe instance
+export const getStripeInstance = () => {
+  return getStripe();
+};
 
-// Initialize Stripe with the secret key
-export const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2023-08-16'
-});
-
-// Monthly subscription price ID from your Stripe dashboard
-// In production, this would be your actual price ID
-export const MONTHLY_SUBSCRIPTION_PRICE_ID = PRODUCTION_MODE
-  ? 'price_1OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcUXQnMhJ97qXKTKhbhLgdpBDVaFMXqiYUkSVSCEZzRMTg500Ip6Sxgus'
-  : 'price_1OA0V5Dq86aeJPbWXMvBSMhBfYiXbciqJAGXFu9XKEcUXQnMhJ97qXKTKhbhLgdpBDVaFMXqiYUkSVSCEZzRMTg500Ip6Sxgus';
+// Helper function to get the monthly subscription price ID
+export const getSubscriptionPriceId = () => {
+  return process.env.STRIPE_PRICE_ID || '';
+};
 
 // Create a subscription for a customer
 export const createSubscription = async (customerId: string, paymentMethodId: string) => {
   try {
+    const stripe = getStripe();
+    const priceId = getSubscriptionPriceId();
+    
     // Attach the payment method to the customer
     await stripe.paymentMethods.attach(paymentMethodId, {
       customer: customerId,
@@ -39,7 +40,7 @@ export const createSubscription = async (customerId: string, paymentMethodId: st
     // Create the subscription
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
-      items: [{ price: MONTHLY_SUBSCRIPTION_PRICE_ID }],
+      items: [{ price: priceId }],
       expand: ['latest_invoice.payment_intent'],
     });
 
@@ -53,6 +54,7 @@ export const createSubscription = async (customerId: string, paymentMethodId: st
 // Create a customer in Stripe
 export const createCustomer = async (email: string, name: string) => {
   try {
+    const stripe = getStripe();
     const customer = await stripe.customers.create({
       email,
       name,
@@ -67,6 +69,7 @@ export const createCustomer = async (email: string, name: string) => {
 // Create a Stripe Connect account for painters
 export const createConnectAccount = async (email: string, name: string) => {
   try {
+    const stripe = getStripe();
     const account = await stripe.accounts.create({
       type: 'express',
       email,
@@ -90,6 +93,7 @@ export const createConnectAccount = async (email: string, name: string) => {
 // Create an account link for a painter to complete onboarding
 export const createAccountLink = async (accountId: string, refreshUrl: string, returnUrl: string) => {
   try {
+    const stripe = getStripe();
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
       refresh_url: refreshUrl,
@@ -106,6 +110,8 @@ export const createAccountLink = async (accountId: string, refreshUrl: string, r
 // Transfer funds to a painter's connected account
 export const transferFundsToPainter = async (amount: number, painterId: string, description: string) => {
   try {
+    const stripe = getStripe();
+    
     // Platform fee (10% of the amount)
     const platformFee = Math.round(amount * 0.1);
     const transferAmount = amount - platformFee;
@@ -128,6 +134,7 @@ export const transferFundsToPainter = async (amount: number, painterId: string, 
 // Process refund of good faith deposit
 export const refundGoodFaithDeposit = async (paymentIntentId: string) => {
   try {
+    const stripe = getStripe();
     const refund = await stripe.refunds.create({
       payment_intent: paymentIntentId,
       reason: 'requested_by_customer',
@@ -140,8 +147,11 @@ export const refundGoodFaithDeposit = async (paymentIntentId: string) => {
 };
 
 // Handle webhook events from Stripe
-export const handleWebhookEvent = async (body: string, signature: string, webhookSecret: string) => {
+export const handleWebhookEvent = async (body: string, signature: string) => {
   try {
+    const stripe = getStripe();
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
+    
     const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     
     switch (event.type) {

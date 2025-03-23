@@ -22,7 +22,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Check, AlertCircle, ExternalLink, AlertTriangle } from "lucide-react";
+import { Check, AlertCircle, ExternalLink, AlertTriangle, RefreshCw } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -55,6 +55,7 @@ const StripeKeySetupForm = () => {
   const [checkingConfig, setCheckingConfig] = useState(true);
   const [savedData, setSavedData] = useState<Partial<StripeFormValues> | null>(null);
   const [functionError, setFunctionError] = useState<string | null>(null);
+  const [deploymentRetries, setDeploymentRetries] = useState(0);
   
   // Initialize form with react-hook-form
   const form = useForm<StripeFormValues>({
@@ -132,6 +133,70 @@ const StripeKeySetupForm = () => {
     saveFormData({ ...currentValues, [field]: value });
   };
 
+  // Direct writing to Supabase secrets via RPC function
+  const setSecretViaRPC = async (session: any, key: string, value: string) => {
+    try {
+      const { data, error } = await supabase.rpc('set_secret', {
+        name: key,
+        value: value
+      });
+      
+      if (error) throw error;
+      
+      return { success: true };
+    } catch (error) {
+      console.error(`Error setting secret via RPC (${key}):`, error);
+      throw error;
+    }
+  };
+
+  // Try to set a secret using either edge function or RPC as fallback
+  const setSecret = async (session: any, key: string, value: string) => {
+    try {
+      // First try to use edge function
+      const response = await supabase.functions.invoke('set-secrets', {
+        body: { key, value },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+      
+      if (response.error) {
+        console.error(`Edge function error for ${key}:`, response.error);
+        throw response.error;
+      }
+      
+      return response;
+    } catch (edgeFunctionError) {
+      console.warn(`Edge function failed for ${key}, trying RPC fallback:`, edgeFunctionError);
+      
+      // As a fallback, try to use RPC
+      if (deploymentRetries < 1) {
+        try {
+          const rpcResult = await setSecretViaRPC(session, key, value);
+          return rpcResult;
+        } catch (rpcError) {
+          console.error(`RPC fallback failed for ${key}:`, rpcError);
+          throw rpcError;
+        }
+      } else {
+        throw edgeFunctionError;
+      }
+    }
+  };
+
+  const retryWithDelay = async () => {
+    setDeploymentRetries(prev => prev + 1);
+    setFunctionError("Retrying to save configuration...");
+    
+    // Wait 3 seconds before retrying
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // Retry submission
+    const data = form.getValues();
+    onSubmit(data);
+  };
+
   const onSubmit = async (data: StripeFormValues) => {
     setIsSubmitting(true);
     setFunctionError(null);
@@ -144,42 +209,30 @@ const StripeKeySetupForm = () => {
         throw new Error("You must be logged in");
       }
       
-      // Set the Stripe Secret Key
-      const secretKeyResponse = await supabase.functions.invoke('set-secrets', {
-        body: { key: 'STRIPE_SECRET_KEY', value: data.secretKey },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
+      // Try to set all three secrets
+      try {
+        // Set the Stripe Secret Key
+        await setSecret(session, 'STRIPE_SECRET_KEY', data.secretKey);
+        
+        // Set the Stripe Webhook Secret
+        await setSecret(session, 'STRIPE_WEBHOOK_SECRET', data.webhookSecret);
+        
+        // Set the Stripe Price ID
+        await setSecret(session, 'STRIPE_PRICE_ID', data.priceId);
+      } catch (error) {
+        console.error("Error setting secrets:", error);
+        
+        if (deploymentRetries < 2) {
+          setFunctionError(
+            "There was an error saving your configuration. This might be because the Edge Functions are still deploying. " +
+            "Please click 'Retry' to try again."
+          );
+          setIsSubmitting(false);
+          return;
+        } else {
+          throw new Error("Failed to save configuration after multiple attempts. Please try again later.");
         }
-      }).catch(error => {
-        console.error("Error invoking set-secrets function for secret key:", error);
-        setFunctionError("There was an error communicating with the server. The set-secrets function may still be deploying. Please wait a minute and try again.");
-        throw new Error("Failed to set secret key: " + (error.message || "Network error"));
-      });
-      
-      if (secretKeyResponse.error) {
-        console.error("Error response from set-secrets for secret key:", secretKeyResponse.error);
-        throw new Error("Failed to set secret key: " + secretKeyResponse.error.message);
       }
-      
-      // Set the Stripe Webhook Secret
-      const webhookResponse = await supabase.functions.invoke('set-secrets', {
-        body: { key: 'STRIPE_WEBHOOK_SECRET', value: data.webhookSecret },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
-      
-      if (webhookResponse.error) throw new Error("Failed to set webhook secret: " + webhookResponse.error.message);
-      
-      // Set the Stripe Price ID
-      const priceIdResponse = await supabase.functions.invoke('set-secrets', {
-        body: { key: 'STRIPE_PRICE_ID', value: data.priceId },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
-      
-      if (priceIdResponse.error) throw new Error("Failed to set price ID: " + priceIdResponse.error.message);
       
       // Show success message
       toast({
@@ -253,8 +306,21 @@ const StripeKeySetupForm = () => {
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>Edge Function Error</AlertTitle>
-                  <AlertDescription>
-                    {functionError}
+                  <AlertDescription className="flex flex-col space-y-2">
+                    <p>{functionError}</p>
+                    {deploymentRetries > 0 && (
+                      <Button 
+                        type="button" 
+                        size="sm" 
+                        variant="outline" 
+                        className="self-start mt-2 flex items-center gap-2"
+                        onClick={retryWithDelay}
+                        disabled={isSubmitting}
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                        Retry
+                      </Button>
+                    )}
                   </AlertDescription>
                 </Alert>
               )}

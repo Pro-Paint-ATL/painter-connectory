@@ -4,10 +4,13 @@ import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import StripeKeySetupForm from "@/components/admin/StripeKeySetupForm";
+import { AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const StripeSetup = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [showDeploymentAlert, setShowDeploymentAlert] = React.useState(true);
 
   // Redirect non-admin users
   React.useEffect(() => {
@@ -36,6 +39,25 @@ const StripeSetup = () => {
   return (
     <div className="container max-w-6xl mx-auto py-12 px-4">
       <h1 className="text-3xl font-bold mb-8">Stripe Configuration</h1>
+      
+      {showDeploymentAlert && (
+        <Alert className="mb-6 bg-amber-50 dark:bg-amber-950/20 border-amber-200">
+          <AlertTriangle className="h-4 w-4 text-amber-600" />
+          <AlertTitle>Function Deployment Notice</AlertTitle>
+          <AlertDescription className="flex justify-between items-start">
+            <span>
+              Edge functions may take a moment to deploy. If you encounter errors when saving, 
+              please try again in a few moments or use the retry button that will appear.
+            </span>
+            <button 
+              onClick={() => setShowDeploymentAlert(false)}
+              className="text-sm underline text-muted-foreground hover:text-foreground"
+            >
+              Dismiss
+            </button>
+          </AlertDescription>
+        </Alert>
+      )}
       
       <div className="mb-8">
         <p className="text-muted-foreground mb-4">
