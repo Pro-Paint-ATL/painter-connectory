@@ -312,74 +312,84 @@ const JobMarketplace = () => {
   };
 
   return (
-    <div className="container max-w-screen-xl py-8">
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Job Marketplace</h1>
-          <p className="text-muted-foreground">
-            Browse and bid on available painting jobs in your area
-          </p>
-        </div>
-      </div>
-
-      {renderSubscriptionRequired()}
-
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex w-full md:w-auto flex-col space-y-4 md:flex-row md:space-x-4 md:space-y-0">
-          <div className="relative w-full md:w-80">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search jobs..."
-              className="w-full pl-8"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+    <div 
+      className="min-h-screen py-8"
+      style={{
+        backgroundImage: "url('/lovable-uploads/20d420d7-dea3-405b-a02f-139bdcd1752c.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed"
+      }}
+    >
+      <div className="container max-w-screen-xl bg-background/95 backdrop-blur-sm rounded-lg p-6 shadow-lg">
+        <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Job Marketplace</h1>
+            <p className="text-muted-foreground">
+              Browse and bid on available painting jobs in your area
+            </p>
           </div>
-          
-          <Select
-            value={projectTypeFilter}
-            onValueChange={setProjectTypeFilter}
-          >
-            <SelectTrigger className="w-full md:w-56">
-              <SelectValue placeholder="Filter by project type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all-types">All Project Types</SelectItem>
-              {ProjectTypes.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
-        <Button 
-          variant="outline" 
-          onClick={() => {
-            setSearchQuery("");
-            setProjectTypeFilter("");
-            fetchJobs();
-          }}
+        {renderSubscriptionRequired()}
+
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex w-full md:w-auto flex-col space-y-4 md:flex-row md:space-x-4 md:space-y-0">
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search jobs..."
+                className="w-full pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            
+            <Select
+              value={projectTypeFilter}
+              onValueChange={setProjectTypeFilter}
+            >
+              <SelectTrigger className="w-full md:w-56">
+                <SelectValue placeholder="Filter by project type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all-types">All Project Types</SelectItem>
+                {ProjectTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setSearchQuery("");
+              setProjectTypeFilter("");
+              fetchJobs();
+            }}
+          >
+            Refresh
+          </Button>
+        </div>
+
+        <Tabs 
+          defaultValue="all" 
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="mb-6"
         >
-          Refresh
-        </Button>
+          <TabsList>
+            <TabsTrigger value="all">All Jobs</TabsTrigger>
+            <TabsTrigger value="no-bids">No Bids Yet</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        {renderJobCards()}
+        {renderPagination()}
       </div>
-
-      <Tabs 
-        defaultValue="all" 
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="mb-6"
-      >
-        <TabsList>
-          <TabsTrigger value="all">All Jobs</TabsTrigger>
-          <TabsTrigger value="no-bids">No Bids Yet</TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      {renderJobCards()}
-      {renderPagination()}
     </div>
   );
 };
