@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,7 +22,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Check, AlertCircle } from "lucide-react";
+import { Check, AlertCircle, ExternalLink } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 
@@ -44,10 +44,14 @@ const stripeFormSchema = z.object({
 
 type StripeFormValues = z.infer<typeof stripeFormSchema>;
 
+// Local storage key for saving form data
+const FORM_STORAGE_KEY = "stripe_setup_form_data";
+
 const StripeKeySetupForm = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [setupComplete, setSetupComplete] = useState(false);
+  const [checkingConfig, setCheckingConfig] = useState(true);
   
   // Initialize form with react-hook-form
   const form = useForm<StripeFormValues>({
@@ -58,6 +62,61 @@ const StripeKeySetupForm = () => {
       priceId: "",
     },
   });
+
+  // Check if Stripe is already configured
+  useEffect(() => {
+    async function checkStripeConfig() {
+      try {
+        // Get the auth token for the current user
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) return;
+        
+        // Check if Stripe is configured
+        const response = await supabase.functions.invoke('check-stripe-config', {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
+          }
+        });
+        
+        if (response.data && response.data.configured) {
+          setSetupComplete(true);
+        }
+      } catch (error) {
+        console.error("Error checking Stripe configuration:", error);
+      } finally {
+        setCheckingConfig(false);
+      }
+    }
+    
+    checkStripeConfig();
+  }, []);
+
+  // Load saved form data from localStorage
+  useEffect(() => {
+    const savedFormData = localStorage.getItem(FORM_STORAGE_KEY);
+    if (savedFormData) {
+      try {
+        const parsedData = JSON.parse(savedFormData);
+        Object.keys(parsedData).forEach(key => {
+          form.setValue(key as keyof StripeFormValues, parsedData[key]);
+        });
+      } catch (error) {
+        console.error("Error loading saved form data:", error);
+      }
+    }
+  }, [form]);
+
+  // Save form data to localStorage when it changes
+  const saveFormData = (data: Partial<StripeFormValues>) => {
+    localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(data));
+  };
+
+  // Handle form field changes
+  const handleFieldChange = (field: keyof StripeFormValues, value: string) => {
+    const currentValues = form.getValues();
+    saveFormData({ ...currentValues, [field]: value });
+  };
 
   const onSubmit = async (data: StripeFormValues) => {
     setIsSubmitting(true);
@@ -106,6 +165,9 @@ const StripeKeySetupForm = () => {
         description: "Your Stripe integration is now ready to use.",
       });
       
+      // Clear the saved form data on successful submission
+      localStorage.removeItem(FORM_STORAGE_KEY);
+      
       setSetupComplete(true);
     } catch (error) {
       console.error("Error saving Stripe keys:", error);
@@ -118,6 +180,20 @@ const StripeKeySetupForm = () => {
       setIsSubmitting(false);
     }
   };
+  
+  if (checkingConfig) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardContent className="pt-6">
+          <div className="flex justify-center py-8">
+            <div className="animate-pulse text-center">
+              <p className="text-muted-foreground">Checking configuration status...</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
   
   return (
     <Card className="w-full max-w-2xl mx-auto">
@@ -145,12 +221,11 @@ const StripeKeySetupForm = () => {
                   <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
                   <div>
                     <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">
-                      Important Security Notice
+                      Important Information
                     </p>
                     <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
-                      The keys you enter will be stored securely as Supabase Edge Function secrets.
-                      They will not be exposed to the frontend and can only be accessed by your
-                      server-side functions.
+                      You can leave this page to copy keys from Stripe Dashboard - your entries will be saved. 
+                      Return to this page to continue the setup.
                     </p>
                   </div>
                 </div>
@@ -168,10 +243,22 @@ const StripeKeySetupForm = () => {
                         type="password"
                         autoComplete="off"
                         {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          handleFieldChange("secretKey", e.target.value);
+                        }}
                       />
                     </FormControl>
-                    <FormDescription>
-                      Your Stripe secret key starting with 'sk_test_' (test) or 'sk_live_' (production)
+                    <FormDescription className="flex items-center">
+                      <span>Your Stripe secret key starting with 'sk_test_' (test) or 'sk_live_' (production)</span>
+                      <a 
+                        href="https://dashboard.stripe.com/apikeys" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center ml-1 text-primary hover:underline"
+                      >
+                        <ExternalLink className="h-3 w-3 ml-0.5" />
+                      </a>
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -190,10 +277,22 @@ const StripeKeySetupForm = () => {
                         type="password"
                         autoComplete="off"
                         {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          handleFieldChange("webhookSecret", e.target.value);
+                        }}
                       />
                     </FormControl>
-                    <FormDescription>
-                      Your Stripe webhook signing secret starting with 'whsec_'
+                    <FormDescription className="flex items-center">
+                      <span>Your Stripe webhook signing secret starting with 'whsec_'</span>
+                      <a 
+                        href="https://dashboard.stripe.com/webhooks" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center ml-1 text-primary hover:underline"
+                      >
+                        <ExternalLink className="h-3 w-3 ml-0.5" />
+                      </a>
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -211,10 +310,22 @@ const StripeKeySetupForm = () => {
                         placeholder="price_..."
                         autoComplete="off"
                         {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          handleFieldChange("priceId", e.target.value);
+                        }}
                       />
                     </FormControl>
-                    <FormDescription>
-                      The Stripe Price ID for your subscription product
+                    <FormDescription className="flex items-center">
+                      <span>The Stripe Price ID for your subscription product (starts with 'price_')</span>
+                      <a 
+                        href="https://dashboard.stripe.com/products" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center ml-1 text-primary hover:underline"
+                      >
+                        <ExternalLink className="h-3 w-3 ml-0.5" />
+                      </a>
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
