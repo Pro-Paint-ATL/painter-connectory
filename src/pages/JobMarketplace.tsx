@@ -43,7 +43,6 @@ const JobMarketplace = () => {
   const [projectTypeFilter, setProjectTypeFilter] = useState<string>("");
   const [activeTab, setActiveTab] = useState("all");
 
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const jobsPerPage = 9;
 
@@ -58,7 +57,6 @@ const JobMarketplace = () => {
     if (!user) return;
 
     try {
-      // Check if user has subscription info and it's active
       const isActive = user.subscription?.status === "active";
       setIsSubscribed(isActive);
     } catch (error) {
@@ -104,7 +102,6 @@ const JobMarketplace = () => {
   const applyFilters = () => {
     let filtered = [...jobs];
 
-    // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -117,18 +114,15 @@ const JobMarketplace = () => {
       );
     }
 
-    // Apply project type filter
     if (projectTypeFilter) {
       filtered = filtered.filter(job => job.project_type === projectTypeFilter);
     }
 
-    // Apply tab filter
     if (activeTab === "no-bids") {
       filtered = filtered.filter(job => job.bid_count === 0);
     }
 
     setFilteredJobs(filtered);
-    // Reset to first page when filters change
     setCurrentPage(1);
   };
 
@@ -150,13 +144,11 @@ const JobMarketplace = () => {
     navigate(`/job/${jobId}`);
   };
 
-  // Get current page of jobs
   const indexOfLastJob = currentPage * jobsPerPage;
   const indexOfFirstJob = indexOfLastJob - jobsPerPage;
   const currentJobs = filteredJobs.slice(indexOfFirstJob, indexOfLastJob);
   const totalPages = Math.ceil(filteredJobs.length / jobsPerPage);
 
-  // Change page
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   const renderPagination = () => {
@@ -313,12 +305,9 @@ const JobMarketplace = () => {
 
   return (
     <div 
-      className="min-h-screen py-8"
+      className="min-h-screen py-8 bg-cover bg-center bg-fixed"
       style={{
-        backgroundImage: "url('/lovable-uploads/20d420d7-dea3-405b-a02f-139bdcd1752c.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed"
+        backgroundImage: "url(/lovable-uploads/20d420d7-dea3-405b-a02f-139bdcd1752c.png)"
       }}
     >
       <div className="container max-w-screen-xl bg-background/95 backdrop-blur-sm rounded-lg p-6 shadow-lg">
@@ -353,7 +342,7 @@ const JobMarketplace = () => {
                 <SelectValue placeholder="Filter by project type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all-types">All Project Types</SelectItem>
+                <SelectItem value="">All Project Types</SelectItem>
                 {ProjectTypes.map((type) => (
                   <SelectItem key={type} value={type}>
                     {type}
