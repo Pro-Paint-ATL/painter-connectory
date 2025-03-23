@@ -90,7 +90,8 @@ const StripeKeySetupForm = () => {
           return;
         }
         
-        if (response.data && response.data.configured) {
+        // Fixed TypeScript error by properly checking response shape
+        if (response && 'data' in response && response.data && response.data.configured) {
           setSetupComplete(true);
         }
       } catch (error) {

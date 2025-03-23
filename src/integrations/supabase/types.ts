@@ -294,6 +294,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      set_secret: {
+        Args: {
+          name: string
+          value: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
