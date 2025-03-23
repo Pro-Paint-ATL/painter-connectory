@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -307,7 +308,7 @@ const JobMarketplace = () => {
     <div 
       className="min-h-screen py-8 bg-cover bg-center bg-fixed"
       style={{
-        backgroundImage: "url(/lovable-uploads/20d420d7-dea3-405b-a02f-139bdcd1752c.png)"
+        backgroundImage: `url("/lovable-uploads/4382d8c5-2d78-4f88-9c06-e70bcc1a82fb.png")`
       }}
     >
       <div className="container max-w-screen-xl bg-background/95 backdrop-blur-sm rounded-lg p-6 shadow-lg">
