@@ -114,7 +114,7 @@ const JobMarketplace = () => {
       );
     }
 
-    if (projectTypeFilter) {
+    if (projectTypeFilter && projectTypeFilter !== "all-types") {
       filtered = filtered.filter(job => job.project_type === projectTypeFilter);
     }
 
@@ -342,7 +342,7 @@ const JobMarketplace = () => {
                 <SelectValue placeholder="Filter by project type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Project Types</SelectItem>
+                <SelectItem value="all-types">All Project Types</SelectItem>
                 {ProjectTypes.map((type) => (
                   <SelectItem key={type} value={type}>
                     {type}
