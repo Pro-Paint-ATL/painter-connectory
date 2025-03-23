@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { User, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { User as UserType } from "@/types/auth";
 
 interface UserMenuProps {
@@ -15,26 +15,15 @@ const UserMenu = ({ user, onLogout, onNavigate }: UserMenuProps) => {
 
   return (
     <div className="flex items-center gap-2">
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        className="rounded-full" 
-        aria-label="User profile"
-        onClick={() => onNavigate("/profile")}
-      >
-        <User className="h-5 w-5" />
-      </Button>
       {user.role === "painter" && (
-        <>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => onNavigate("/subscription")}
-            className="gap-2"
-          >
-            <span className="hidden sm:inline">Subscription</span>
-          </Button>
-        </>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => onNavigate("/subscription")}
+          className="gap-2"
+        >
+          <span className="hidden sm:inline">Subscription</span>
+        </Button>
       )}
       {user.role === "admin" && (
         <Button 
