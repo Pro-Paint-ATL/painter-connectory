@@ -63,15 +63,42 @@ const StripeKeySetupForm = () => {
     setIsSubmitting(true);
     
     try {
-      // Update Supabase Edge Function secrets
-      const { error: secretKeyError } = await supabase.functions.setSecretValue('STRIPE_SECRET_KEY', data.secretKey);
-      if (secretKeyError) throw new Error("Failed to set secret key");
+      // Get the auth token for the current user
+      const { data: { session } } = await supabase.auth.getSession();
       
-      const { error: webhookError } = await supabase.functions.setSecretValue('STRIPE_WEBHOOK_SECRET', data.webhookSecret);
-      if (webhookError) throw new Error("Failed to set webhook secret");
+      if (!session) {
+        throw new Error("You must be logged in");
+      }
       
-      const { error: priceIdError } = await supabase.functions.setSecretValue('STRIPE_PRICE_ID', data.priceId);
-      if (priceIdError) throw new Error("Failed to set price ID");
+      // Set the Stripe Secret Key
+      const secretKeyResponse = await supabase.functions.invoke('set-secrets', {
+        body: { key: 'STRIPE_SECRET_KEY', value: data.secretKey },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+      
+      if (secretKeyResponse.error) throw new Error("Failed to set secret key: " + secretKeyResponse.error.message);
+      
+      // Set the Stripe Webhook Secret
+      const webhookResponse = await supabase.functions.invoke('set-secrets', {
+        body: { key: 'STRIPE_WEBHOOK_SECRET', value: data.webhookSecret },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+      
+      if (webhookResponse.error) throw new Error("Failed to set webhook secret: " + webhookResponse.error.message);
+      
+      // Set the Stripe Price ID
+      const priceIdResponse = await supabase.functions.invoke('set-secrets', {
+        body: { key: 'STRIPE_PRICE_ID', value: data.priceId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+      
+      if (priceIdResponse.error) throw new Error("Failed to set price ID: " + priceIdResponse.error.message);
       
       // Show success message
       toast({
