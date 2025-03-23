@@ -103,6 +103,9 @@ const AdminSubscriptions = () => {
       // Simulated API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      // Get the existing subscription data for this painter
+      const painterToUpdate = subscriptions.find(s => s.id === painterId);
+      
       // Update subscription status
       const { error } = await supabase
         .from('profiles')
@@ -110,6 +113,8 @@ const AdminSubscriptions = () => {
           subscription: {
             ...subscriptions.find(s => s.id === painterId)?.subscription,
             status: action === 'activate' ? 'active' : 'canceled',
+            stripeSubscriptionId: painterToUpdate?.subscriptionId,
+            stripeCustomerId: painterToUpdate?.customerId,
           }
         })
         .eq('id', painterId);
