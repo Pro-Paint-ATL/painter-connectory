@@ -2,26 +2,26 @@
 project_id = "onwbydtzjkvgwffharmo"
 
 [api]
-enabled = true
+# Port to use for the API URL.
 port = 54321
+# Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
+# endpoints. public and storage are always included.
 schemas = ["public", "storage"]
+# Extra schemas to add to the search_path of every request. public is always included.
+extra_search_path = ["public", "extensions"]
+# Maximum rows to return when listing from the database in Supabase's API. Defaults to 1000.
+max_rows = 1000
 
 [db]
+# Port to use for the local database URL.
 port = 54322
-
-[studio]
-port = 54323
-
-[inbucket]
-port = 54324
-
-[storage]
-enabled = true
+# The database major version to use. This has to be the same as your remote database's. Run `SHOW
+# server_version;` on the remote database to check.
+major_version = 15
 
 [auth]
-enabled = true
-
-[realtime]
-enabled = true
+hooks_url = "https://onwbydtzjkvgwffharmo.functions.supabase.co/auth-hooks"
 
 [functions]
+[functions.serve]
+include = ["functions/**/*"]

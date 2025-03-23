@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -22,6 +21,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { SubscriptionService } from "@/utils/subscription-service";
 
 interface SubscriptionControls {
   id: string;
@@ -30,6 +30,7 @@ interface SubscriptionControls {
   status: "active" | "past_due" | "canceled" | null;
   subscriptionId?: string;
   customerId?: string;
+  subscription?: any;
 }
 
 const AdminSubscriptions = () => {
@@ -70,7 +71,8 @@ const AdminSubscriptions = () => {
             email: profile.email,
             status: subscription?.status || null,
             subscriptionId: subscription?.stripeSubscriptionId,
-            customerId: subscription?.stripeCustomerId
+            customerId: subscription?.stripeCustomerId,
+            subscription: subscription
           } as SubscriptionControls;
         });
       } catch (err) {
@@ -97,29 +99,13 @@ const AdminSubscriptions = () => {
     
     setActionLoading(painterId);
     try {
-      // In a real application, this would call your backend API to handle the Stripe integration
-      // For this demo, we'll just update the local state
-      
-      // Simulated API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Get the existing subscription data for this painter
-      const painterToUpdate = subscriptions.find(s => s.id === painterId);
-      
-      // Update subscription status
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          subscription: {
-            ...subscriptions.find(s => s.id === painterId)?.subscription,
-            status: action === 'activate' ? 'active' : 'canceled',
-            stripeSubscriptionId: painterToUpdate?.subscriptionId,
-            stripeCustomerId: painterToUpdate?.customerId,
-          }
-        })
-        .eq('id', painterId);
-      
-      if (error) throw error;
+      if (action === 'activate') {
+        // Use the subscription service to activate the subscription
+        await SubscriptionService.adminActivateSubscription(painterId);
+      } else {
+        // Use the subscription service to cancel the subscription
+        await SubscriptionService.adminCancelSubscription(painterId);
+      }
       
       toast({
         title: action === 'activate' ? "Subscription Activated" : "Subscription Canceled",
