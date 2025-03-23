@@ -15,9 +15,9 @@ export const SubscriptionService = {
       const { data, error } = await supabase.functions.invoke('stripe-subscription', {
         body: { 
           email, 
-          name 
-        },
-        path: 'create-customer'
+          name,
+          action: 'create-customer'
+        }
       });
       
       if (error) throw error;
@@ -43,9 +43,9 @@ export const SubscriptionService = {
         body: { 
           customerId, 
           paymentMethodId,
-          trialDays
-        },
-        path: 'create-subscription'
+          trialDays,
+          action: 'create-subscription'
+        }
       });
       
       if (error) throw error;
@@ -71,8 +71,10 @@ export const SubscriptionService = {
   }> {
     try {
       const { data, error } = await supabase.functions.invoke('stripe-subscription', {
-        body: { subscriptionId },
-        path: 'cancel-subscription'
+        body: { 
+          subscriptionId,
+          action: 'cancel-subscription'
+        }
       });
       
       if (error) throw error;
@@ -97,8 +99,10 @@ export const SubscriptionService = {
   }> {
     try {
       const { data, error } = await supabase.functions.invoke('stripe-subscription', {
-        body: { subscriptionId },
-        path: 'reactivate-subscription'
+        body: { 
+          subscriptionId,
+          action: 'reactivate-subscription'
+        }
       });
       
       if (error) throw error;

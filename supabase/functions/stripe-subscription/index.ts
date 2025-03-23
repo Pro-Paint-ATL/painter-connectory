@@ -25,13 +25,17 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    const path = url.pathname.split('/').pop();
+    // Parse request body
+    const body = await req.json();
+    const { action } = body;
+    
+    console.log(`Processing Stripe action: ${action}`);
 
     // Create a customer in Stripe
-    if (path === 'create-customer') {
-      const { email, name } = await req.json();
+    if (action === 'create-customer') {
+      const { email, name } = body;
       
+      console.log(`Creating customer for ${email}`);
       const customer = await stripe.customers.create({
         email,
         name,
@@ -44,8 +48,10 @@ serve(async (req) => {
     }
     
     // Create a subscription
-    else if (path === 'create-subscription') {
-      const { customerId, paymentMethodId, trialDays = 21 } = await req.json();
+    else if (action === 'create-subscription') {
+      const { customerId, paymentMethodId, trialDays = 21 } = body;
+      
+      console.log(`Creating subscription for customer ${customerId}`);
       
       // Attach the payment method to the customer
       await stripe.paymentMethods.attach(paymentMethodId, {
@@ -67,6 +73,8 @@ serve(async (req) => {
         expand: ['latest_invoice.payment_intent'],
       });
       
+      console.log(`Subscription created: ${subscription.id}, status: ${subscription.status}`);
+      
       return new Response(
         JSON.stringify({
           success: true,
@@ -79,9 +87,10 @@ serve(async (req) => {
     }
     
     // Cancel a subscription
-    else if (path === 'cancel-subscription') {
-      const { subscriptionId } = await req.json();
+    else if (action === 'cancel-subscription') {
+      const { subscriptionId } = body;
       
+      console.log(`Canceling subscription ${subscriptionId}`);
       const subscription = await stripe.subscriptions.cancel(subscriptionId);
       
       return new Response(
@@ -95,9 +104,10 @@ serve(async (req) => {
     }
     
     // Reactivate a canceled subscription
-    else if (path === 'reactivate-subscription') {
-      const { subscriptionId } = await req.json();
+    else if (action === 'reactivate-subscription') {
+      const { subscriptionId } = body;
       
+      console.log(`Attempting to reactivate subscription ${subscriptionId}`);
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
       
       if (subscription.status === 'canceled') {
@@ -109,6 +119,8 @@ serve(async (req) => {
           })),
           expand: ['latest_invoice.payment_intent'],
         });
+        
+        console.log(`Created new subscription ${newSubscription.id} for customer ${subscription.customer}`);
         
         return new Response(
           JSON.stringify({
@@ -132,7 +144,7 @@ serve(async (req) => {
     }
     
     // Handle webhook events
-    else if (path === 'webhook') {
+    else if (action === 'webhook') {
       const signature = req.headers.get('stripe-signature');
       
       if (!signature) {
@@ -142,11 +154,11 @@ serve(async (req) => {
         );
       }
       
-      const body = await req.text();
+      const reqText = await req.text();
       let event;
       
       try {
-        event = stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET);
+        event = stripe.webhooks.constructEvent(reqText, signature, STRIPE_WEBHOOK_SECRET);
       } catch (error) {
         return new Response(
           JSON.stringify({ error: `Webhook signature verification failed: ${error.message}` }),
@@ -178,10 +190,10 @@ serve(async (req) => {
       );
     }
     
-    // If no matching path
+    // If no matching action
     return new Response(
-      JSON.stringify({ error: 'Invalid endpoint' }),
-      { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: 'Invalid action', receivedAction: action }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
     
   } catch (error) {
