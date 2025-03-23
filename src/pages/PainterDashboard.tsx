@@ -162,45 +162,54 @@ const PainterDashboard = () => {
   }
 
   return (
-    <div className="container max-w-7xl mx-auto py-8 px-4">
-      <DashboardStats stats={stats} />
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="bookings">Bookings</TabsTrigger>
-          <TabsTrigger value="profile">Company Profile</TabsTrigger>
-          <TabsTrigger value="subscription">Subscription</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview">
-          <DashboardOverview 
-            bookings={bookings} 
-            isLoading={isLoading} 
-            user={user} 
-            setActiveTab={setActiveTab}
-            navigate={navigate}
-          />
-        </TabsContent>
-        
-        <TabsContent value="bookings">
-          <BookingsList 
-            bookings={bookings} 
-            isLoading={isLoading} 
-          />
-        </TabsContent>
-        
-        <TabsContent value="profile">
-          <CompanyProfileForm user={user} />
-        </TabsContent>
-        
-        <TabsContent value="subscription">
-          <SubscriptionPanel 
-            user={user} 
-            navigate={navigate}
-          />
-        </TabsContent>
-      </Tabs>
+    <div 
+      className="min-h-screen py-8 bg-cover bg-center bg-fixed"
+      style={{
+        backgroundImage: `url("/lovable-uploads/613d79c2-aa77-4caf-ab1e-65f6a63009d0.png")`
+      }}
+    >
+      <div className="container max-w-7xl mx-auto px-4">
+        <div className="bg-background/95 backdrop-blur-sm rounded-lg p-6 shadow-lg">
+          <DashboardStats stats={stats} />
+          
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-6">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="bookings">Bookings</TabsTrigger>
+              <TabsTrigger value="profile">Company Profile</TabsTrigger>
+              <TabsTrigger value="subscription">Subscription</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="overview">
+              <DashboardOverview 
+                bookings={bookings} 
+                isLoading={isLoading} 
+                user={user} 
+                setActiveTab={setActiveTab}
+                navigate={navigate}
+              />
+            </TabsContent>
+            
+            <TabsContent value="bookings">
+              <BookingsList 
+                bookings={bookings} 
+                isLoading={isLoading} 
+              />
+            </TabsContent>
+            
+            <TabsContent value="profile">
+              <CompanyProfileForm user={user} />
+            </TabsContent>
+            
+            <TabsContent value="subscription">
+              <SubscriptionPanel 
+                user={user} 
+                navigate={navigate}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
     </div>
   );
 };
