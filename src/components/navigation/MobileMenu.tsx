@@ -47,10 +47,11 @@ const MobileMenu = ({
     navigate(path);
   };
 
-  // Check if "Profile" is already in the navItems to avoid duplication
+  // Check if certain paths are already in the navItems to avoid duplication
   const hasProfileInNavItems = navItems.some(item => item.href === "/profile");
-  // Check if "Job Marketplace" is already in the navItems
   const hasMarketplaceInNavItems = navItems.some(item => item.href === "/marketplace");
+  const hasDashboardInNavItems = navItems.some(item => item.href === "/painter-dashboard");
+  const hasSubscriptionInNavItems = navItems.some(item => item.href === "/subscription");
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -107,23 +108,23 @@ const MobileMenu = ({
                   Job Marketplace
                 </Button>
               )}
-              {user?.role === "painter" && (
-                <>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleNavigation("/painter-dashboard")}
-                    className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
-                  >
-                    Dashboard
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleNavigation("/subscription")}
-                    className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
-                  >
-                    Subscription
-                  </Button>
-                </>
+              {user?.role === "painter" && !hasDashboardInNavItems && (
+                <Button
+                  variant="ghost"
+                  onClick={() => handleNavigation("/painter-dashboard")}
+                  className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
+                >
+                  Dashboard
+                </Button>
+              )}
+              {user?.role === "painter" && !hasSubscriptionInNavItems && (
+                <Button
+                  variant="ghost"
+                  onClick={() => handleNavigation("/subscription")}
+                  className="flex items-center justify-start py-2 text-base font-medium transition-colors hover:text-primary"
+                >
+                  Subscription
+                </Button>
               )}
               {user?.role === "admin" && (
                 <Button

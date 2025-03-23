@@ -29,14 +29,6 @@ const UserMenu = ({ user, onLogout, onNavigate }: UserMenuProps) => {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => onNavigate("/painter-dashboard")}
-            className="gap-2"
-          >
-            <span className="hidden sm:inline">Dashboard</span>
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
             onClick={() => onNavigate("/subscription")}
             className="gap-2"
           >
