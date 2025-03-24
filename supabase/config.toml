@@ -104,9 +104,6 @@ backend = "postgres"
 [experimental]
 # Configures Postgres storage engine to use OrioleDB (S3)
 orioledb_version = ""
-# Enable Postgres Repo
-postgres_repo = false
 
 [functions]
-[functions.serve]
-port = 54321
+# Port for Functions to use.
