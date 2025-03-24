@@ -25,7 +25,75 @@ serve(async (req) => {
   }
 
   try {
-    // Parse request body
+    // Parse request body if it's not a webhook event
+    if (req.headers.get('stripe-signature')) {
+      // This is a webhook event, handle it differently
+      const signature = req.headers.get('stripe-signature');
+      const body = await req.text();
+      
+      try {
+        const event = stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET);
+        console.log(`Processing webhook event: ${event.type}`);
+        
+        // Handle the event based on its type
+        switch (event.type) {
+          case 'customer.subscription.created':
+            console.log('Subscription created:', event.data.object);
+            // Here we could update the user's subscription in our database
+            break;
+            
+          case 'customer.subscription.updated':
+            console.log('Subscription updated:', event.data.object);
+            // Update subscription status in database
+            break;
+            
+          case 'customer.subscription.deleted':
+            console.log('Subscription deleted:', event.data.object);
+            // Mark subscription as canceled in database
+            break;
+            
+          case 'invoice.payment_succeeded':
+            console.log('Payment succeeded:', event.data.object);
+            // Record successful payment
+            break;
+            
+          case 'invoice.payment_failed':
+            console.log('Payment failed:', event.data.object);
+            // Handle failed payment - could notify user
+            break;
+            
+          case 'payment_intent.succeeded':
+            console.log('Payment intent succeeded:', event.data.object);
+            break;
+            
+          case 'payment_intent.payment_failed':
+            console.log('Payment intent failed:', event.data.object);
+            break;
+            
+          default:
+            console.log(`Unhandled event type: ${event.type}`);
+        }
+        
+        return new Response(
+          JSON.stringify({ received: true }),
+          { 
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      } catch (err) {
+        console.error(`Webhook signature verification failed: ${err.message}`);
+        return new Response(
+          JSON.stringify({ error: `Webhook signature verification failed: ${err.message}` }),
+          { 
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+    }
+    
+    // Parse request for non-webhook requests
     const body = await req.json();
     const { action } = body;
     
@@ -141,53 +209,6 @@ serve(async (req) => {
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-    }
-    
-    // Handle webhook events
-    else if (action === 'webhook') {
-      const signature = req.headers.get('stripe-signature');
-      
-      if (!signature) {
-        return new Response(
-          JSON.stringify({ error: 'Webhook signature missing' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      const reqText = await req.text();
-      let event;
-      
-      try {
-        event = stripe.webhooks.constructEvent(reqText, signature, STRIPE_WEBHOOK_SECRET);
-      } catch (error) {
-        return new Response(
-          JSON.stringify({ error: `Webhook signature verification failed: ${error.message}` }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      // Handle the event based on its type
-      console.log(`Processing webhook event: ${event.type}`);
-      
-      switch (event.type) {
-        case 'customer.subscription.created':
-        case 'customer.subscription.updated':
-        case 'customer.subscription.deleted':
-        case 'invoice.payment_succeeded':
-        case 'invoice.payment_failed':
-          // These events should update the user's subscription status in your database
-          // This would be implemented by making a call to your database
-          console.log('Subscription event received:', event.data.object);
-          break;
-          
-        default:
-          console.log(`Unhandled event type: ${event.type}`);
-      }
-      
-      return new Response(
-        JSON.stringify({ received: true }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
     }
     
     // If no matching action

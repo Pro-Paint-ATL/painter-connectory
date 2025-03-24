@@ -1,5 +1,4 @@
 
-import { handleWebhookEvent } from '@/utils/stripe-server';
 import { supabase } from '@/lib/supabase';
 import { Subscription } from '@/types/auth';
 import { Json } from '@/integrations/supabase/types';
@@ -13,13 +12,17 @@ export const stripeWebhookHandler = async (request: Request) => {
     const body = await request.text();
     const signature = request.headers.get('stripe-signature') || '';
     
-    // This is your webhook secret from Stripe dashboard
-    const webhookSecret = 'whsec_your_webhook_secret';
+    // Instead of handling it directly, send to our Supabase Edge Function
+    const { data, error } = await supabase.functions.invoke('stripe-subscription', {
+      body: body,
+      headers: {
+        'stripe-signature': signature
+      },
+    });
     
-    // Pass all three arguments properly
-    const result = await handleWebhookEvent(body, signature, webhookSecret);
+    if (error) throw error;
     
-    return new Response(JSON.stringify(result), {
+    return new Response(JSON.stringify(data), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
